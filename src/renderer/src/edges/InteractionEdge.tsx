@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { type EdgeProps, getBezierPath, EdgeLabelRenderer } from '@xyflow/react'
+import type { InteractionEdge as InteractionEdgeType } from '../types'
 
 function InteractionEdgeComponent({
   id,
@@ -11,10 +12,10 @@ function InteractionEdgeComponent({
   targetPosition,
   data,
   selected
-}: EdgeProps) {
-  const edgeStyle = (data as Record<string, unknown>)?.edgeStyle as string | undefined
-  const sourceColor = ((data as Record<string, unknown>)?.sourceColor as string) || 'hsl(230 5% 65% / 0.5)'
-  const targetColor = ((data as Record<string, unknown>)?.targetColor as string) || sourceColor
+}: EdgeProps<InteractionEdgeType>) {
+  const edgeStyle = data?.edgeStyle
+  const sourceColor = data?.sourceColor || 'hsl(230 5% 65% / 0.5)'
+  const targetColor = data?.targetColor || sourceColor
 
   const [edgePath] = getBezierPath({
     sourceX,
@@ -96,7 +97,7 @@ function InteractionEdgeComponent({
             {edgeStyle === 'condition-true' && 'True'}
             {edgeStyle === 'condition-false' && 'False'}
             {edgeStyle === 'choice' &&
-              `Choice ${((data as Record<string, unknown>)?.choiceIndex as number ?? 0) + 1}`}
+              `Choice ${(data?.choiceIndex ?? 0) + 1}`}
           </div>
         </EdgeLabelRenderer>
       )}

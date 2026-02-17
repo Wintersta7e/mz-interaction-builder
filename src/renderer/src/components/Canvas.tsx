@@ -24,7 +24,7 @@ import { nodeTypes } from '../nodes'
 import { edgeTypes } from '../edges'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
-import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData } from '../types'
+import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
 function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
   switch (type) {
@@ -38,8 +38,6 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
       return { type: 'condition', label: 'Condition', condition: { id: generateId('cond'), type: 'switch' } }
     case 'end':
       return { type: 'end', label: 'End' }
-    default:
-      return { type: 'start', label: 'Start' }
   }
 }
 
@@ -64,7 +62,7 @@ const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
 function getEdgeTypeAndData(
   connection: Connection,
   nodes: InteractionNode[]
-): { type: string; data: Record<string, unknown> } {
+): { type: string; data: InteractionEdgeData } {
   const sourceNode = nodes.find((n) => n.id === connection.source)
   const targetNode = nodes.find((n) => n.id === connection.target)
   const sourceType = sourceNode?.type as InteractionNodeType | undefined

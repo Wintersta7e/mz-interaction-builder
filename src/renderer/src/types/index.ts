@@ -121,8 +121,14 @@ export type InteractionNode = Node<InteractionNodeData, InteractionNodeType>
 // Edge types
 export type InteractionEdgeType = 'default' | 'choice' | 'condition-true' | 'condition-false'
 
+// Edge style (visual style applied to rendered edges)
+export type EdgeStyle = 'default' | 'choice' | 'condition-true' | 'condition-false'
+
 // Edge data
 export interface InteractionEdgeData {
+  edgeStyle?: EdgeStyle
+  sourceColor?: string
+  targetColor?: string
   choiceIndex?: number
   conditionBranch?: 'true' | 'false'
   [key: string]: unknown

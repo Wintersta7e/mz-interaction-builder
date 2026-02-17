@@ -235,6 +235,7 @@ interface MenuPropertiesProps {
 }
 
 function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'menu'
   const data = node.data as MenuNodeData
   const choices = data.choices || []
   const [expandedChoice, setExpandedChoice] = useState<string | null>(null)
@@ -453,6 +454,7 @@ interface ActionPropertiesProps {
 }
 
 function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'action'
   const data = node.data as ActionNodeData
   const actions = data.actions || []
   const { switches, variables } = useProjectStore()
@@ -665,6 +667,7 @@ interface ConditionPropertiesProps {
 }
 
 function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'condition'
   const data = node.data as ConditionNodeData
   const condition = data.condition || { id: uuid(), type: 'switch' as const }
   const { switches, variables } = useProjectStore()
