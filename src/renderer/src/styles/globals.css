@@ -81,9 +81,17 @@
   box-shadow: 0 0 8px currentColor;
 }
 
+@keyframes edge-dash-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
 .react-flow__edge-path {
   stroke: hsl(230 5% 65% / 0.5);
   stroke-width: 2;
+  stroke-dasharray: 6 4;
+  animation: edge-dash-flow 0.6s linear infinite;
   transition: stroke-width 0.15s ease, stroke-opacity 0.15s ease;
 }
 
