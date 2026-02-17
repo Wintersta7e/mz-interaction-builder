@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Play, List, Zap, GitBranch, Square } from 'lucide-react'
 import type { InteractionNodeType } from '../types'
 
@@ -37,6 +37,32 @@ export function CanvasContextMenu({
   onClose
 }: CanvasContextMenuProps): React.JSX.Element {
   const menuRef = useRef<HTMLDivElement>(null)
+  const [clampedPosition, setClampedPosition] = useState(position)
+
+  // Clamp menu position to stay within viewport (B8)
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    if (!menu) {
+      setClampedPosition(position)
+      return
+    }
+
+    const parent = menu.parentElement
+    if (!parent) {
+      setClampedPosition(position)
+      return
+    }
+
+    const menuRect = menu.getBoundingClientRect()
+    const parentRect = parent.getBoundingClientRect()
+    const maxX = parentRect.width - menuRect.width
+    const maxY = parentRect.height - menuRect.height
+
+    setClampedPosition({
+      x: Math.max(0, Math.min(position.x, maxX)),
+      y: Math.max(0, Math.min(position.y, maxY))
+    })
+  }, [position])
 
   // Close on click outside or Escape
   useEffect(() => {
@@ -60,7 +86,7 @@ export function CanvasContextMenu({
     <div
       ref={menuRef}
       className="absolute z-50 min-w-[180px] rounded-xl border border-border bg-card/95 py-1 shadow-xl backdrop-blur-md"
-      style={{ left: position.x, top: position.y }}
+      style={{ left: clampedPosition.x, top: clampedPosition.y }}
     >
       <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Add Node
