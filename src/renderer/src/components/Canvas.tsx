@@ -2,6 +2,7 @@ import { useCallback, useRef, useEffect } from 'react'
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   Controls,
   MiniMap,
   useNodesState,
@@ -289,13 +290,22 @@ function CanvasInner() {
         selectNodesOnDrag={false}
         className="bg-background"
       >
-        <Background color="hsl(var(--muted-foreground) / 0.2)" gap={16} />
-        <Controls className="!bg-card !border-border !shadow-lg" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          color="hsl(230 15% 15%)"
+          gap={20}
+          size={1.5}
+        />
+        <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
         {showMinimap && (
           <MiniMap
             nodeStrokeWidth={3}
-            className="!bg-card !border-border"
-            maskColor="hsl(var(--background) / 0.8)"
+            className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
+            maskColor="hsl(230 25% 7% / 0.8)"
+            nodeBorderRadius={4}
+            pannable
+            zoomable
+            style={{ width: 180, height: 120 }}
           />
         )}
       </ReactFlow>
