@@ -52,11 +52,11 @@ function InteractionEdgeComponent({
         <defs>
           <linearGradient
             id={gradientId}
-            gradientUnits="userSpaceOnUse"
-            x1={sourceX}
-            y1={sourceY}
-            x2={targetX}
-            y2={targetY}
+            gradientUnits="objectBoundingBox"
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="0"
           >
             <stop offset="0%" stopColor={sourceColor} />
             <stop offset="100%" stopColor={targetColor} />

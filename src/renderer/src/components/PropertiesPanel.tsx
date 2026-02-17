@@ -10,7 +10,7 @@ import type {
 } from '../types'
 import { v4 as uuid } from 'uuid'
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useDebouncedSync } from '../hooks/useDebouncedSync'
 import { parseIntSafe } from '../lib/parseIntSafe'
 import { SearchableSelect } from './SearchableSelect'
@@ -78,10 +78,14 @@ function DebouncedTextarea({
 }
 
 export function PropertiesPanel() {
-  const { selectedNodeId } = useUIStore()
-  const { document, updateNode } = useDocumentStore()
-
-  const selectedNode = document.nodes.find((n) => n.id === selectedNodeId)
+  const selectedNodeId = useUIStore((s) => s.selectedNodeId)
+  const updateNode = useDocumentStore((s) => s.updateNode)
+  const selectedNode = useDocumentStore(
+    useCallback(
+      (s) => (selectedNodeId ? s.document.nodes.find((n) => n.id === selectedNodeId) ?? null : null),
+      [selectedNodeId]
+    )
+  )
 
   if (!selectedNode) {
     return (
