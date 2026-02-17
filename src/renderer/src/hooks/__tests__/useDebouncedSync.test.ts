@@ -88,6 +88,21 @@ describe('useDebouncedSync', () => {
     expect(commit).toHaveBeenCalledWith('typed')
   })
 
+  it('flushes null values correctly', () => {
+    const commit = vi.fn()
+    const { result } = renderHook(() => useDebouncedSync<string | null>('initial', commit, 300))
+
+    act(() => {
+      result.current.setLocalValue(null)
+    })
+
+    act(() => {
+      result.current.flush()
+    })
+
+    expect(commit).toHaveBeenCalledWith(null)
+  })
+
   it('syncs when store value changes externally', () => {
     const commit = vi.fn()
     const { result, rerender } = renderHook(

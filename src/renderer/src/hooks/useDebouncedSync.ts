@@ -22,7 +22,8 @@ export function useDebouncedSync<T>(
 } {
   const [localValue, setLocalState] = useState<T>(storeValue)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingValueRef = useRef<T | null>(null)
+  const pendingValueRef = useRef<T>(storeValue)
+  const hasPendingRef = useRef(false)
   const commitFnRef = useRef(commitFn)
 
   // Keep commitFn ref current to avoid stale closures
@@ -35,7 +36,7 @@ export function useDebouncedSync<T>(
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current)
       timerRef.current = null
-      pendingValueRef.current = null
+      hasPendingRef.current = false
     }
   }, [storeValue])
 
@@ -52,6 +53,7 @@ export function useDebouncedSync<T>(
     (value: T) => {
       setLocalState(value)
       pendingValueRef.current = value
+      hasPendingRef.current = true
 
       // Clear existing timer
       if (timerRef.current !== null) {
@@ -66,7 +68,7 @@ export function useDebouncedSync<T>(
           console.error('useDebouncedSync: commit failed', e)
         }
         timerRef.current = null
-        pendingValueRef.current = null
+        hasPendingRef.current = false
       }, delay)
     },
     [delay]
@@ -77,9 +79,9 @@ export function useDebouncedSync<T>(
       clearTimeout(timerRef.current)
       timerRef.current = null
     }
-    if (pendingValueRef.current !== null) {
+    if (hasPendingRef.current) {
       commitFnRef.current(pendingValueRef.current)
-      pendingValueRef.current = null
+      hasPendingRef.current = false
     }
   }, [])
 
