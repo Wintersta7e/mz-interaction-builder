@@ -11,6 +11,69 @@ import type {
 import { v4 as uuid } from 'uuid'
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
 import { useState } from 'react'
+import { useDebouncedSync } from '../hooks/useDebouncedSync'
+
+// ============================================
+// Debounced Input Wrappers
+// ============================================
+
+function DebouncedInput({
+  value,
+  onChange,
+  type = 'text',
+  className,
+  placeholder,
+  min,
+  max
+}: {
+  value: string | number
+  onChange: (value: string) => void
+  type?: string
+  className?: string
+  placeholder?: string
+  min?: number
+  max?: number
+}) {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(String(value ?? ''), onChange, 300)
+  return (
+    <input
+      type={type}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={flush}
+      className={className}
+      placeholder={placeholder}
+      min={min}
+      max={max}
+    />
+  )
+}
+
+function DebouncedTextarea({
+  value,
+  onChange,
+  className,
+  rows,
+  placeholder
+}: {
+  value: string
+  onChange: (value: string) => void
+  className?: string
+  rows?: number
+  placeholder?: string
+}) {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(value, onChange, 300)
+  return (
+    <textarea
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={flush}
+      className={className}
+      rows={rows}
+      placeholder={placeholder}
+    />
+  )
+}
 
 export function PropertiesPanel() {
   const { selectedNodeId } = useUIStore()
@@ -33,12 +96,11 @@ export function PropertiesPanel() {
       {/* Common properties */}
       <div className="mb-4">
         <label className="mb-1 block text-xs text-muted-foreground">Label</label>
-        <input
-          type="text"
+        <DebouncedInput
           value={selectedNode.data.label}
-          onChange={(e) =>
+          onChange={(value) =>
             updateNode(selectedNode.id, {
-              data: { ...selectedNode.data, label: e.target.value }
+              data: { ...selectedNode.data, label: value }
             })
           }
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
@@ -163,9 +225,9 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
       )}
 
       {currentCondition.type === 'script' && (
-        <textarea
+        <DebouncedTextarea
           value={currentCondition.script || ''}
-          onChange={(e) => onChange({ ...currentCondition, script: e.target.value })}
+          onChange={(value) => onChange({ ...currentCondition, script: value })}
           className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
           rows={2}
           placeholder="JavaScript expression (returns boolean)"
@@ -249,10 +311,9 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     <ChevronDown className="h-3 w-3" />
                   </button>
                 </div>
-                <input
-                  type="text"
+                <DebouncedInput
                   value={choice.text}
-                  onChange={(e) => updateChoice(index, { text: e.target.value })}
+                  onChange={(value) => updateChoice(index, { text: value })}
                   className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder={`Choice ${index + 1}`}
                 />
@@ -465,9 +526,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
             </div>
 
             {action.type === 'script' && (
-              <textarea
+              <DebouncedTextarea
                 value={action.script || ''}
-                onChange={(e) => updateAction(index, { script: e.target.value })}
+                onChange={(value) => updateAction(index, { script: value })}
                 className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
                 rows={3}
                 placeholder="JavaScript code..."
@@ -555,10 +616,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
             {action.type === 'show_text' && (
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <DebouncedInput
                     value={action.faceName || ''}
-                    onChange={(e) => updateAction(index, { faceName: e.target.value })}
+                    onChange={(value) => updateAction(index, { faceName: value })}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Face Name"
                   />
@@ -572,9 +632,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                     max={7}
                   />
                 </div>
-                <textarea
+                <DebouncedTextarea
                   value={action.text || ''}
-                  onChange={(e) => updateAction(index, { text: e.target.value })}
+                  onChange={(value) => updateAction(index, { text: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   rows={3}
                   placeholder="Message text..."
@@ -584,25 +644,23 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'plugin_command' && (
               <div className="space-y-2">
-                <input
-                  type="text"
+                <DebouncedInput
                   value={action.pluginName || ''}
-                  onChange={(e) => updateAction(index, { pluginName: e.target.value })}
+                  onChange={(value) => updateAction(index, { pluginName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Plugin Name"
                 />
-                <input
-                  type="text"
+                <DebouncedInput
                   value={action.commandName || ''}
-                  onChange={(e) => updateAction(index, { commandName: e.target.value })}
+                  onChange={(value) => updateAction(index, { commandName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Command Name"
                 />
-                <textarea
+                <DebouncedTextarea
                   value={action.commandArgs ? JSON.stringify(action.commandArgs) : ''}
-                  onChange={(e) => {
+                  onChange={(value) => {
                     try {
-                      const args = e.target.value ? JSON.parse(e.target.value) : undefined
+                      const args = value ? JSON.parse(value) : undefined
                       updateAction(index, { commandArgs: args })
                     } catch {
                       // Invalid JSON, ignore
@@ -736,9 +794,9 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
       {condition.type === 'script' && (
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Script (returns boolean)</label>
-          <textarea
+          <DebouncedTextarea
             value={condition.script || ''}
-            onChange={(e) => updateCondition({ script: e.target.value })}
+            onChange={(value) => updateCondition({ script: value })}
             className="w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs"
             rows={4}
             placeholder="return $gameVariables.value(1) > 0;"
