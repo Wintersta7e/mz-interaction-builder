@@ -12,6 +12,7 @@ import { v4 as uuid } from 'uuid'
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
 import { useState } from 'react'
 import { useDebouncedSync } from '../hooks/useDebouncedSync'
+import { SearchableSelect } from './SearchableSelect'
 
 // ============================================
 // Debounced Input Wrappers
@@ -161,18 +162,12 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
 
       {currentCondition.type === 'switch' && (
         <div className="space-y-1">
-          <select
-            value={currentCondition.switchId || ''}
-            onChange={(e) => onChange({ ...currentCondition, switchId: parseInt(e.target.value, 10) })}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
-          >
-            <option value="">-- Select Switch --</option>
-            {switches.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.id}: {s.name || '(unnamed)'}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            items={switches}
+            value={currentCondition.switchId ?? null}
+            onChange={(id) => onChange({ ...currentCondition, switchId: id })}
+            placeholder="-- Select Switch --"
+          />
           <select
             value={currentCondition.switchValue || 'on'}
             onChange={(e) => onChange({ ...currentCondition, switchValue: e.target.value as 'on' | 'off' })}
@@ -186,18 +181,12 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
 
       {currentCondition.type === 'variable' && (
         <div className="space-y-1">
-          <select
-            value={currentCondition.variableId || ''}
-            onChange={(e) => onChange({ ...currentCondition, variableId: parseInt(e.target.value, 10) })}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
-          >
-            <option value="">-- Select Variable --</option>
-            {variables.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.id}: {v.name || '(unnamed)'}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            items={variables}
+            value={currentCondition.variableId ?? null}
+            onChange={(id) => onChange({ ...currentCondition, variableId: id })}
+            placeholder="-- Select Variable --"
+          />
           <div className="flex gap-1">
             <select
               value={currentCondition.variableOperator || '=='}
@@ -537,18 +526,12 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'set_switch' && (
               <div className="space-y-2">
-                <select
-                  value={action.switchId || ''}
-                  onChange={(e) => updateAction(index, { switchId: parseInt(e.target.value, 10) })}
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-                >
-                  <option value="">-- Select Switch --</option>
-                  {switches.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.id}: {s.name || '(unnamed)'}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  items={switches}
+                  value={action.switchId ?? null}
+                  onChange={(id) => updateAction(index, { switchId: id })}
+                  placeholder="-- Select Switch --"
+                />
                 <select
                   value={action.switchValue || 'on'}
                   onChange={(e) =>
@@ -565,18 +548,12 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'set_variable' && (
               <div className="space-y-2">
-                <select
-                  value={action.variableId || ''}
-                  onChange={(e) => updateAction(index, { variableId: parseInt(e.target.value, 10) })}
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-                >
-                  <option value="">-- Select Variable --</option>
-                  {variables.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.id}: {v.name || '(unnamed)'}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  items={variables}
+                  value={action.variableId ?? null}
+                  onChange={(id) => updateAction(index, { variableId: id })}
+                  placeholder="-- Select Variable --"
+                />
                 <div className="flex gap-2">
                   <select
                     value={action.variableOperation || 'set'}
@@ -717,18 +694,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         <>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Switch</label>
-            <select
-              value={condition.switchId || ''}
-              onChange={(e) => updateCondition({ switchId: parseInt(e.target.value, 10) })}
-              className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="">-- Select Switch --</option>
-              {switches.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.id}: {s.name || '(unnamed)'}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              items={switches}
+              value={condition.switchId ?? null}
+              onChange={(id) => updateCondition({ switchId: id })}
+              placeholder="-- Select Switch --"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Value</label>
@@ -748,18 +719,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         <>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Variable</label>
-            <select
-              value={condition.variableId || ''}
-              onChange={(e) => updateCondition({ variableId: parseInt(e.target.value, 10) })}
-              className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="">-- Select Variable --</option>
-              {variables.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.id}: {v.name || '(unnamed)'}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              items={variables}
+              value={condition.variableId ?? null}
+              onChange={(id) => updateCondition({ variableId: id })}
+              placeholder="-- Select Variable --"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Operator</label>
