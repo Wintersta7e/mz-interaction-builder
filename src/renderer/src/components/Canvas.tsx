@@ -12,10 +12,9 @@ import {
   Connection,
   ReactFlowProvider,
   useReactFlow,
-  Node as RFNode,
-  Edge as RFEdge,
-  NodeChange,
-  EdgeChange
+  type NodeChange,
+  type EdgeChange,
+  type OnMoveEnd
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
@@ -47,10 +46,8 @@ function CanvasInner() {
   const { push } = useHistoryStore()
   const { screenToFlowPosition } = useReactFlow()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes as any[])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges as any[])
+  const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
+  const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
 
   // Refs to track latest state for use in callbacks (avoids stale closures)
   const nodesRef = useRef(nodes)
@@ -64,13 +61,13 @@ function CanvasInner() {
 
   // Sync local state when document changes (e.g., file load, undo/redo)
   useEffect(() => {
-    setNodesState(document.nodes as any[])
-    setEdgesState(document.edges as any[])
+    setNodesState(document.nodes)
+    setEdgesState(document.edges)
   }, [document.nodes, document.edges, setNodesState, setEdgesState])
 
   // Sync nodes/edges changes to document store
   const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
+    (changes: NodeChange<InteractionNode>[]) => {
       // Check for significant changes first
       const significantChange = changes.some(
         (c) => c.type === 'remove' || c.type === 'add' || (c.type === 'position' && !c.dragging)
@@ -86,7 +83,7 @@ function CanvasInner() {
 
       // Sync to document store using computed new nodes
       if (significantChange) {
-        const newNodes = applyNodeChanges(changes, nodesRef.current) as InteractionNode[]
+        const newNodes = applyNodeChanges(changes, nodesRef.current)
         setNodes(newNodes)
       }
     },
@@ -94,7 +91,7 @@ function CanvasInner() {
   )
 
   const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
+    (changes: EdgeChange<InteractionEdge>[]) => {
       const significantChange = changes.some((c) => c.type === 'remove' || c.type === 'add')
 
       // Push current document to history BEFORE applying changes
@@ -107,7 +104,7 @@ function CanvasInner() {
 
       // Sync to document store using computed new edges
       if (significantChange) {
-        const newEdges = applyEdgeChanges(changes, edgesRef.current) as InteractionEdge[]
+        const newEdges = applyEdgeChanges(changes, edgesRef.current)
         setEdges(newEdges)
       }
     },
@@ -118,18 +115,20 @@ function CanvasInner() {
     (connection: Connection) => {
       // Push current document to history before making changes
       push(useDocumentStore.getState().document)
-      const newEdge = {
+      const newEdge: InteractionEdge = {
         ...connection,
-        id: generateId('edge')
-      } as RFEdge
+        id: generateId('edge'),
+        sourceHandle: connection.sourceHandle ?? undefined,
+        targetHandle: connection.targetHandle ?? undefined
+      }
       setEdgesState((eds) => addEdge(newEdge, eds))
-      addDocEdge(newEdge as InteractionEdge)
+      addDocEdge(newEdge)
     },
     [setEdgesState, addDocEdge, push]
   )
 
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: RFNode) => {
+    (_event: React.MouseEvent, node: InteractionNode) => {
       setSelectedNodeId(node.id)
     },
     [setSelectedNodeId]
@@ -171,13 +170,13 @@ function CanvasInner() {
       // Push current document to history before making changes
       push(useDocumentStore.getState().document)
       addNode(newNode)
-      setNodesState((nds) => [...nds, newNode as unknown as RFNode])
+      setNodesState((nds) => [...nds, newNode])
     },
     [screenToFlowPosition, addNode, setNodesState, push]
   )
 
-  const onMoveEnd = useCallback(
-    (_event: any, viewport: { zoom: number }) => {
+  const onMoveEnd: OnMoveEnd = useCallback(
+    (_event, viewport) => {
       setZoom(viewport.zoom)
     },
     [setZoom]
@@ -199,14 +198,14 @@ function CanvasInner() {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         // Check for selected edges first (use ref for latest value)
         const currentEdges = edgesRef.current
-        const selectedEdges = currentEdges.filter((edge: RFEdge) => edge.selected)
+        const selectedEdges = currentEdges.filter((edge) => edge.selected)
         if (selectedEdges.length > 0) {
           e.preventDefault()
           // Get fresh document state for history
           push(useDocumentStore.getState().document)
-          const selectedEdgeIds = selectedEdges.map((edge: RFEdge) => edge.id)
-          setEdgesState((eds: RFEdge[]) => eds.filter((edge) => !selectedEdgeIds.includes(edge.id)))
-          setEdges(currentEdges.filter((edge: RFEdge) => !selectedEdgeIds.includes(edge.id)) as InteractionEdge[])
+          const selectedEdgeIds = selectedEdges.map((edge) => edge.id)
+          setEdgesState((eds) => eds.filter((edge) => !selectedEdgeIds.includes(edge.id)))
+          setEdges(currentEdges.filter((edge) => !selectedEdgeIds.includes(edge.id)))
           return
         }
 
@@ -218,7 +217,7 @@ function CanvasInner() {
           removeNode(selectedNodeId)
           setNodesState((nds) => nds.filter((n) => n.id !== selectedNodeId))
           // Also remove connected edges
-          setEdgesState((eds: RFEdge[]) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId))
+          setEdgesState((eds) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId))
           setSelectedNodeId(null)
         }
       }
@@ -254,7 +253,7 @@ function CanvasInner() {
           // Get fresh document state for history
           push(useDocumentStore.getState().document)
           addNode(pastedNode)
-          setNodesState((nds) => [...nds, pastedNode as unknown as RFNode])
+          setNodesState((nds) => [...nds, pastedNode])
           setSelectedNodeId(pastedNode.id)
         }
       }
