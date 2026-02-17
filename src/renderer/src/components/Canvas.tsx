@@ -355,6 +355,7 @@ function CanvasInner() {
             className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
             maskColor="hsl(230 25% 7% / 0.8)"
             nodeBorderRadius={4}
+            nodeColor={(node) => NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || 'start'] || '#9ca3af'}
             pannable
             zoomable
             style={{ width: 180, height: 120 }}
