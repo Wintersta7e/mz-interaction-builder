@@ -196,11 +196,15 @@ export default function App() {
       setProjectPath(folderPath)
       addRecentProject(folderPath)
 
+      const loadWarnings: string[] = []
+
       // Load maps
       const mapsResult = await window.api.project.getMaps()
       if (signal.aborted) return
       if (!('error' in mapsResult)) {
         setMaps(mapsResult)
+      } else {
+        loadWarnings.push(`Maps: ${mapsResult.error}`)
       }
 
       // Load switches
@@ -208,6 +212,8 @@ export default function App() {
       if (signal.aborted) return
       if (!('error' in switchesResult)) {
         setSwitches(switchesResult)
+      } else {
+        loadWarnings.push(`Switches: ${switchesResult.error}`)
       }
 
       // Load variables
@@ -215,12 +221,19 @@ export default function App() {
       if (signal.aborted) return
       if (!('error' in variablesResult)) {
         setVariables(variablesResult)
+      } else {
+        loadWarnings.push(`Variables: ${variablesResult.error}`)
       }
 
+      const warningText =
+        loadWarnings.length > 0
+          ? `\n\nWarnings:\n${loadWarnings.map((w) => `- ${w}`).join('\n')}`
+          : ''
+
       await window.api.dialog.message({
-        type: 'info',
+        type: loadWarnings.length > 0 ? 'warning' : 'info',
         title: 'Project Loaded',
-        message: `Loaded project from:\n${folderPath}`
+        message: `Loaded project from:\n${folderPath}${warningText}`
       })
     } catch (error) {
       if (signal.aborted) return
@@ -297,6 +310,13 @@ export default function App() {
         if (result.success) {
           useDocumentStore.getState().setDirty(false)
           console.log('Auto-saved at', new Date().toLocaleTimeString())
+        } else {
+          console.error('Auto-save failed:', result.error)
+          await window.api.dialog.message({
+            type: 'warning',
+            title: 'Auto-save Failed',
+            message: `Could not auto-save to:\n${currentPath}\n\n${result.error || 'Unknown error'}\n\nPlease save manually with Ctrl+S.`
+          })
         }
       }, AUTO_SAVE_INTERVAL)
     }
