@@ -40,6 +40,53 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
   }
 }
 
+// Node accent color mapping (matches CSS variables and node components)
+const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
+  start: '#34d399',
+  menu: '#a78bfa',
+  action: '#38bdf8',
+  condition: '#fbbf24',
+  end: '#fb7185'
+}
+
+function getEdgeTypeAndData(
+  connection: Connection,
+  nodes: InteractionNode[]
+): { type: string; data: Record<string, unknown> } {
+  const sourceNode = nodes.find((n) => n.id === connection.source)
+  const targetNode = nodes.find((n) => n.id === connection.target)
+  const sourceType = sourceNode?.type as InteractionNodeType | undefined
+  const targetType = targetNode?.type as InteractionNodeType | undefined
+
+  const sourceColor = sourceType ? NODE_ACCENT_COLORS[sourceType] : '#9ca3af'
+  const targetColor = targetType ? NODE_ACCENT_COLORS[targetType] : '#9ca3af'
+
+  if (sourceType === 'condition' && connection.sourceHandle === 'true') {
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'condition-true', sourceColor: '#34d399', targetColor, conditionBranch: 'true' }
+    }
+  }
+  if (sourceType === 'condition' && connection.sourceHandle === 'false') {
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'condition-false', sourceColor: '#fb7185', targetColor, conditionBranch: 'false' }
+    }
+  }
+  if (sourceType === 'menu' && connection.sourceHandle?.startsWith('choice-')) {
+    const choiceIndex = parseInt(connection.sourceHandle.replace('choice-', ''), 10)
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'choice', sourceColor: '#a78bfa', targetColor, choiceIndex }
+    }
+  }
+
+  return {
+    type: 'interaction',
+    data: { edgeStyle: 'default', sourceColor, targetColor }
+  }
+}
+
 function CanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const { document, setNodes, setEdges, addNode, addEdge: addDocEdge, removeNode } = useDocumentStore()
@@ -116,9 +163,12 @@ function CanvasInner() {
     (connection: Connection) => {
       // Push current document to history before making changes
       push(useDocumentStore.getState().document)
+      const { type, data } = getEdgeTypeAndData(connection, nodesRef.current)
       const newEdge: InteractionEdge = {
         ...connection,
         id: generateId('edge'),
+        type,
+        data,
         sourceHandle: connection.sourceHandle ?? undefined,
         targetHandle: connection.targetHandle ?? undefined
       }
