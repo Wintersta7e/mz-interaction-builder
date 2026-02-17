@@ -12,6 +12,7 @@ import { v4 as uuid } from 'uuid'
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
 import { useState } from 'react'
 import { useDebouncedSync } from '../hooks/useDebouncedSync'
+import { parseIntSafe } from '../lib/parseIntSafe'
 import { SearchableSelect } from './SearchableSelect'
 
 // ============================================
@@ -205,7 +206,10 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
             <input
               type="number"
               value={currentCondition.variableCompareValue || ''}
-              onChange={(e) => onChange({ ...currentCondition, variableCompareValue: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const val = parseIntSafe(e.target.value)
+                if (val !== undefined) onChange({ ...currentCondition, variableCompareValue: val })
+              }}
               className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
               placeholder="Value"
             />
@@ -412,11 +416,10 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
         <label className="mb-1 block text-xs text-muted-foreground">Window Background</label>
         <select
           value={data.windowBackground ?? 0}
-          onChange={(e) =>
-            updateNode(node.id, {
-              data: { ...data, windowBackground: parseInt(e.target.value, 10) as 0 | 1 | 2 }
-            })
-          }
+          onChange={(e) => {
+            const val = parseIntSafe(e.target.value, 0) as 0 | 1 | 2
+            updateNode(node.id, { data: { ...data, windowBackground: val } })
+          }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value={0}>Window</option>
@@ -429,11 +432,10 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
         <label className="mb-1 block text-xs text-muted-foreground">Window Position</label>
         <select
           value={data.windowPosition ?? 2}
-          onChange={(e) =>
-            updateNode(node.id, {
-              data: { ...data, windowPosition: parseInt(e.target.value, 10) as 0 | 1 | 2 }
-            })
-          }
+          onChange={(e) => {
+            const val = parseIntSafe(e.target.value, 2) as 0 | 1 | 2
+            updateNode(node.id, { data: { ...data, windowPosition: val } })
+          }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value={0}>Left</option>
@@ -574,7 +576,10 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   <input
                     type="number"
                     value={action.variableValue || ''}
-                    onChange={(e) => updateAction(index, { variableValue: parseInt(e.target.value, 10) })}
+                    onChange={(e) => {
+                      const val = parseIntSafe(e.target.value)
+                      if (val !== undefined) updateAction(index, { variableValue: val })
+                    }}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Value"
                   />
@@ -586,7 +591,10 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               <input
                 type="number"
                 value={action.commonEventId || ''}
-                onChange={(e) => updateAction(index, { commonEventId: parseInt(e.target.value, 10) })}
+                onChange={(e) => {
+                  const val = parseIntSafe(e.target.value)
+                  if (val !== undefined) updateAction(index, { commonEventId: val })
+                }}
                 className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                 placeholder="Common Event ID"
               />
@@ -604,7 +612,10 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   <input
                     type="number"
                     value={action.faceIndex ?? ''}
-                    onChange={(e) => updateAction(index, { faceIndex: parseInt(e.target.value, 10) })}
+                    onChange={(e) => {
+                      const val = parseIntSafe(e.target.value)
+                      if (val !== undefined) updateAction(index, { faceIndex: val })
+                    }}
                     className="w-16 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Idx"
                     min={0}
@@ -641,8 +652,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                     try {
                       const args = value ? JSON.parse(value) : undefined
                       updateAction(index, { commandArgs: args })
-                    } catch {
-                      // Invalid JSON, ignore
+                    } catch (e) {
+                      if (!(e instanceof SyntaxError)) throw e
+                      // Invalid JSON — user still typing, ignore
                     }
                   }}
                   className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
@@ -751,7 +763,10 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
             <input
               type="number"
               value={condition.variableCompareValue || ''}
-              onChange={(e) => updateCondition({ variableCompareValue: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const val = parseIntSafe(e.target.value)
+                if (val !== undefined) updateCondition({ variableCompareValue: val })
+              }}
               className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
               placeholder="Value"
             />

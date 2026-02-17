@@ -60,7 +60,11 @@ export function useDebouncedSync<T>(
 
       // Set new debounce timer
       timerRef.current = setTimeout(() => {
-        commitFnRef.current(value)
+        try {
+          commitFnRef.current(value)
+        } catch (e) {
+          console.error('useDebouncedSync: commit failed', e)
+        }
         timerRef.current = null
         pendingValueRef.current = null
       }, delay)
