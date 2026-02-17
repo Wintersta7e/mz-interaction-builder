@@ -11,6 +11,10 @@ module.exports = {
       }
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Consolas', 'monospace']
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

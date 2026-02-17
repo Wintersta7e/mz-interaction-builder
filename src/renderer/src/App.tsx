@@ -1,3 +1,7 @@
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
+import '@fontsource/inter/600.css'
+import '@fontsource/jetbrains-mono/400.css'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Layout } from './components/Layout'
 import { Toolbar } from './components/Toolbar'
