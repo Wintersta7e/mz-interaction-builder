@@ -81,4 +81,6 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
   )
 }
 
-export const ConditionNode = memo(ConditionNodeComponent)
+export const ConditionNode = memo(ConditionNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

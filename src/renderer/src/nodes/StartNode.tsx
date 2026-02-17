@@ -23,4 +23,6 @@ function StartNodeComponent({ data, selected }: StartNodeProps) {
   )
 }
 
-export const StartNode = memo(StartNodeComponent)
+export const StartNode = memo(StartNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

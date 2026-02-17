@@ -115,4 +115,6 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
   )
 }
 
-export const MenuNode = memo(MenuNodeComponent)
+export const MenuNode = memo(MenuNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

@@ -57,4 +57,6 @@ function ActionNodeComponent({ data, selected }: ActionNodeProps) {
   )
 }
 
-export const ActionNode = memo(ActionNodeComponent)
+export const ActionNode = memo(ActionNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

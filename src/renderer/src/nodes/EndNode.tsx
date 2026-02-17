@@ -23,4 +23,6 @@ function EndNodeComponent({ data, selected }: EndNodeProps) {
   )
 }
 
-export const EndNode = memo(EndNodeComponent)
+export const EndNode = memo(EndNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})
