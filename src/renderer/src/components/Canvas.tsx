@@ -20,6 +20,7 @@ import {
 import '@xyflow/react/dist/style.css'
 
 import { nodeTypes } from '../nodes'
+import { edgeTypes } from '../edges'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData } from '../types'
 
@@ -329,6 +330,7 @@ function CanvasInner() {
         onDrop={onDrop}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         snapToGrid
         snapGrid={[16, 16]}
