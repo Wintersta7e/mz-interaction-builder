@@ -52,6 +52,15 @@ const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
   end: '#fb7185'
 }
 
+// Quick-add hotkeys: press 1-5 to create a node at viewport center
+const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
+  '1': 'start',
+  '2': 'menu',
+  '3': 'action',
+  '4': 'condition',
+  '5': 'end'
+}
+
 function getEdgeTypeAndData(
   connection: Connection,
   nodes: InteractionNode[]
@@ -392,11 +401,36 @@ function CanvasInner() {
         setNodes([...docState.document.nodes, ...newNodes])
         setEdges([...docState.document.edges, ...newEdges])
       }
+
+      // Number keys 1-5: quick-add node at viewport center
+      const nodeType = HOTKEY_NODE_MAP[e.key]
+      if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        const wrapper = reactFlowWrapper.current
+        if (!wrapper) return
+        const bounds = wrapper.getBoundingClientRect()
+        const centerPosition = screenToFlowPosition({
+          x: bounds.left + bounds.width / 2,
+          y: bounds.top + bounds.height / 2
+        })
+
+        const newNode: InteractionNode = {
+          id: generateId(nodeType),
+          type: nodeType,
+          position: centerPosition,
+          data: getDefaultNodeData(nodeType)
+        }
+
+        push(useDocumentStore.getState().document)
+        addNode(newNode)
+        setNodesState((nds) => [...nds, newNode])
+        setSelectedNodeId(newNode.id)
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedNodeId, push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId])
+  }, [selectedNodeId, push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
 
   return (
     <div ref={reactFlowWrapper} className="h-full w-full">
