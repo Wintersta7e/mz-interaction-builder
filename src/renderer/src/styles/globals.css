@@ -91,7 +91,6 @@
   stroke: hsl(230 5% 65% / 0.5);
   stroke-width: 2;
   stroke-dasharray: 6 4;
-  animation: edge-dash-flow 0.6s linear infinite;
   transition: stroke-width 0.15s ease, stroke-opacity 0.15s ease;
 }
 
@@ -99,12 +98,14 @@
   stroke-width: 3;
   stroke-opacity: 0.8;
   filter: drop-shadow(0 0 3px hsl(230 5% 65% / 0.3));
+  animation: edge-dash-flow 0.6s linear infinite;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: hsl(var(--primary));
   stroke-width: 3;
   filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.4));
+  animation: edge-dash-flow 0.6s linear infinite;
 }
 
 .react-flow__connection-path {
@@ -181,8 +182,7 @@ textarea:disabled {
 
 /* Node styles */
 .interaction-node {
-  background: hsl(230 20% 11% / 0.85);
-  backdrop-filter: blur(8px);
+  background: hsl(230 20% 11%);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 

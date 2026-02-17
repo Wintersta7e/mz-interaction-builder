@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { type EdgeProps, getBezierPath, EdgeLabelRenderer } from '@xyflow/react'
 
-export function InteractionEdge({
+function InteractionEdgeComponent({
   id,
   sourceX,
   sourceY,
@@ -102,3 +103,5 @@ export function InteractionEdge({
     </>
   )
 }
+
+export const InteractionEdge = memo(InteractionEdgeComponent)
