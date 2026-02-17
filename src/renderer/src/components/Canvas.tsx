@@ -13,6 +13,7 @@ import {
   Connection,
   ReactFlowProvider,
   useReactFlow,
+  SelectionMode,
   type NodeChange,
   type EdgeChange,
   type OnMoveEnd
@@ -90,7 +91,7 @@ function getEdgeTypeAndData(
 
 function CanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
-  const { document, setNodes, setEdges, addNode, addEdge: addDocEdge, removeNode } = useDocumentStore()
+  const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore()
   const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } = useUIStore()
   const { push } = useHistoryStore()
   const { screenToFlowPosition } = useReactFlow()
@@ -235,7 +236,7 @@ function CanvasInner() {
   )
 
   // Clipboard for copy/paste
-  const clipboardRef = useRef<InteractionNode | null>(null)
+  const clipboardRef = useRef<{ nodes: InteractionNode[]; edges: InteractionEdge[] } | null>(null)
 
   // Handle Delete key to remove selected node and Copy/Paste
   useEffect(() => {
@@ -246,74 +247,116 @@ function CanvasInner() {
         return
       }
 
-      // Delete/Backspace - remove selected node or edges
+      // Delete/Backspace - remove selected nodes and/or edges
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Check for selected edges first (use ref for latest value)
+        const currentNodes = nodesRef.current
         const currentEdges = edgesRef.current
-        const selectedEdges = currentEdges.filter((edge) => edge.selected)
-        if (selectedEdges.length > 0) {
-          e.preventDefault()
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          const selectedEdgeIds = selectedEdges.map((edge) => edge.id)
-          setEdgesState((eds) => eds.filter((edge) => !selectedEdgeIds.includes(edge.id)))
-          setEdges(currentEdges.filter((edge) => !selectedEdgeIds.includes(edge.id)))
-          return
-        }
+        const selectedNodes = currentNodes.filter((n) => n.selected)
+        const selectedEdgesArr = currentEdges.filter((edge) => edge.selected)
 
-        // Then check for selected node
-        if (selectedNodeId) {
-          e.preventDefault()
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          removeNode(selectedNodeId)
-          setNodesState((nds) => nds.filter((n) => n.id !== selectedNodeId))
-          // Also remove connected edges
-          setEdgesState((eds) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId))
-          setSelectedNodeId(null)
-        }
+        if (selectedNodes.length === 0 && selectedEdgesArr.length === 0) return
+
+        e.preventDefault()
+        push(useDocumentStore.getState().document)
+
+        const selectedNodeIds = new Set(selectedNodes.map((n) => n.id))
+        const selectedEdgeIds = new Set(selectedEdgesArr.map((edge) => edge.id))
+
+        // Remove selected nodes and any edges connected to them, plus selected edges
+        const newNodes = currentNodes.filter((n) => !selectedNodeIds.has(n.id))
+        const newEdges = currentEdges.filter(
+          (edge) =>
+            !selectedEdgeIds.has(edge.id) &&
+            !selectedNodeIds.has(edge.source) &&
+            !selectedNodeIds.has(edge.target)
+        )
+
+        setNodesState(newNodes)
+        setEdgesState(newEdges)
+        setNodes(newNodes)
+        setEdges(newEdges)
+        setSelectedNodeId(null)
       }
 
-      // Ctrl+C - copy selected node
+      // Ctrl+C - copy selected nodes and internal edges
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (selectedNodeId) {
-          // Get fresh document state
-          const currentDoc = useDocumentStore.getState().document
+        const currentDoc = useDocumentStore.getState().document
+        const currentNodes = nodesRef.current
+        let nodesToCopy = currentNodes.filter((n) => n.selected)
+
+        // Fall back to single selected node
+        if (nodesToCopy.length === 0 && selectedNodeId) {
           const node = currentDoc.nodes.find((n) => n.id === selectedNodeId)
-          if (node) {
-            e.preventDefault()
-            clipboardRef.current = JSON.parse(JSON.stringify(node)) // Deep clone
-          }
+          if (node) nodesToCopy = [node]
+        }
+
+        if (nodesToCopy.length === 0) return
+
+        e.preventDefault()
+        const selectedIds = new Set(nodesToCopy.map((n) => n.id))
+        const internalEdges = currentDoc.edges.filter(
+          (edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)
+        )
+
+        clipboardRef.current = {
+          nodes: JSON.parse(JSON.stringify(nodesToCopy)),
+          edges: JSON.parse(JSON.stringify(internalEdges))
         }
       }
 
-      // Ctrl+V - paste node
+      // Ctrl+V - paste nodes and remap edges
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (clipboardRef.current) {
-          e.preventDefault()
-          const pastedNode: InteractionNode = {
-            ...JSON.parse(JSON.stringify(clipboardRef.current)),
-            id: generateId(clipboardRef.current.type),
-            position: {
-              x: clipboardRef.current.position.x + 50,
-              y: clipboardRef.current.position.y + 50
-            }
-          }
-          // Update the clipboard position for subsequent pastes
-          clipboardRef.current.position = pastedNode.position
+        if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return
 
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          addNode(pastedNode)
-          setNodesState((nds) => [...nds, pastedNode])
-          setSelectedNodeId(pastedNode.id)
+        e.preventDefault()
+        push(useDocumentStore.getState().document)
+
+        const offset = { x: 20, y: 20 }
+        const idMap = new Map<string, string>() // oldId → newId
+
+        // Create new nodes with new IDs and offset positions
+        const newNodes: InteractionNode[] = clipboardRef.current.nodes.map((node) => {
+          const newId = generateId(node.type || 'node')
+          idMap.set(node.id, newId)
+          return {
+            ...JSON.parse(JSON.stringify(node)),
+            id: newId,
+            position: { x: node.position.x + offset.x, y: node.position.y + offset.y },
+            selected: true
+          }
+        })
+
+        // Remap edges: replace source/target IDs and generate new edge IDs
+        const newEdges: InteractionEdge[] = clipboardRef.current.edges.map((edge) => ({
+          ...JSON.parse(JSON.stringify(edge)),
+          id: generateId('edge'),
+          source: idMap.get(edge.source) || edge.source,
+          target: idMap.get(edge.target) || edge.target
+        }))
+
+        // Update clipboard positions for next paste
+        clipboardRef.current = {
+          nodes: clipboardRef.current.nodes.map((n) => ({
+            ...n,
+            position: { x: n.position.x + offset.x, y: n.position.y + offset.y }
+          })),
+          edges: clipboardRef.current.edges
         }
+
+        // Deselect existing nodes, then add new ones
+        setNodesState((nds) => [...nds.map((n) => ({ ...n, selected: false })), ...newNodes])
+        setEdgesState((eds) => [...eds, ...newEdges])
+
+        // Sync to document store
+        const docState = useDocumentStore.getState()
+        setNodes([...docState.document.nodes, ...newNodes])
+        setEdges([...docState.document.edges, ...newEdges])
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedNodeId, push, removeNode, addNode, setNodesState, setEdgesState, setSelectedNodeId, setEdges])
+  }, [selectedNodeId, push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId])
 
   return (
     <div ref={reactFlowWrapper} className="h-full w-full">
@@ -339,7 +382,8 @@ function CanvasInner() {
         maxZoom={2}
         edgesFocusable={true}
         elementsSelectable={true}
-        selectNodesOnDrag={false}
+        selectionOnDrag
+        selectionMode={SelectionMode.Partial}
         className="bg-background"
       >
         <Background
