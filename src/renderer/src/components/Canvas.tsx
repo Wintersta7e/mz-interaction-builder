@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -22,6 +22,7 @@ import '@xyflow/react/dist/style.css'
 
 import { nodeTypes } from '../nodes'
 import { edgeTypes } from '../edges'
+import { CanvasContextMenu } from './CanvasContextMenu'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData } from '../types'
 
@@ -187,8 +188,15 @@ function CanvasInner() {
     [setSelectedNodeId]
   )
 
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    flowPosition: { x: number; y: number }
+  } | null>(null)
+
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
+    setContextMenu(null)
   }, [setSelectedNodeId])
 
   const onEdgeClick = useCallback(() => {
@@ -233,6 +241,38 @@ function CanvasInner() {
       setZoom(viewport.zoom)
     },
     [setZoom]
+  )
+
+  const onPaneContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
+      event.preventDefault()
+      const flowPosition = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      const bounds = reactFlowWrapper.current?.getBoundingClientRect()
+      setContextMenu({
+        x: event.clientX - (bounds?.left ?? 0),
+        y: event.clientY - (bounds?.top ?? 0),
+        flowPosition
+      })
+    },
+    [screenToFlowPosition]
+  )
+
+  const handleContextMenuAddNode = useCallback(
+    (type: InteractionNodeType) => {
+      if (!contextMenu) return
+      const newNode: InteractionNode = {
+        id: generateId(type),
+        type,
+        position: contextMenu.flowPosition,
+        data: getDefaultNodeData(type)
+      }
+      push(useDocumentStore.getState().document)
+      addNode(newNode)
+      setNodesState((nds) => [...nds, newNode])
+      setSelectedNodeId(newNode.id)
+      setContextMenu(null)
+    },
+    [contextMenu, push, addNode, setNodesState, setSelectedNodeId]
   )
 
   // Clipboard for copy/paste
@@ -369,6 +409,7 @@ function CanvasInner() {
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
+        onPaneContextMenu={onPaneContextMenu}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onMoveEnd={onMoveEnd}
@@ -406,6 +447,13 @@ function CanvasInner() {
           />
         )}
       </ReactFlow>
+      {contextMenu && (
+        <CanvasContextMenu
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onAddNode={handleContextMenuAddNode}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   )
 }
