@@ -17,9 +17,13 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
 
     switch (condition.type) {
       case 'switch':
-        return `Switch #${condition.switchId} is ${condition.switchValue}`
+        return condition.switchId != null
+          ? `Switch #${condition.switchId} is ${condition.switchValue ?? 'ON'}`
+          : 'Switch (not configured)'
       case 'variable':
-        return `Variable #${condition.variableId} ${condition.variableOperator} ${condition.variableCompareValue}`
+        return condition.variableId != null
+          ? `Var #${condition.variableId} ${condition.variableOperator ?? '=='} ${condition.variableCompareValue ?? '?'}`
+          : 'Variable (not configured)'
       case 'script':
         return condition.script?.slice(0, 30) + (condition.script && condition.script.length > 30 ? '...' : '') || 'Script'
       default:

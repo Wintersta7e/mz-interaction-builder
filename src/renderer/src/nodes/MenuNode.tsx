@@ -9,11 +9,12 @@ interface MenuNodeProps {
   selected?: boolean
 }
 
-// Constants for layout calculations
-const HEADER_HEIGHT = 40 // px-3 py-2 ≈ 40px
-const CONTENT_PADDING = 12 // p-3 = 12px
-const CHOICE_HEIGHT = 30 // py-1.5 + text ≈ 30px
-const CHOICE_GAP = 8 // space-y-2 = 8px
+// Constants for handle positioning — must match the Tailwind classes below.
+// If you change px-3/py-2/p-3/py-1.5/space-y-2, update these values.
+const HEADER_HEIGHT = 40 // header: px-3 py-2 + icon ≈ 40px
+const CONTENT_PADDING = 12 // content: p-3 = 12px
+const CHOICE_HEIGHT = 30 // choice row: py-1.5 + text-sm ≈ 30px
+const CHOICE_GAP = 8 // gap: space-y-2 = 8px
 
 function MenuNodeComponent({ data, selected }: MenuNodeProps) {
   const choices = data.choices || []

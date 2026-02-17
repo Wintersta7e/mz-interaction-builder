@@ -14,7 +14,7 @@ export interface SearchableSelectProps {
   disabled?: boolean
 }
 
-const VISIBLE_WINDOW = 20
+const VISIBLE_WINDOW = 50
 
 function formatId(id: number): string {
   return String(id).padStart(4, '0')
@@ -175,8 +175,8 @@ export function SearchableSelect({
           {filtered.length === 0 ? (
             <div className="px-2 py-1.5 text-sm text-muted-foreground">No matches</div>
           ) : (
-            visibleItems.map((item) => {
-              const actualIndex = visibleStart + visibleItems.indexOf(item)
+            visibleItems.map((item, windowIndex) => {
+              const actualIndex = visibleStart + windowIndex
               const isHighlighted = actualIndex === highlightIndex
               return (
                 <div

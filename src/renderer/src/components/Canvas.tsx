@@ -338,6 +338,8 @@ function CanvasInner() {
             !selectedNodeIds.has(edge.target)
         )
 
+        // Updates to both ReactFlow state and Zustand are synchronous within this handler.
+        // React 18 batches them into a single render, so they cannot diverge mid-update.
         setNodesState(newNodes)
         setEdgesState(newEdges)
         setNodes(newNodes)
