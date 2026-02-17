@@ -1,4 +1,4 @@
-import { type EdgeProps, getBezierPath } from '@xyflow/react'
+import { type EdgeProps, getBezierPath, EdgeLabelRenderer } from '@xyflow/react'
 
 export function InteractionEdge({
   id,
@@ -73,6 +73,32 @@ export function InteractionEdge({
             : undefined
         }}
       />
+      {/* Edge label */}
+      {(edgeStyle === 'condition-true' ||
+        edgeStyle === 'condition-false' ||
+        edgeStyle === 'choice') && (
+        <EdgeLabelRenderer>
+          <div
+            className="nodrag nopan pointer-events-none absolute rounded-full px-2 py-0.5 text-[10px] font-medium shadow-sm"
+            style={{
+              transform: `translate(-50%, -50%) translate(${(sourceX + targetX) / 2}px, ${(sourceY + targetY) / 2}px)`,
+              backgroundColor:
+                edgeStyle === 'condition-true'
+                  ? '#34d399'
+                  : edgeStyle === 'condition-false'
+                    ? '#fb7185'
+                    : '#a78bfa',
+              color: edgeStyle === 'condition-false' ? '#fff' : '#000',
+              opacity: selected ? 1 : 0.7
+            }}
+          >
+            {edgeStyle === 'condition-true' && 'True'}
+            {edgeStyle === 'condition-false' && 'False'}
+            {edgeStyle === 'choice' &&
+              `Choice ${((data as Record<string, unknown>)?.choiceIndex as number ?? 0) + 1}`}
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }
