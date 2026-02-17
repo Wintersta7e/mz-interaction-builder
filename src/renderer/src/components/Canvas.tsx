@@ -84,7 +84,8 @@ function getEdgeTypeAndData(
     }
   }
   if (sourceType === 'menu' && connection.sourceHandle?.startsWith('choice-')) {
-    const choiceIndex = parseInt(connection.sourceHandle.replace('choice-', ''), 10)
+    const parsed = parseInt(connection.sourceHandle.replace('choice-', ''), 10)
+    const choiceIndex = Number.isNaN(parsed) ? 0 : parsed
     return {
       type: 'interaction',
       data: { edgeStyle: 'choice', sourceColor: '#a78bfa', targetColor, choiceIndex }
@@ -117,6 +118,15 @@ function CanvasInner() {
     edgesRef.current = edges
   }, [edges])
 
+  // Track drag state to prevent double history push (B5)
+  const isDraggingRef = useRef(false)
+
+  // P4: Cache selectedNodeId in ref to avoid re-creating keydown handler
+  const selectedNodeIdRef = useRef(selectedNodeId)
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId
+  }, [selectedNodeId])
+
   // Sync local state when document changes (e.g., file load, undo/redo)
   useEffect(() => {
     setNodesState(document.nodes)
@@ -126,12 +136,19 @@ function CanvasInner() {
   // Sync nodes/edges changes to document store
   const handleNodesChange = useCallback(
     (changes: NodeChange<InteractionNode>[]) => {
-      // Check for significant changes first
-      const significantChange = changes.some(
-        (c) => c.type === 'remove' || c.type === 'add' || (c.type === 'position' && !c.dragging)
-      )
+      // Track drag state to prevent double history push (B5)
+      const dragStart = changes.some((c) => c.type === 'position' && c.dragging)
+      const dragEnd = changes.some((c) => c.type === 'position' && !c.dragging)
 
-      // Push current document to history BEFORE applying changes
+      if (dragStart) isDraggingRef.current = true
+
+      const isRemoveOrAdd = changes.some((c) => c.type === 'remove' || c.type === 'add')
+      const isDragComplete = dragEnd && isDraggingRef.current
+
+      if (isDragComplete) isDraggingRef.current = false
+
+      const significantChange = isRemoveOrAdd || isDragComplete
+
       if (significantChange) {
         push(useDocumentStore.getState().document)
       }
@@ -139,10 +156,10 @@ function CanvasInner() {
       // Apply changes to local ReactFlow state
       onNodesChange(changes)
 
-      // Sync to document store using computed new nodes
+      // Sync to document store (M6: applies same changes to same snapshot, producing correct result)
       if (significantChange) {
-        const newNodes = applyNodeChanges(changes, nodesRef.current)
-        setNodes(newNodes)
+        const updatedNodes = applyNodeChanges(changes, nodesRef.current)
+        setNodes(updatedNodes)
       }
     },
     [onNodesChange, setNodes, push]
@@ -220,8 +237,11 @@ function CanvasInner() {
     (event: React.DragEvent) => {
       event.preventDefault()
 
-      const type = event.dataTransfer.getData('application/interaction-node') as InteractionNodeType
-      if (!type) return
+      const rawType = event.dataTransfer.getData('application/interaction-node')
+      if (!rawType) return
+      const validTypes: InteractionNodeType[] = ['start', 'menu', 'action', 'condition', 'end']
+      if (!validTypes.includes(rawType as InteractionNodeType)) return
+      const type = rawType as InteractionNodeType
 
       const position = screenToFlowPosition({
         x: event.clientX,
@@ -327,13 +347,13 @@ function CanvasInner() {
 
       // Ctrl+C - copy selected nodes and internal edges
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        const currentDoc = useDocumentStore.getState().document
         const currentNodes = nodesRef.current
+        const currentEdges = edgesRef.current
         let nodesToCopy = currentNodes.filter((n) => n.selected)
 
-        // Fall back to single selected node
-        if (nodesToCopy.length === 0 && selectedNodeId) {
-          const node = currentDoc.nodes.find((n) => n.id === selectedNodeId)
+        // Fall back to single selected node from ReactFlow state (same source)
+        if (nodesToCopy.length === 0 && selectedNodeIdRef.current) {
+          const node = currentNodes.find((n) => n.id === selectedNodeIdRef.current)
           if (node) nodesToCopy = [node]
         }
 
@@ -341,13 +361,13 @@ function CanvasInner() {
 
         e.preventDefault()
         const selectedIds = new Set(nodesToCopy.map((n) => n.id))
-        const internalEdges = currentDoc.edges.filter(
+        const internalEdges = currentEdges.filter(
           (edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)
         )
 
         clipboardRef.current = {
-          nodes: JSON.parse(JSON.stringify(nodesToCopy)),
-          edges: JSON.parse(JSON.stringify(internalEdges))
+          nodes: structuredClone(nodesToCopy),
+          edges: structuredClone(internalEdges)
         }
       }
 
@@ -359,45 +379,46 @@ function CanvasInner() {
         push(useDocumentStore.getState().document)
 
         const offset = { x: 20, y: 20 }
-        const idMap = new Map<string, string>() // oldId → newId
+        const idMap = new Map<string, string>()
 
         // Create new nodes with new IDs and offset positions
         const newNodes: InteractionNode[] = clipboardRef.current.nodes.map((node) => {
           const newId = generateId(node.type || 'node')
           idMap.set(node.id, newId)
           return {
-            ...JSON.parse(JSON.stringify(node)),
+            ...structuredClone(node),
             id: newId,
             position: { x: node.position.x + offset.x, y: node.position.y + offset.y },
             selected: true
           }
         })
 
-        // Remap edges: replace source/target IDs and generate new edge IDs
-        const newEdges: InteractionEdge[] = clipboardRef.current.edges.map((edge) => ({
-          ...JSON.parse(JSON.stringify(edge)),
-          id: generateId('edge'),
-          source: idMap.get(edge.source) || edge.source,
-          target: idMap.get(edge.target) || edge.target
-        }))
+        // Remap edges — only keep edges where BOTH endpoints were copied (B7)
+        const newEdges: InteractionEdge[] = clipboardRef.current.edges
+          .filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
+          .map((edge) => ({
+            ...structuredClone(edge),
+            id: generateId('edge'),
+            source: idMap.get(edge.source)!,
+            target: idMap.get(edge.target)!
+          }))
 
-        // Update clipboard positions for next paste
+        // Update clipboard for next paste — fresh clone, don't mutate original (B4)
         clipboardRef.current = {
           nodes: clipboardRef.current.nodes.map((n) => ({
-            ...n,
+            ...structuredClone(n),
             position: { x: n.position.x + offset.x, y: n.position.y + offset.y }
           })),
           edges: clipboardRef.current.edges
         }
 
-        // Deselect existing nodes, then add new ones
-        setNodesState((nds) => [...nds.map((n) => ({ ...n, selected: false })), ...newNodes])
-        setEdgesState((eds) => [...eds, ...newEdges])
-
-        // Sync to document store
-        const docState = useDocumentStore.getState()
-        setNodes([...docState.document.nodes, ...newNodes])
-        setEdges([...docState.document.edges, ...newEdges])
+        // Single-source update: compute new state from refs, set both local and store (B1)
+        const allNodes = [...nodesRef.current.map((n) => ({ ...n, selected: false })), ...newNodes]
+        const allEdges = [...edgesRef.current, ...newEdges]
+        setNodesState(allNodes)
+        setEdgesState(allEdges)
+        setNodes(allNodes)
+        setEdges(allEdges)
       }
 
       // Number keys 1-5: quick-add node at viewport center
@@ -428,7 +449,14 @@ function CanvasInner() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedNodeId, push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
+  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
+
+  // P6: Memoize MiniMap nodeColor to avoid re-renders
+  const miniMapNodeColor = useCallback(
+    (node: { type?: string }) =>
+      NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || 'start'] || '#9ca3af',
+    []
+  )
 
   return (
     <div ref={reactFlowWrapper} className="h-full w-full">
@@ -472,7 +500,7 @@ function CanvasInner() {
             className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
             maskColor="hsl(230 25% 7% / 0.8)"
             nodeBorderRadius={4}
-            nodeColor={(node) => NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || 'start'] || '#9ca3af'}
+            nodeColor={miniMapNodeColor}
             pannable
             zoomable
             style={{ width: 180, height: 120 }}
