@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { GitBranch } from 'lucide-react'
+import { cn } from '../lib/utils'
 import type { ConditionNodeData } from '../types'
 
 interface ConditionNodeProps {
@@ -28,22 +29,27 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
 
   return (
     <div
-      className={`min-w-[180px] rounded-lg border-2 bg-card shadow-lg transition-all ${
-        selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-      }`}
-      style={{ borderColor: 'hsl(45, 93%, 47%)' }}
+      className={cn(
+        'interaction-node min-w-[180px] rounded-xl border shadow-lg'
+      )}
+      style={{
+        borderColor: selected ? '#fbbf24' : 'color-mix(in srgb, #fbbf24 30%, transparent)',
+        boxShadow: selected
+          ? '0 0 0 2px #fbbf24, 0 0 15px color-mix(in srgb, #fbbf24 40%, transparent)'
+          : '0 4px 12px hsl(0 0% 0% / 0.3)'
+      }}
     >
+      {/* Accent strip */}
+      <div className="h-1 rounded-t-xl" style={{ backgroundColor: '#fbbf24' }} />
+
       {/* Header */}
-      <div
-        className="flex items-center gap-2 rounded-t-md px-3 py-2 text-white"
-        style={{ backgroundColor: 'hsl(45, 93%, 47%)' }}
-      >
-        <GitBranch className="h-4 w-4" />
-        <span className="font-semibold">{data.label || 'Condition'}</span>
+      <div className="flex items-center gap-2 px-3 py-2">
+        <GitBranch className="h-4 w-4" style={{ color: '#fbbf24' }} />
+        <span className="text-sm font-medium">{data.label || 'Condition'}</span>
       </div>
 
       {/* Content */}
-      <div className="relative p-3">
+      <div className="relative px-3 pb-3">
         <p className="text-xs text-muted-foreground">{getConditionSummary()}</p>
 
         {/* Branch labels */}
@@ -56,7 +62,8 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
         <Handle
           type="target"
           position={Position.Left}
-          className="!-left-[6px] !top-1/2 !h-3 !w-3 !-translate-y-1/2 !border-2 !border-background !bg-muted-foreground"
+          className="!-left-[6px] !top-1/2 !h-3 !w-3 !-translate-y-1/2 !rounded-full !border-2 !border-background"
+          style={{ backgroundColor: 'hsl(230 10% 50%)' }}
         />
 
         {/* True output */}
@@ -64,7 +71,7 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
           type="source"
           position={Position.Right}
           id="true"
-          className="!-right-[6px] !h-3 !w-3 !border-2 !border-background !bg-green-500"
+          className="!-right-[6px] !h-3 !w-3 !rounded-full !border-2 !border-background !bg-green-500"
           style={{ top: '60%' }}
         />
 
@@ -73,7 +80,7 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
           type="source"
           position={Position.Right}
           id="false"
-          className="!-right-[6px] !h-3 !w-3 !border-2 !border-background !bg-red-500"
+          className="!-right-[6px] !h-3 !w-3 !rounded-full !border-2 !border-background !bg-red-500"
           style={{ top: '80%' }}
         />
       </div>

@@ -32,7 +32,7 @@ function ActionNodeComponent({ data, selected }: ActionNodeProps) {
 
   return (
     <BaseNode
-      color="hsl(217, 91%, 60%)"
+      accentColor="#38bdf8"
       icon={<Zap className="h-4 w-4" />}
       label={data.label || 'Action'}
       selected={selected}

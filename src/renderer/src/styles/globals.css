@@ -149,3 +149,15 @@ select:disabled,
 textarea:disabled {
   cursor: not-allowed;
 }
+
+/* Node styles */
+.interaction-node {
+  background: hsl(230 20% 11% / 0.85);
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.interaction-node:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.4);
+}

@@ -11,7 +11,7 @@ interface StartNodeProps {
 function StartNodeComponent({ data, selected }: StartNodeProps) {
   return (
     <BaseNode
-      color="hsl(142, 71%, 45%)"
+      accentColor="#34d399"
       icon={<Play className="h-4 w-4" />}
       label={data.label || 'Start'}
       selected={selected}

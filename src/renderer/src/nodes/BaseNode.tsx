@@ -4,7 +4,7 @@ import { cn } from '../lib/utils'
 
 interface BaseNodeProps {
   children: ReactNode
-  color: string
+  accentColor: string // hex color e.g. '#34d399'
   icon: ReactNode
   label: string
   selected?: boolean
@@ -15,7 +15,7 @@ interface BaseNodeProps {
 
 export function BaseNode({
   children,
-  color,
+  accentColor,
   icon,
   label,
   selected,
@@ -26,29 +26,39 @@ export function BaseNode({
   return (
     <div
       className={cn(
-        'min-w-[180px] rounded-lg border-2 bg-card shadow-lg transition-all',
-        selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+        'interaction-node min-w-[180px] rounded-xl border shadow-lg'
       )}
-      style={{ borderColor: color }}
+      style={{
+        borderColor: selected
+          ? accentColor
+          : `color-mix(in srgb, ${accentColor} 30%, transparent)`,
+        boxShadow: selected
+          ? `0 0 0 2px ${accentColor}, 0 0 15px color-mix(in srgb, ${accentColor} 40%, transparent)`
+          : '0 4px 12px hsl(0 0% 0% / 0.3)'
+      }}
     >
-      {/* Header */}
+      {/* Accent strip */}
       <div
-        className="flex items-center gap-2 rounded-t-md px-3 py-2 text-white"
-        style={{ backgroundColor: color }}
-      >
-        {icon}
-        <span className="font-semibold">{label}</span>
+        className="h-1 rounded-t-xl"
+        style={{ backgroundColor: accentColor }}
+      />
+
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span style={{ color: accentColor }}>{icon}</span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
       </div>
 
       {/* Content */}
-      <div className="p-3">{children}</div>
+      <div className="px-3 pb-3">{children}</div>
 
       {/* Input Handle */}
       {hasInput && (
         <Handle
           type="target"
           position={Position.Left}
-          className="!h-3 !w-3 !border-2 !border-background !bg-muted-foreground"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-background"
+          style={{ backgroundColor: 'hsl(230 10% 50%)' }}
         />
       )}
 
@@ -59,7 +69,8 @@ export function BaseNode({
             <Handle
               type="source"
               position={Position.Right}
-              className="!h-3 !w-3 !border-2 !border-background !bg-muted-foreground"
+              className="!h-3 !w-3 !rounded-full !border-2 !border-background"
+              style={{ backgroundColor: accentColor }}
             />
           ) : (
             Array.from({ length: outputCount }).map((_, i) => (
@@ -68,9 +79,10 @@ export function BaseNode({
                 type="source"
                 position={Position.Right}
                 id={`output-${i}`}
-                className="!h-3 !w-3 !border-2 !border-background !bg-muted-foreground"
+                className="!h-3 !w-3 !rounded-full !border-2 !border-background"
                 style={{
-                  top: `${((i + 1) / (outputCount + 1)) * 100}%`
+                  top: `${((i + 1) / (outputCount + 1)) * 100}%`,
+                  backgroundColor: accentColor
                 }}
               />
             ))
