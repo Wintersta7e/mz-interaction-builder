@@ -29,6 +29,8 @@ import { BookmarkPanel } from "./BookmarkPanel";
 import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
+import { autoLayout } from "../lib/autoLayout";
+import type { AutoLayoutOptions } from "../lib/autoLayout";
 import {
   useDocumentStore,
   useUIStore,
@@ -391,6 +393,39 @@ function CanvasInner() {
     [getNodes, setCenter, setSelectedNodeId],
   );
 
+  // Auto-layout (Phase 4A)
+  const applyAutoLayout = useCallback(
+    (options: AutoLayoutOptions = {}) => {
+      const currentNodes = nodesRef.current;
+      const currentEdges = edgesRef.current;
+      if (currentNodes.length === 0) return;
+
+      push(useDocumentStore.getState().document);
+
+      const positions = autoLayout(currentNodes, currentEdges, options);
+      const updatedNodes = currentNodes.map((node) => {
+        const pos = positions.get(node.id);
+        return pos ? { ...node, position: pos } : node;
+      });
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+      fitView({ padding: 0.1, duration: 300 });
+    },
+    [push, setNodesState, setNodes, fitView],
+  );
+
+  // Watch for layout trigger from Toolbar (Phase 4A)
+  const layoutTrigger = useUIStore((s) => s.layoutTrigger);
+  const clearLayoutTrigger = useUIStore((s) => s.clearLayoutTrigger);
+
+  useEffect(() => {
+    if (layoutTrigger) {
+      applyAutoLayout(layoutTrigger);
+      clearLayoutTrigger();
+    }
+  }, [layoutTrigger, applyAutoLayout, clearLayoutTrigger]);
+
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return;
@@ -422,6 +457,13 @@ function CanvasInner() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
         e.preventDefault();
         useUIStore.getState().setSearchOpen(true);
+        return;
+      }
+
+      // Ctrl+Shift+L: Auto-layout (Phase 4A)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "l") {
+        e.preventDefault();
+        applyAutoLayout();
         return;
       }
 
@@ -655,6 +697,7 @@ function CanvasInner() {
     setCenter,
     getNodes,
     clearHighlightedPaths,
+    applyAutoLayout,
   ]);
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders

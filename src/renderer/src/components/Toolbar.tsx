@@ -1,3 +1,5 @@
+import { useState } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import {
   FilePlus,
   FolderOpen,
@@ -11,6 +13,8 @@ import {
   Folder,
   HelpCircle,
   AlertTriangle,
+  LayoutGrid,
+  ChevronDown,
 } from "lucide-react";
 import {
   useDocumentStore,
@@ -44,6 +48,10 @@ export function Toolbar({
   const { zoom, setZoom } = useUIStore();
   const { projectPath } = useProjectStore();
   const setDocument = useDocumentStore((s) => s.setDocument);
+  const triggerAutoLayout = useUIStore((s) => s.triggerAutoLayout);
+  const [layoutDirection, setLayoutDirection] = useState<"LR" | "TB">("LR");
+  const [nodeSpacing, setNodeSpacing] = useState(80);
+  const [rankSpacing, setRankSpacing] = useState(200);
 
   const handleUndo = () => {
     const doc = undo();
@@ -150,6 +158,94 @@ export function Toolbar({
           >
             <Maximize2 className="h-4 w-4" />
           </button>
+        </div>
+
+        <div className="mx-2 h-6 w-px bg-border" />
+
+        {/* Layout */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => triggerAutoLayout({ direction: layoutDirection, nodeSpacing, rankSpacing })}
+            className="flex h-8 items-center gap-1.5 rounded-l px-2 hover:bg-muted"
+            title="Auto Layout (Ctrl+Shift+L)"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="text-xs">Layout</span>
+          </button>
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <button
+                className="flex h-8 w-5 items-center justify-center rounded-r hover:bg-muted"
+                title="Layout Settings"
+              >
+                <ChevronDown className="h-3 w-3" />
+              </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content
+                className="z-50 w-56 rounded-lg border border-border bg-card p-3 shadow-xl"
+                sideOffset={5}
+                align="start"
+              >
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-muted-foreground">Layout Settings</div>
+                  <div className="space-y-1">
+                    <label className="text-xs">Direction</label>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setLayoutDirection("LR")}
+                        className={`flex-1 rounded px-2 py-1 text-xs ${
+                          layoutDirection === "LR"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80"
+                        }`}
+                      >
+                        Left &rarr; Right
+                      </button>
+                      <button
+                        onClick={() => setLayoutDirection("TB")}
+                        className={`flex-1 rounded px-2 py-1 text-xs ${
+                          layoutDirection === "TB"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80"
+                        }`}
+                      >
+                        Top &darr; Bottom
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs">Node Spacing: {nodeSpacing}px</label>
+                    <input
+                      type="range"
+                      min={20}
+                      max={200}
+                      value={nodeSpacing}
+                      onChange={(e) => setNodeSpacing(Number(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs">Rank Spacing: {rankSpacing}px</label>
+                    <input
+                      type="range"
+                      min={50}
+                      max={500}
+                      value={rankSpacing}
+                      onChange={(e) => setRankSpacing(Number(e.target.value))}
+                      className="w-full accent-primary"
+                    />
+                  </div>
+                  <button
+                    onClick={() => triggerAutoLayout({ direction: layoutDirection, nodeSpacing, rankSpacing })}
+                    className="w-full rounded bg-primary px-2 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
+                  >
+                    Apply Layout
+                  </button>
+                </div>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
         </div>
 
         <div className="mx-2 h-6 w-px bg-border" />
