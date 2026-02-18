@@ -24,10 +24,11 @@ import { nodeTypes } from '../nodes'
 import { edgeTypes } from '../edges'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { SearchPanel } from './SearchPanel'
-import { searchNodes } from '../lib/searchNodes'
 import { findUpstreamNodes, findDownstreamNodes } from '../lib/graphTraversal'
 import { BookmarkPanel } from './BookmarkPanel'
 import { BreadcrumbTrail } from './BreadcrumbTrail'
+import { useCanvasSearch } from '../hooks/useCanvasSearch'
+import { usePathHighlighting } from '../hooks/usePathHighlighting'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -110,17 +111,12 @@ function CanvasInner() {
   const { push } = useHistoryStore()
   const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow()
 
-  const searchOpen = useUIStore((s) => s.searchOpen)
-  const searchTerm = useUIStore((s) => s.searchTerm)
-  const searchMatches = useUIStore((s) => s.searchMatches)
-  const searchCurrentIndex = useUIStore((s) => s.searchCurrentIndex)
-  const setSearchMatches = useUIStore((s) => s.setSearchMatches)
-  const setSearchCurrentIndex = useUIStore((s) => s.setSearchCurrentIndex)
-
-  const highlightedNodeIds = useUIStore((s) => s.highlightedNodeIds)
-  const highlightedEdgeIds = useUIStore((s) => s.highlightedEdgeIds)
   const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths)
   const clearHighlightedPaths = useUIStore((s) => s.clearHighlightedPaths)
+
+  // Extracted hooks for search and path highlighting (M3)
+  const { searchOpen } = useCanvasSearch(reactFlowWrapper, document.nodes)
+  usePathHighlighting(reactFlowWrapper)
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
@@ -222,19 +218,21 @@ function CanvasInner() {
     [setEdgesState, addDocEdge, push]
   )
 
+  // M1: Use getState() to read edges at call-time, avoiding dependency on document.nodes/edges
   const onNodeClick = useCallback(
     (event: React.MouseEvent, node: InteractionNode) => {
       if (event.altKey) {
         // Alt+Click = upstream, Shift+Alt+Click = downstream (Phase 3B)
         const traverseFn = event.shiftKey ? findDownstreamNodes : findUpstreamNodes
-        const result = traverseFn(node.id, document.nodes, document.edges)
+        const { edges: docEdges } = useDocumentStore.getState().document
+        const result = traverseFn(node.id, docEdges)
         setHighlightedPaths(Array.from(result.nodeIds), Array.from(result.edgeIds))
       } else {
         clearHighlightedPaths()
       }
       setSelectedNodeId(node.id)
     },
-    [setSelectedNodeId, document.nodes, document.edges, setHighlightedPaths, clearHighlightedPaths]
+    [setSelectedNodeId, setHighlightedPaths, clearHighlightedPaths]
   )
 
   const [contextMenu, setContextMenu] = useState<{
@@ -310,106 +308,19 @@ function CanvasInner() {
     [screenToFlowPosition]
   )
 
-  // Recompute search matches when term or nodes change
-  useEffect(() => {
-    if (!searchOpen || !searchTerm.trim()) {
-      setSearchMatches([])
-      setSearchCurrentIndex(0)
-      return
-    }
-    const matches = searchNodes(document.nodes, searchTerm)
-    setSearchMatches(matches)
-    setSearchCurrentIndex(matches.length > 0 ? 0 : -1)
-  }, [searchTerm, searchOpen, document.nodes, setSearchMatches, setSearchCurrentIndex])
-
-  // Navigate to a node (pan + zoom) — shared by search & future features
+  // L2: Navigate to a node using measured dimensions for accurate centering
   const navigateToNode = useCallback(
     (nodeId: string) => {
       const node = getNodes().find((n) => n.id === nodeId)
       if (node) {
-        setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1, duration: 300 })
+        const w = node.measured?.width ?? 180
+        const h = node.measured?.height ?? 80
+        setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: 1, duration: 300 })
         setSelectedNodeId(nodeId)
       }
     },
     [getNodes, setCenter, setSelectedNodeId]
   )
-
-  // Apply search highlight classes to matching nodes
-  useEffect(() => {
-    const wrapper = reactFlowWrapper.current
-    if (!wrapper) return
-
-    // Clear all search highlights first
-    wrapper.querySelectorAll('.search-highlight-current, .search-highlight-match').forEach((el) => {
-      el.classList.remove('search-highlight-current', 'search-highlight-match')
-    })
-
-    if (searchMatches.length === 0) return
-
-    // Apply match highlights
-    for (const nodeId of searchMatches) {
-      const el = wrapper.querySelector(`[data-id="${nodeId}"]`)
-      if (el) el.classList.add('search-highlight-match')
-    }
-
-    // Apply current highlight
-    if (searchCurrentIndex >= 0 && searchCurrentIndex < searchMatches.length) {
-      const currentId = searchMatches[searchCurrentIndex]
-      const el = wrapper.querySelector(`[data-id="${currentId}"]`)
-      if (el) {
-        el.classList.remove('search-highlight-match')
-        el.classList.add('search-highlight-current')
-      }
-    }
-  }, [searchMatches, searchCurrentIndex])
-
-  // Apply path highlighting classes (Phase 3B)
-  const isHighlighting = highlightedNodeIds.length > 0 || highlightedEdgeIds.length > 0
-
-  useEffect(() => {
-    const rfEl = reactFlowWrapper.current?.querySelector('.react-flow') as HTMLElement | null
-    if (!rfEl) return
-
-    if (isHighlighting) {
-      rfEl.setAttribute('data-highlighting', '')
-    } else {
-      rfEl.removeAttribute('data-highlighting')
-    }
-
-    const highlightedNodeSet = new Set(highlightedNodeIds)
-    const highlightedEdgeSet = new Set(highlightedEdgeIds)
-
-    // Apply .highlighted to matching nodes
-    rfEl.querySelectorAll('.react-flow__node').forEach((el) => {
-      const id = el.getAttribute('data-id')
-      if (id && highlightedNodeSet.has(id)) {
-        el.classList.add('highlighted')
-      } else {
-        el.classList.remove('highlighted')
-      }
-    })
-
-    // Apply .highlighted to matching edges
-    // React Flow v12 edge wrappers use data-id attribute
-    rfEl.querySelectorAll('.react-flow__edge').forEach((el) => {
-      // Try data-id first, then fall back to data-testid
-      let id = el.getAttribute('data-id')
-      if (!id) {
-        const testId = el.getAttribute('data-testid')
-        if (testId) id = testId.replace('rf__edge-', '')
-      }
-      if (id && highlightedEdgeSet.has(id)) {
-        el.classList.add('highlighted')
-      } else {
-        el.classList.remove('highlighted')
-      }
-    })
-
-    return () => {
-      rfEl.removeAttribute('data-highlighting')
-      rfEl.querySelectorAll('.highlighted').forEach((el) => el.classList.remove('highlighted'))
-    }
-  }, [isHighlighting, highlightedNodeIds, highlightedEdgeIds])
 
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
@@ -580,12 +491,14 @@ function CanvasInner() {
         }
       }
 
-      // Home: Fit to Start (Phase 3D)
+      // Home: Fit to Start (Phase 3D) — L2: use measured dimensions
       if (e.key === 'Home') {
         e.preventDefault()
         const startNode = getNodes().find((n) => n.type === 'start')
         if (startNode) {
-          setCenter(startNode.position.x + 90, startNode.position.y + 40, { zoom: 1, duration: 300 })
+          const w = startNode.measured?.width ?? 180
+          const h = startNode.measured?.height ?? 80
+          setCenter(startNode.position.x + w / 2, startNode.position.y + h / 2, { zoom: 1, duration: 300 })
         }
       }
 
