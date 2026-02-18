@@ -103,7 +103,7 @@ function CanvasInner() {
   const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore()
   const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } = useUIStore()
   const { push } = useHistoryStore()
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow()
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
@@ -423,6 +423,33 @@ function CanvasInner() {
         setEdges(allEdges)
       }
 
+      // Ctrl+0: Fit All (Phase 3D)
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault()
+        fitView({ padding: 0.1, duration: 300 })
+      }
+
+      // Ctrl+1: Fit Selection (Phase 3D)
+      if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault()
+        const selected = getNodes().filter((n) => n.selected)
+        if (selected.length > 0) {
+          fitView({ nodes: selected, padding: 0.1, duration: 300 })
+        } else if (selectedNodeIdRef.current) {
+          const node = getNodes().find((n) => n.id === selectedNodeIdRef.current)
+          if (node) fitView({ nodes: [node], padding: 0.1, duration: 300 })
+        }
+      }
+
+      // Home: Fit to Start (Phase 3D)
+      if (e.key === 'Home') {
+        e.preventDefault()
+        const startNode = getNodes().find((n) => n.type === 'start')
+        if (startNode) {
+          setCenter(startNode.position.x + 90, startNode.position.y + 40, { zoom: 1, duration: 300 })
+        }
+      }
+
       // Number keys 1-5: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key]
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -451,7 +478,7 @@ function CanvasInner() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
+  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition, fitView, setCenter, getNodes])
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(
