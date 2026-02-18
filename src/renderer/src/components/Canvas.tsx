@@ -26,6 +26,7 @@ import { CanvasContextMenu } from './CanvasContextMenu'
 import { SearchPanel } from './SearchPanel'
 import { searchNodes } from '../lib/searchNodes'
 import { findUpstreamNodes, findDownstreamNodes } from '../lib/graphTraversal'
+import { BookmarkPanel } from './BookmarkPanel'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -587,6 +588,15 @@ function CanvasInner() {
         }
       }
 
+      // B: toggle bookmark (Phase 3C)
+      if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const nodeId = selectedNodeIdRef.current
+        if (nodeId) {
+          e.preventDefault()
+          useDocumentStore.getState().toggleBookmark(nodeId)
+        }
+      }
+
       // Number keys 1-5: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key]
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -681,6 +691,7 @@ function CanvasInner() {
         />
       )}
       {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+      <BookmarkPanel onNavigateToNode={navigateToNode} />
     </div>
   )
 }

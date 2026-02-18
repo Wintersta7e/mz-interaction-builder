@@ -1,14 +1,17 @@
 import { memo } from 'react'
 import { Zap } from 'lucide-react'
 import { BaseNode } from './BaseNode'
+import { useDocumentStore } from '../stores'
 import type { ActionNodeData } from '../types'
 
 interface ActionNodeProps {
+  id: string
   data: ActionNodeData
   selected?: boolean
 }
 
-function ActionNodeComponent({ data, selected }: ActionNodeProps) {
+function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
+  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? []
   const actions = data.actions || []
 
   const getActionLabel = (type: string): string => {
@@ -36,6 +39,7 @@ function ActionNodeComponent({ data, selected }: ActionNodeProps) {
       icon={<Zap className="h-4 w-4" />}
       label={data.label || 'Action'}
       selected={selected}
+      bookmarked={bookmarks.includes(id)}
       hasInput={true}
       hasOutput={true}
     >
