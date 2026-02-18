@@ -27,6 +27,7 @@ import { SearchPanel } from './SearchPanel'
 import { searchNodes } from '../lib/searchNodes'
 import { findUpstreamNodes, findDownstreamNodes } from '../lib/graphTraversal'
 import { BookmarkPanel } from './BookmarkPanel'
+import { BreadcrumbTrail } from './BreadcrumbTrail'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -635,63 +636,66 @@ function CanvasInner() {
   )
 
   return (
-    <div ref={reactFlowWrapper} className="h-full w-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
-        onPaneContextMenu={onPaneContextMenu}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onMoveEnd={onMoveEnd}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        snapToGrid
-        snapGrid={[16, 16]}
-        defaultViewport={{ x: 0, y: 0, zoom }}
-        minZoom={0.25}
-        maxZoom={2}
-        edgesFocusable={true}
-        elementsSelectable={true}
-        selectionOnDrag
-        selectionMode={SelectionMode.Partial}
-        className="bg-background"
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          color="hsl(230 15% 15%)"
-          gap={20}
-          size={1.5}
-        />
-        <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
-        {showMinimap && (
-          <MiniMap
-            nodeStrokeWidth={3}
-            className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
-            maskColor="hsl(230 25% 7% / 0.8)"
-            nodeBorderRadius={4}
-            nodeColor={miniMapNodeColor}
-            pannable
-            zoomable
-            style={{ width: 180, height: 120 }}
+    <div className="flex h-full w-full flex-col">
+      <BreadcrumbTrail onNavigateToNode={navigateToNode} />
+      <div ref={reactFlowWrapper} className="relative flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          onEdgeClick={onEdgeClick}
+          onPaneClick={onPaneClick}
+          onPaneContextMenu={onPaneContextMenu}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onMoveEnd={onMoveEnd}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          snapToGrid
+          snapGrid={[16, 16]}
+          defaultViewport={{ x: 0, y: 0, zoom }}
+          minZoom={0.25}
+          maxZoom={2}
+          edgesFocusable={true}
+          elementsSelectable={true}
+          selectionOnDrag
+          selectionMode={SelectionMode.Partial}
+          className="bg-background"
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            color="hsl(230 15% 15%)"
+            gap={20}
+            size={1.5}
+          />
+          <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
+          {showMinimap && (
+            <MiniMap
+              nodeStrokeWidth={3}
+              className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
+              maskColor="hsl(230 25% 7% / 0.8)"
+              nodeBorderRadius={4}
+              nodeColor={miniMapNodeColor}
+              pannable
+              zoomable
+              style={{ width: 180, height: 120 }}
+            />
+          )}
+        </ReactFlow>
+        {contextMenu && (
+          <CanvasContextMenu
+            position={{ x: contextMenu.x, y: contextMenu.y }}
+            onAddNode={handleContextMenuAddNode}
+            onClose={() => setContextMenu(null)}
           />
         )}
-      </ReactFlow>
-      {contextMenu && (
-        <CanvasContextMenu
-          position={{ x: contextMenu.x, y: contextMenu.y }}
-          onAddNode={handleContextMenuAddNode}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-      {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
-      <BookmarkPanel onNavigateToNode={navigateToNode} />
+        {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+        <BookmarkPanel onNavigateToNode={navigateToNode} />
+      </div>
     </div>
   )
 }
