@@ -1,18 +1,18 @@
-import { ReactNode } from 'react'
-import { Handle, Position } from '@xyflow/react'
-import { Star } from 'lucide-react'
-import { cn } from '../lib/utils'
+import { ReactNode } from "react";
+import { Handle, Position } from "@xyflow/react";
+import { Star } from "lucide-react";
+import { cn } from "../lib/utils";
 
 interface BaseNodeProps {
-  children: ReactNode
-  accentColor: string // hex color e.g. '#34d399'
-  icon: ReactNode
-  label: string
-  selected?: boolean
-  bookmarked?: boolean
-  hasInput?: boolean
-  hasOutput?: boolean
-  outputCount?: number
+  children: ReactNode;
+  accentColor: string; // hex color e.g. '#34d399'
+  icon: ReactNode;
+  label: string;
+  selected?: boolean;
+  bookmarked?: boolean;
+  hasInput?: boolean;
+  hasOutput?: boolean;
+  outputCount?: number;
 }
 
 export function BaseNode({
@@ -24,12 +24,12 @@ export function BaseNode({
   bookmarked,
   hasInput = true,
   hasOutput = true,
-  outputCount = 1
+  outputCount = 1,
 }: BaseNodeProps) {
   return (
     <div
       className={cn(
-        'interaction-node min-w-[180px] rounded-xl border shadow-lg'
+        "interaction-node min-w-[180px] rounded-xl border shadow-lg",
       )}
       style={{
         borderColor: selected
@@ -37,7 +37,7 @@ export function BaseNode({
           : `color-mix(in srgb, ${accentColor} 30%, transparent)`,
         boxShadow: selected
           ? `0 0 0 2px ${accentColor}, 0 0 15px color-mix(in srgb, ${accentColor} 40%, transparent)`
-          : '0 4px 12px hsl(0 0% 0% / 0.3)'
+          : "0 4px 12px hsl(0 0% 0% / 0.3)",
       }}
     >
       {/* Accent strip */}
@@ -64,7 +64,7 @@ export function BaseNode({
           type="target"
           position={Position.Left}
           className="!h-3 !w-3 !rounded-full !border-2 !border-background"
-          style={{ backgroundColor: 'hsl(230 10% 50%)' }}
+          style={{ backgroundColor: "hsl(230 10% 50%)" }}
         />
       )}
 
@@ -88,7 +88,7 @@ export function BaseNode({
                 className="!h-3 !w-3 !rounded-full !border-2 !border-background"
                 style={{
                   top: `${((i + 1) / (outputCount + 1)) * 100}%`,
-                  backgroundColor: accentColor
+                  backgroundColor: accentColor,
                 }}
               />
             ))
@@ -96,5 +96,5 @@ export function BaseNode({
         </>
       )}
     </div>
-  )
+  );
 }

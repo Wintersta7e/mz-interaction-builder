@@ -1,5 +1,5 @@
-import { InteractionEdge } from './InteractionEdge'
+import { InteractionEdge } from "./InteractionEdge";
 
 export const edgeTypes = {
-  interaction: InteractionEdge
-}
+  interaction: InteractionEdge,
+};

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /**
  * Hook that provides local state for immediate UI updates with debounced
@@ -14,76 +14,76 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 export function useDebouncedSync<T>(
   storeValue: T,
   commitFn: (value: T) => void,
-  delay: number = 300
+  delay: number = 300,
 ): {
-  localValue: T
-  setLocalValue: (value: T) => void
-  flush: () => void
+  localValue: T;
+  setLocalValue: (value: T) => void;
+  flush: () => void;
 } {
-  const [localValue, setLocalState] = useState<T>(storeValue)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pendingValueRef = useRef<T>(storeValue)
-  const hasPendingRef = useRef(false)
-  const commitFnRef = useRef(commitFn)
+  const [localValue, setLocalState] = useState<T>(storeValue);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingValueRef = useRef<T>(storeValue);
+  const hasPendingRef = useRef(false);
+  const commitFnRef = useRef(commitFn);
 
   // Keep commitFn ref current to avoid stale closures
-  commitFnRef.current = commitFn
+  commitFnRef.current = commitFn;
 
   // Sync local value when store value changes externally
   useEffect(() => {
-    setLocalState(storeValue)
+    setLocalState(storeValue);
     // Clear any pending debounce when store updates externally
     if (timerRef.current !== null) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-      hasPendingRef.current = false
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      hasPendingRef.current = false;
     }
-  }, [storeValue])
+  }, [storeValue]);
 
   // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current !== null) {
-        clearTimeout(timerRef.current)
+        clearTimeout(timerRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   const setLocalValue = useCallback(
     (value: T) => {
-      setLocalState(value)
-      pendingValueRef.current = value
-      hasPendingRef.current = true
+      setLocalState(value);
+      pendingValueRef.current = value;
+      hasPendingRef.current = true;
 
       // Clear existing timer
       if (timerRef.current !== null) {
-        clearTimeout(timerRef.current)
+        clearTimeout(timerRef.current);
       }
 
       // Set new debounce timer
       timerRef.current = setTimeout(() => {
         try {
-          commitFnRef.current(value)
+          commitFnRef.current(value);
         } catch (e) {
-          console.error('useDebouncedSync: commit failed', e)
+          console.error("useDebouncedSync: commit failed", e);
         }
-        timerRef.current = null
-        hasPendingRef.current = false
-      }, delay)
+        timerRef.current = null;
+        hasPendingRef.current = false;
+      }, delay);
     },
-    [delay]
-  )
+    [delay],
+  );
 
   const flush = useCallback(() => {
     if (timerRef.current !== null) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
     if (hasPendingRef.current) {
-      commitFnRef.current(pendingValueRef.current)
-      hasPendingRef.current = false
+      commitFnRef.current(pendingValueRef.current);
+      hasPendingRef.current = false;
     }
-  }, [])
+  }, []);
 
-  return { localValue, setLocalValue, flush }
+  return { localValue, setLocalValue, flush };
 }

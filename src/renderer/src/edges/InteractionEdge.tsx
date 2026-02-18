@@ -1,6 +1,10 @@
-import { memo } from 'react'
-import { type EdgeProps, getBezierPath, EdgeLabelRenderer } from '@xyflow/react'
-import type { InteractionEdge as InteractionEdgeType } from '../types'
+import { memo } from "react";
+import {
+  type EdgeProps,
+  getBezierPath,
+  EdgeLabelRenderer,
+} from "@xyflow/react";
+import type { InteractionEdge as InteractionEdgeType } from "../types";
 
 function InteractionEdgeComponent({
   id,
@@ -11,11 +15,11 @@ function InteractionEdgeComponent({
   sourcePosition,
   targetPosition,
   data,
-  selected
+  selected,
 }: EdgeProps<InteractionEdgeType>) {
-  const edgeStyle = data?.edgeStyle
-  const sourceColor = data?.sourceColor || 'hsl(230 5% 65% / 0.5)'
-  const targetColor = data?.targetColor || sourceColor
+  const edgeStyle = data?.edgeStyle;
+  const sourceColor = data?.sourceColor || "hsl(230 5% 65% / 0.5)";
+  const targetColor = data?.targetColor || sourceColor;
 
   const [edgePath] = getBezierPath({
     sourceX,
@@ -23,27 +27,27 @@ function InteractionEdgeComponent({
     targetX,
     targetY,
     sourcePosition,
-    targetPosition
-  })
+    targetPosition,
+  });
 
-  const gradientId = `edge-gradient-${id}`
+  const gradientId = `edge-gradient-${id}`;
 
   // Determine stroke color based on edge style
-  let strokeColor = 'hsl(230 5% 65% / 0.5)' // default muted
-  let useGradient = false
+  let strokeColor = "hsl(230 5% 65% / 0.5)"; // default muted
+  let useGradient = false;
 
   switch (edgeStyle) {
-    case 'condition-true':
-      strokeColor = '#34d399'
-      break
-    case 'condition-false':
-      strokeColor = '#fb7185'
-      break
-    case 'choice':
-      useGradient = true // gradient from violet to target
-      break
+    case "condition-true":
+      strokeColor = "#34d399";
+      break;
+    case "condition-false":
+      strokeColor = "#fb7185";
+      break;
+    case "choice":
+      useGradient = true; // gradient from violet to target
+      break;
     default:
-      strokeColor = 'hsl(230 5% 65% / 0.5)'
+      strokeColor = "hsl(230 5% 65% / 0.5)";
   }
 
   return (
@@ -72,37 +76,36 @@ function InteractionEdgeComponent({
           strokeWidth: selected ? 3 : 2,
           filter: selected
             ? `drop-shadow(0 0 4px ${useGradient ? sourceColor : strokeColor})`
-            : undefined
+            : undefined,
         }}
       />
       {/* Edge label */}
-      {(edgeStyle === 'condition-true' ||
-        edgeStyle === 'condition-false' ||
-        edgeStyle === 'choice') && (
+      {(edgeStyle === "condition-true" ||
+        edgeStyle === "condition-false" ||
+        edgeStyle === "choice") && (
         <EdgeLabelRenderer>
           <div
             className="nodrag nopan pointer-events-none absolute rounded-full px-2 py-0.5 text-[10px] font-medium shadow-sm"
             style={{
               transform: `translate(-50%, -50%) translate(${(sourceX + targetX) / 2}px, ${(sourceY + targetY) / 2}px)`,
               backgroundColor:
-                edgeStyle === 'condition-true'
-                  ? '#34d399'
-                  : edgeStyle === 'condition-false'
-                    ? '#fb7185'
-                    : '#a78bfa',
-              color: edgeStyle === 'condition-false' ? '#fff' : '#000',
-              opacity: selected ? 1 : 0.7
+                edgeStyle === "condition-true"
+                  ? "#34d399"
+                  : edgeStyle === "condition-false"
+                    ? "#fb7185"
+                    : "#a78bfa",
+              color: edgeStyle === "condition-false" ? "#fff" : "#000",
+              opacity: selected ? 1 : 0.7,
             }}
           >
-            {edgeStyle === 'condition-true' && 'True'}
-            {edgeStyle === 'condition-false' && 'False'}
-            {edgeStyle === 'choice' &&
-              `Choice ${(data?.choiceIndex ?? 0) + 1}`}
+            {edgeStyle === "condition-true" && "True"}
+            {edgeStyle === "condition-false" && "False"}
+            {edgeStyle === "choice" && `Choice ${(data?.choiceIndex ?? 0) + 1}`}
           </div>
         </EdgeLabelRenderer>
       )}
     </>
-  )
+  );
 }
 
-export const InteractionEdge = memo(InteractionEdgeComponent)
+export const InteractionEdge = memo(InteractionEdgeComponent);

@@ -1,43 +1,45 @@
-import { memo } from 'react'
-import { Zap } from 'lucide-react'
-import { BaseNode } from './BaseNode'
-import { useDocumentStore } from '../stores'
-import type { ActionNodeData } from '../types'
+import { memo } from "react";
+import { Zap } from "lucide-react";
+import { BaseNode } from "./BaseNode";
+import { useDocumentStore } from "../stores";
+import type { ActionNodeData } from "../types";
 
 interface ActionNodeProps {
-  id: string
-  data: ActionNodeData
-  selected?: boolean
+  id: string;
+  data: ActionNodeData;
+  selected?: boolean;
 }
 
 function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
-  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
-  const actions = data.actions || []
+  const bookmarked = useDocumentStore((s) =>
+    (s.document.bookmarks ?? []).includes(id),
+  );
+  const actions = data.actions || [];
 
   const getActionLabel = (type: string): string => {
     switch (type) {
-      case 'script':
-        return 'Script'
-      case 'set_variable':
-        return 'Set Variable'
-      case 'set_switch':
-        return 'Set Switch'
-      case 'common_event':
-        return 'Common Event'
-      case 'show_text':
-        return 'Show Text'
-      case 'plugin_command':
-        return 'Plugin Command'
+      case "script":
+        return "Script";
+      case "set_variable":
+        return "Set Variable";
+      case "set_switch":
+        return "Set Switch";
+      case "common_event":
+        return "Common Event";
+      case "show_text":
+        return "Show Text";
+      case "plugin_command":
+        return "Plugin Command";
       default:
-        return 'Action'
+        return "Action";
     }
-  }
+  };
 
   return (
     <BaseNode
       accentColor="#38bdf8"
       icon={<Zap className="h-4 w-4" />}
-      label={data.label || 'Action'}
+      label={data.label || "Action"}
       selected={selected}
       bookmarked={bookmarked}
       hasInput={true}
@@ -53,14 +55,16 @@ function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
             </div>
           ))}
           {actions.length > 3 && (
-            <p className="text-xs text-muted-foreground">+{actions.length - 3} more</p>
+            <p className="text-xs text-muted-foreground">
+              +{actions.length - 3} more
+            </p>
           )}
         </div>
       )}
     </BaseNode>
-  )
+  );
 }
 
 export const ActionNode = memo(ActionNodeComponent, (prev, next) => {
-  return prev.selected === next.selected && prev.data === next.data
-})
+  return prev.selected === next.selected && prev.data === next.data;
+});

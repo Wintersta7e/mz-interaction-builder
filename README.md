@@ -3,8 +3,8 @@
 A visual node-graph editor for creating RPG Maker MZ character interactions without coding. Design complex dialogue trees, choice menus, and branching logic visually, then export directly to RPG Maker event commands.
 
 [![CI](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml)
-![Electron](https://img.shields.io/badge/Electron-36-47848F?logo=electron)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 

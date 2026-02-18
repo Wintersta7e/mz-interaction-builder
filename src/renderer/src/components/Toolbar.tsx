@@ -10,49 +10,62 @@ import {
   Maximize2,
   Folder,
   HelpCircle,
-  AlertTriangle
-} from 'lucide-react'
-import { useDocumentStore, useHistoryStore, useUIStore, useProjectStore } from '../stores'
-import { TitleBar } from './TitleBar'
+  AlertTriangle,
+} from "lucide-react";
+import {
+  useDocumentStore,
+  useHistoryStore,
+  useUIStore,
+  useProjectStore,
+} from "../stores";
+import { TitleBar } from "./TitleBar";
 
 interface ToolbarProps {
-  onNew: () => void
-  onOpen: () => void
-  onSave: () => void
-  onExport: () => void
-  onOpenProject: () => void
-  onHelp?: () => void
-  onValidate?: () => void
+  onNew: () => void;
+  onOpen: () => void;
+  onSave: () => void;
+  onExport: () => void;
+  onOpenProject: () => void;
+  onHelp?: () => void;
+  onValidate?: () => void;
 }
 
-export function Toolbar({ onNew, onOpen, onSave, onExport, onOpenProject, onHelp, onValidate }: ToolbarProps) {
-  const { isDirty } = useDocumentStore()
-  const { canUndo, canRedo, undo, redo } = useHistoryStore()
-  const { zoom, setZoom } = useUIStore()
-  const { projectPath } = useProjectStore()
-  const setDocument = useDocumentStore((s) => s.setDocument)
+export function Toolbar({
+  onNew,
+  onOpen,
+  onSave,
+  onExport,
+  onOpenProject,
+  onHelp,
+  onValidate,
+}: ToolbarProps) {
+  const { isDirty } = useDocumentStore();
+  const { canUndo, canRedo, undo, redo } = useHistoryStore();
+  const { zoom, setZoom } = useUIStore();
+  const { projectPath } = useProjectStore();
+  const setDocument = useDocumentStore((s) => s.setDocument);
 
   const handleUndo = () => {
-    const doc = undo()
-    if (doc) setDocument(doc)
-  }
+    const doc = undo();
+    if (doc) setDocument(doc);
+  };
 
   const handleRedo = () => {
-    const doc = redo()
-    if (doc) setDocument(doc)
-  }
+    const doc = redo();
+    if (doc) setDocument(doc);
+  };
 
   const handleZoomIn = () => {
-    setZoom(Math.min(zoom * 1.2, 2))
-  }
+    setZoom(Math.min(zoom * 1.2, 2));
+  };
 
   const handleZoomOut = () => {
-    setZoom(Math.max(zoom / 1.2, 0.25))
-  }
+    setZoom(Math.max(zoom / 1.2, 0.25));
+  };
 
   const handleZoomReset = () => {
-    setZoom(1)
-  }
+    setZoom(1);
+  };
 
   return (
     <div>
@@ -79,7 +92,7 @@ export function Toolbar({ onNew, onOpen, onSave, onExport, onOpenProject, onHelp
             className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted"
             title="Save (Ctrl+S)"
           >
-            <Save className={`h-4 w-4 ${isDirty ? 'text-amber-500' : ''}`} />
+            <Save className={`h-4 w-4 ${isDirty ? "text-amber-500" : ""}`} />
           </button>
         </div>
 
@@ -145,12 +158,14 @@ export function Toolbar({ onNew, onOpen, onSave, onExport, onOpenProject, onHelp
         <button
           onClick={onOpenProject}
           className={`flex h-8 items-center gap-2 rounded px-3 text-sm hover:bg-muted ${
-            projectPath ? 'text-primary' : 'text-muted-foreground'
+            projectPath ? "text-primary" : "text-muted-foreground"
           }`}
-          title={projectPath ? `Project: ${projectPath}` : 'Open RPG Maker Project'}
+          title={
+            projectPath ? `Project: ${projectPath}` : "Open RPG Maker Project"
+          }
         >
           <Folder className="h-4 w-4" />
-          {projectPath ? 'Project Loaded' : 'Open Project'}
+          {projectPath ? "Project Loaded" : "Open Project"}
         </button>
 
         <div className="flex-1" />
@@ -189,5 +204,5 @@ export function Toolbar({ onNew, onOpen, onSave, onExport, onOpenProject, onHelp
         </button>
       </div>
     </div>
-  )
+  );
 }

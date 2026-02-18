@@ -1,36 +1,36 @@
-import { Bookmark, ChevronDown, ChevronRight, X } from 'lucide-react'
-import { Play, List, Zap, GitBranch, Square } from 'lucide-react'
-import { useDocumentStore, useUIStore } from '../stores'
-import type { InteractionNodeType } from '../types'
+import { Bookmark, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Play, List, Zap, GitBranch, Square } from "lucide-react";
+import { useDocumentStore, useUIStore } from "../stores";
+import type { InteractionNodeType } from "../types";
 
 const nodeIcons: Record<InteractionNodeType, React.ReactNode> = {
   start: <Play className="h-3 w-3" />,
   menu: <List className="h-3 w-3" />,
   action: <Zap className="h-3 w-3" />,
   condition: <GitBranch className="h-3 w-3" />,
-  end: <Square className="h-3 w-3" />
-}
+  end: <Square className="h-3 w-3" />,
+};
 
 const nodeColors: Record<InteractionNodeType, string> = {
-  start: '#34d399',
-  menu: '#a78bfa',
-  action: '#38bdf8',
-  condition: '#fbbf24',
-  end: '#fb7185'
-}
+  start: "#34d399",
+  menu: "#a78bfa",
+  action: "#38bdf8",
+  condition: "#fbbf24",
+  end: "#fb7185",
+};
 
 interface BookmarkPanelProps {
-  onNavigateToNode: (nodeId: string) => void
+  onNavigateToNode: (nodeId: string) => void;
 }
 
 export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
-  const nodes = useDocumentStore((s) => s.document.nodes)
-  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? []
-  const removeBookmark = useDocumentStore((s) => s.removeBookmark)
-  const showBookmarks = useUIStore((s) => s.showBookmarks)
-  const setShowBookmarks = useUIStore((s) => s.setShowBookmarks)
+  const nodes = useDocumentStore((s) => s.document.nodes);
+  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? [];
+  const removeBookmark = useDocumentStore((s) => s.removeBookmark);
+  const showBookmarks = useUIStore((s) => s.showBookmarks);
+  const setShowBookmarks = useUIStore((s) => s.setShowBookmarks);
 
-  if (bookmarks.length === 0) return null
+  if (bookmarks.length === 0) return null;
 
   return (
     <div className="absolute bottom-3 left-3 z-40 min-w-[160px] rounded-xl border border-border bg-card/95 shadow-xl backdrop-blur-md">
@@ -52,9 +52,9 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
       {showBookmarks && (
         <div className="max-h-[200px] overflow-y-auto border-t border-border py-1">
           {bookmarks.map((nodeId) => {
-            const node = nodes.find((n) => n.id === nodeId)
-            if (!node) return null
-            const nodeType = node.type as InteractionNodeType
+            const node = nodes.find((n) => n.id === nodeId);
+            if (!node) return null;
+            const nodeType = node.type as InteractionNodeType;
             return (
               <button
                 key={nodeId}
@@ -71,14 +71,14 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
                   role="button"
                   tabIndex={0}
                   onClick={(e) => {
-                    e.stopPropagation()
-                    removeBookmark(nodeId)
+                    e.stopPropagation();
+                    removeBookmark(nodeId);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      removeBookmark(nodeId)
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      removeBookmark(nodeId);
                     }
                   }}
                   className="hidden rounded p-0.5 text-muted-foreground hover:text-foreground group-hover:block"
@@ -86,10 +86,10 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
                   <X className="h-3 w-3" />
                 </span>
               </button>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

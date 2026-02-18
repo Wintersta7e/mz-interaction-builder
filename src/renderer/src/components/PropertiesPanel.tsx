@@ -1,4 +1,4 @@
-import { useDocumentStore, useUIStore, useProjectStore } from '../stores'
+import { useDocumentStore, useUIStore, useProjectStore } from "../stores";
 import type {
   InteractionNode,
   MenuNodeData,
@@ -6,14 +6,22 @@ import type {
   ConditionNodeData,
   MenuChoice,
   Action,
-  Condition
-} from '../types'
-import { v4 as uuid } from 'uuid'
-import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
-import { useState, useCallback } from 'react'
-import { useDebouncedSync } from '../hooks/useDebouncedSync'
-import { parseIntSafe } from '../lib/parseIntSafe'
-import { SearchableSelect } from './SearchableSelect'
+  Condition,
+} from "../types";
+import { v4 as uuid } from "uuid";
+import {
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Ban,
+} from "lucide-react";
+import { useState, useCallback } from "react";
+import { useDebouncedSync } from "../hooks/useDebouncedSync";
+import { parseIntSafe } from "../lib/parseIntSafe";
+import { SearchableSelect } from "./SearchableSelect";
 
 // ============================================
 // Debounced Input Wrappers
@@ -22,21 +30,25 @@ import { SearchableSelect } from './SearchableSelect'
 function DebouncedInput({
   value,
   onChange,
-  type = 'text',
+  type = "text",
   className,
   placeholder,
   min,
-  max
+  max,
 }: {
-  value: string | number
-  onChange: (value: string) => void
-  type?: string
-  className?: string
-  placeholder?: string
-  min?: number
-  max?: number
+  value: string | number;
+  onChange: (value: string) => void;
+  type?: string;
+  className?: string;
+  placeholder?: string;
+  min?: number;
+  max?: number;
 }) {
-  const { localValue, setLocalValue, flush } = useDebouncedSync(String(value ?? ''), onChange, 300)
+  const { localValue, setLocalValue, flush } = useDebouncedSync(
+    String(value ?? ""),
+    onChange,
+    300,
+  );
   return (
     <input
       type={type}
@@ -48,7 +60,7 @@ function DebouncedInput({
       min={min}
       max={max}
     />
-  )
+  );
 }
 
 function DebouncedTextarea({
@@ -56,15 +68,19 @@ function DebouncedTextarea({
   onChange,
   className,
   rows,
-  placeholder
+  placeholder,
 }: {
-  value: string
-  onChange: (value: string) => void
-  className?: string
-  rows?: number
-  placeholder?: string
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  rows?: number;
+  placeholder?: string;
 }) {
-  const { localValue, setLocalValue, flush } = useDebouncedSync(value, onChange, 300)
+  const { localValue, setLocalValue, flush } = useDebouncedSync(
+    value,
+    onChange,
+    300,
+  );
   return (
     <textarea
       value={localValue}
@@ -74,39 +90,48 @@ function DebouncedTextarea({
       rows={rows}
       placeholder={placeholder}
     />
-  )
+  );
 }
 
 export function PropertiesPanel() {
-  const selectedNodeId = useUIStore((s) => s.selectedNodeId)
-  const updateNode = useDocumentStore((s) => s.updateNode)
+  const selectedNodeId = useUIStore((s) => s.selectedNodeId);
+  const updateNode = useDocumentStore((s) => s.updateNode);
   const selectedNode = useDocumentStore(
     useCallback(
-      (s) => (selectedNodeId ? s.document.nodes.find((n) => n.id === selectedNodeId) ?? null : null),
-      [selectedNodeId]
-    )
-  )
+      (s) =>
+        selectedNodeId
+          ? (s.document.nodes.find((n) => n.id === selectedNodeId) ?? null)
+          : null,
+      [selectedNodeId],
+    ),
+  );
 
   if (!selectedNode) {
     return (
       <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-        <p className="text-center text-sm">Select a node to edit its properties</p>
+        <p className="text-center text-sm">
+          Select a node to edit its properties
+        </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">PROPERTIES</h2>
+      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
+        PROPERTIES
+      </h2>
 
       {/* Common properties */}
       <div className="mb-4">
-        <label className="mb-1 block text-xs text-muted-foreground">Label</label>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Label
+        </label>
         <DebouncedInput
           value={selectedNode.data.label}
           onChange={(value) =>
             updateNode(selectedNode.id, {
-              data: { ...selectedNode.data, label: value }
+              data: { ...selectedNode.data, label: value },
             })
           }
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
@@ -114,37 +139,44 @@ export function PropertiesPanel() {
       </div>
 
       {/* Type-specific properties */}
-      {selectedNode.type === 'menu' && (
+      {selectedNode.type === "menu" && (
         <MenuProperties node={selectedNode} updateNode={updateNode} />
       )}
-      {selectedNode.type === 'action' && (
+      {selectedNode.type === "action" && (
         <ActionProperties node={selectedNode} updateNode={updateNode} />
       )}
-      {selectedNode.type === 'condition' && (
+      {selectedNode.type === "condition" && (
         <ConditionProperties node={selectedNode} updateNode={updateNode} />
       )}
     </div>
-  )
+  );
 }
 
 // ============================================
 // Condition Editor Component (Reusable)
 // ============================================
 interface ConditionEditorProps {
-  condition: Condition | undefined
-  onChange: (condition: Condition) => void
-  onRemove?: () => void
-  label?: string
+  condition: Condition | undefined;
+  onChange: (condition: Condition) => void;
+  onRemove?: () => void;
+  label?: string;
 }
 
-function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEditorProps) {
-  const { switches, variables } = useProjectStore()
-  const currentCondition = condition || { id: uuid(), type: 'script' as const }
+function ConditionEditor({
+  condition,
+  onChange,
+  onRemove,
+  label,
+}: ConditionEditorProps) {
+  const { switches, variables } = useProjectStore();
+  const currentCondition = condition || { id: uuid(), type: "script" as const };
 
   return (
     <div className="rounded border border-border p-2 space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs text-muted-foreground">{label || 'Condition'}</label>
+        <label className="text-xs text-muted-foreground">
+          {label || "Condition"}
+        </label>
         {onRemove && (
           <button
             onClick={onRemove}
@@ -157,7 +189,12 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
 
       <select
         value={currentCondition.type}
-        onChange={(e) => onChange({ ...currentCondition, type: e.target.value as Condition['type'] })}
+        onChange={(e) =>
+          onChange({
+            ...currentCondition,
+            type: e.target.value as Condition["type"],
+          })
+        }
         className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
       >
         <option value="switch">Switch</option>
@@ -165,7 +202,7 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
         <option value="script">Script</option>
       </select>
 
-      {currentCondition.type === 'switch' && (
+      {currentCondition.type === "switch" && (
         <div className="space-y-1">
           <SearchableSelect
             items={switches}
@@ -174,8 +211,13 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
             placeholder="-- Select Switch --"
           />
           <select
-            value={currentCondition.switchValue || 'on'}
-            onChange={(e) => onChange({ ...currentCondition, switchValue: e.target.value as 'on' | 'off' })}
+            value={currentCondition.switchValue || "on"}
+            onChange={(e) =>
+              onChange({
+                ...currentCondition,
+                switchValue: e.target.value as "on" | "off",
+              })
+            }
             className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
           >
             <option value="on">ON</option>
@@ -184,7 +226,7 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
         </div>
       )}
 
-      {currentCondition.type === 'variable' && (
+      {currentCondition.type === "variable" && (
         <div className="space-y-1">
           <SearchableSelect
             items={variables}
@@ -194,9 +236,13 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
           />
           <div className="flex gap-1">
             <select
-              value={currentCondition.variableOperator || '=='}
+              value={currentCondition.variableOperator || "=="}
               onChange={(e) =>
-                onChange({ ...currentCondition, variableOperator: e.target.value as Condition['variableOperator'] })
+                onChange({
+                  ...currentCondition,
+                  variableOperator: e.target
+                    .value as Condition["variableOperator"],
+                })
               }
               className="w-20 rounded border border-border bg-background px-2 py-1 text-xs"
             >
@@ -209,10 +255,11 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
             </select>
             <input
               type="number"
-              value={currentCondition.variableCompareValue || ''}
+              value={currentCondition.variableCompareValue || ""}
               onChange={(e) => {
-                const val = parseIntSafe(e.target.value)
-                if (val !== undefined) onChange({ ...currentCondition, variableCompareValue: val })
+                const val = parseIntSafe(e.target.value);
+                if (val !== undefined)
+                  onChange({ ...currentCondition, variableCompareValue: val });
               }}
               className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
               placeholder="Value"
@@ -221,9 +268,9 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
         </div>
       )}
 
-      {currentCondition.type === 'script' && (
+      {currentCondition.type === "script" && (
         <DebouncedTextarea
-          value={currentCondition.script || ''}
+          value={currentCondition.script || ""}
           onChange={(value) => onChange({ ...currentCondition, script: value })}
           className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
           rows={2}
@@ -231,50 +278,55 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
         />
       )}
     </div>
-  )
+  );
 }
 
 // ============================================
 // Menu Properties
 // ============================================
 interface MenuPropertiesProps {
-  node: InteractionNode
-  updateNode: (id: string, data: Partial<InteractionNode>) => void
+  node: InteractionNode;
+  updateNode: (id: string, data: Partial<InteractionNode>) => void;
 }
 
 function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
   // Safe: parent renders this component only when selectedNode.type === 'menu'
-  const data = node.data as MenuNodeData
-  const choices = data.choices || []
-  const [expandedChoice, setExpandedChoice] = useState<string | null>(null)
+  const data = node.data as MenuNodeData;
+  const choices = data.choices || [];
+  const [expandedChoice, setExpandedChoice] = useState<string | null>(null);
 
   const addChoice = () => {
     const newChoice: MenuChoice = {
       id: uuid(),
-      text: `Choice ${choices.length + 1}`
-    }
+      text: `Choice ${choices.length + 1}`,
+    };
     updateNode(node.id, {
-      data: { ...data, choices: [...choices, newChoice] }
-    })
-  }
+      data: { ...data, choices: [...choices, newChoice] },
+    });
+  };
 
   const updateChoice = (index: number, updates: Partial<MenuChoice>) => {
-    const newChoices = choices.map((c, i) => (i === index ? { ...c, ...updates } : c))
-    updateNode(node.id, { data: { ...data, choices: newChoices } })
-  }
+    const newChoices = choices.map((c, i) =>
+      i === index ? { ...c, ...updates } : c,
+    );
+    updateNode(node.id, { data: { ...data, choices: newChoices } });
+  };
 
   const removeChoice = (index: number) => {
-    const newChoices = choices.filter((_, i) => i !== index)
-    updateNode(node.id, { data: { ...data, choices: newChoices } })
-  }
+    const newChoices = choices.filter((_, i) => i !== index);
+    updateNode(node.id, { data: { ...data, choices: newChoices } });
+  };
 
-  const moveChoice = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= choices.length) return
-    const newChoices = [...choices]
-    ;[newChoices[index], newChoices[newIndex]] = [newChoices[newIndex], newChoices[index]]
-    updateNode(node.id, { data: { ...data, choices: newChoices } })
-  }
+  const moveChoice = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= choices.length) return;
+    const newChoices = [...choices];
+    [newChoices[index], newChoices[newIndex]] = [
+      newChoices[newIndex],
+      newChoices[index],
+    ];
+    updateNode(node.id, { data: { ...data, choices: newChoices } });
+  };
 
   return (
     <div className="space-y-4">
@@ -295,14 +347,14 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
               <div className="flex items-center gap-1 p-2">
                 <div className="flex flex-col">
                   <button
-                    onClick={() => moveChoice(index, 'up')}
+                    onClick={() => moveChoice(index, "up")}
                     disabled={index === 0}
                     className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                   >
                     <ChevronUp className="h-3 w-3" />
                   </button>
                   <button
-                    onClick={() => moveChoice(index, 'down')}
+                    onClick={() => moveChoice(index, "down")}
                     disabled={index === choices.length - 1}
                     className="text-muted-foreground hover:text-foreground disabled:opacity-30"
                   >
@@ -316,17 +368,25 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                   placeholder={`Choice ${index + 1}`}
                 />
                 <button
-                  onClick={() => setExpandedChoice(expandedChoice === choice.id ? null : choice.id)}
+                  onClick={() =>
+                    setExpandedChoice(
+                      expandedChoice === choice.id ? null : choice.id,
+                    )
+                  }
                   className={`flex h-6 w-6 items-center justify-center rounded ${
                     choice.hideCondition || choice.disableCondition
-                      ? 'text-amber-500'
-                      : 'text-muted-foreground'
+                      ? "text-amber-500"
+                      : "text-muted-foreground"
                   } hover:bg-muted`}
                   title="Conditions"
                 >
-                  {choice.hideCondition ? <EyeOff className="h-3 w-3" /> :
-                   choice.disableCondition ? <Ban className="h-3 w-3" /> :
-                   <Eye className="h-3 w-3" />}
+                  {choice.hideCondition ? (
+                    <EyeOff className="h-3 w-3" />
+                  ) : choice.disableCondition ? (
+                    <Ban className="h-3 w-3" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
                 </button>
                 <button
                   onClick={() => removeChoice(index)}
@@ -347,7 +407,11 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                       </span>
                       {!choice.hideCondition && (
                         <button
-                          onClick={() => updateChoice(index, { hideCondition: { id: uuid(), type: 'switch' } })}
+                          onClick={() =>
+                            updateChoice(index, {
+                              hideCondition: { id: uuid(), type: "switch" },
+                            })
+                          }
                           className="text-xs text-muted-foreground hover:text-foreground"
                         >
                           + Add
@@ -357,12 +421,18 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     {choice.hideCondition && (
                       <ConditionEditor
                         condition={choice.hideCondition}
-                        onChange={(cond) => updateChoice(index, { hideCondition: cond })}
-                        onRemove={() => updateChoice(index, { hideCondition: undefined })}
+                        onChange={(cond) =>
+                          updateChoice(index, { hideCondition: cond })
+                        }
+                        onRemove={() =>
+                          updateChoice(index, { hideCondition: undefined })
+                        }
                       />
                     )}
                     {!choice.hideCondition && (
-                      <p className="text-xs text-muted-foreground italic">Choice always visible</p>
+                      <p className="text-xs text-muted-foreground italic">
+                        Choice always visible
+                      </p>
                     )}
                   </div>
 
@@ -374,7 +444,11 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                       </span>
                       {!choice.disableCondition && (
                         <button
-                          onClick={() => updateChoice(index, { disableCondition: { id: uuid(), type: 'switch' } })}
+                          onClick={() =>
+                            updateChoice(index, {
+                              disableCondition: { id: uuid(), type: "switch" },
+                            })
+                          }
                           className="text-xs text-muted-foreground hover:text-foreground"
                         >
                           + Add
@@ -384,12 +458,18 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     {choice.disableCondition && (
                       <ConditionEditor
                         condition={choice.disableCondition}
-                        onChange={(cond) => updateChoice(index, { disableCondition: cond })}
-                        onRemove={() => updateChoice(index, { disableCondition: undefined })}
+                        onChange={(cond) =>
+                          updateChoice(index, { disableCondition: cond })
+                        }
+                        onRemove={() =>
+                          updateChoice(index, { disableCondition: undefined })
+                        }
                       />
                     )}
                     {!choice.disableCondition && (
-                      <p className="text-xs text-muted-foreground italic">Choice always enabled</p>
+                      <p className="text-xs text-muted-foreground italic">
+                        Choice always enabled
+                      </p>
                     )}
                   </div>
                 </div>
@@ -400,12 +480,20 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">Cancel Behavior</label>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Cancel Behavior
+        </label>
         <select
-          value={data.cancelType || 'disallow'}
+          value={data.cancelType || "disallow"}
           onChange={(e) =>
             updateNode(node.id, {
-              data: { ...data, cancelType: e.target.value as 'disallow' | 'branch' | 'last_choice' }
+              data: {
+                ...data,
+                cancelType: e.target.value as
+                  | "disallow"
+                  | "branch"
+                  | "last_choice",
+              },
             })
           }
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
@@ -417,12 +505,14 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">Window Background</label>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Window Background
+        </label>
         <select
           value={data.windowBackground ?? 0}
           onChange={(e) => {
-            const val = parseIntSafe(e.target.value, 0) as 0 | 1 | 2
-            updateNode(node.id, { data: { ...data, windowBackground: val } })
+            const val = parseIntSafe(e.target.value, 0) as 0 | 1 | 2;
+            updateNode(node.id, { data: { ...data, windowBackground: val } });
           }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
@@ -433,12 +523,14 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">Window Position</label>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Window Position
+        </label>
         <select
           value={data.windowPosition ?? 2}
           onChange={(e) => {
-            const val = parseIntSafe(e.target.value, 2) as 0 | 1 | 2
-            updateNode(node.id, { data: { ...data, windowPosition: val } })
+            const val = parseIntSafe(e.target.value, 2) as 0 | 1 | 2;
+            updateNode(node.id, { data: { ...data, windowPosition: val } });
           }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
@@ -448,43 +540,45 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
         </select>
       </div>
     </div>
-  )
+  );
 }
 
 // ============================================
 // Action Properties
 // ============================================
 interface ActionPropertiesProps {
-  node: InteractionNode
-  updateNode: (id: string, data: Partial<InteractionNode>) => void
+  node: InteractionNode;
+  updateNode: (id: string, data: Partial<InteractionNode>) => void;
 }
 
 function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
   // Safe: parent renders this component only when selectedNode.type === 'action'
-  const data = node.data as ActionNodeData
-  const actions = data.actions || []
-  const { switches, variables } = useProjectStore()
+  const data = node.data as ActionNodeData;
+  const actions = data.actions || [];
+  const { switches, variables } = useProjectStore();
 
   const addAction = () => {
     const newAction: Action = {
       id: uuid(),
-      type: 'script',
-      script: ''
-    }
+      type: "script",
+      script: "",
+    };
     updateNode(node.id, {
-      data: { ...data, actions: [...actions, newAction] }
-    })
-  }
+      data: { ...data, actions: [...actions, newAction] },
+    });
+  };
 
   const updateAction = (index: number, updates: Partial<Action>) => {
-    const newActions = actions.map((a, i) => (i === index ? { ...a, ...updates } : a))
-    updateNode(node.id, { data: { ...data, actions: newActions } })
-  }
+    const newActions = actions.map((a, i) =>
+      i === index ? { ...a, ...updates } : a,
+    );
+    updateNode(node.id, { data: { ...data, actions: newActions } });
+  };
 
   const removeAction = (index: number) => {
-    const newActions = actions.filter((_, i) => i !== index)
-    updateNode(node.id, { data: { ...data, actions: newActions } })
-  }
+    const newActions = actions.filter((_, i) => i !== index);
+    updateNode(node.id, { data: { ...data, actions: newActions } });
+  };
 
   return (
     <div className="space-y-4">
@@ -504,7 +598,11 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
             <div className="mb-2 flex items-center justify-between">
               <select
                 value={action.type}
-                onChange={(e) => updateAction(index, { type: e.target.value as Action['type'] })}
+                onChange={(e) =>
+                  updateAction(index, {
+                    type: e.target.value as Action["type"],
+                  })
+                }
                 className="rounded border border-border bg-background px-2 py-1 text-sm"
               >
                 <option value="script">Script</option>
@@ -522,9 +620,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               </button>
             </div>
 
-            {action.type === 'script' && (
+            {action.type === "script" && (
               <DebouncedTextarea
-                value={action.script || ''}
+                value={action.script || ""}
                 onChange={(value) => updateAction(index, { script: value })}
                 className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
                 rows={3}
@@ -532,7 +630,7 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               />
             )}
 
-            {action.type === 'set_switch' && (
+            {action.type === "set_switch" && (
               <div className="space-y-2">
                 <SearchableSelect
                   items={switches}
@@ -541,9 +639,11 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   placeholder="-- Select Switch --"
                 />
                 <select
-                  value={action.switchValue || 'on'}
+                  value={action.switchValue || "on"}
                   onChange={(e) =>
-                    updateAction(index, { switchValue: e.target.value as 'on' | 'off' | 'toggle' })
+                    updateAction(index, {
+                      switchValue: e.target.value as "on" | "off" | "toggle",
+                    })
                   }
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                 >
@@ -554,7 +654,7 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               </div>
             )}
 
-            {action.type === 'set_variable' && (
+            {action.type === "set_variable" && (
               <div className="space-y-2">
                 <SearchableSelect
                   items={variables}
@@ -564,9 +664,12 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                 />
                 <div className="flex gap-2">
                   <select
-                    value={action.variableOperation || 'set'}
+                    value={action.variableOperation || "set"}
                     onChange={(e) =>
-                      updateAction(index, { variableOperation: e.target.value as Action['variableOperation'] })
+                      updateAction(index, {
+                        variableOperation: e.target
+                          .value as Action["variableOperation"],
+                      })
                     }
                     className="w-20 rounded border border-border bg-background px-2 py-1 text-sm"
                   >
@@ -579,10 +682,11 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   </select>
                   <input
                     type="number"
-                    value={action.variableValue || ''}
+                    value={action.variableValue || ""}
                     onChange={(e) => {
-                      const val = parseIntSafe(e.target.value)
-                      if (val !== undefined) updateAction(index, { variableValue: val })
+                      const val = parseIntSafe(e.target.value);
+                      if (val !== undefined)
+                        updateAction(index, { variableValue: val });
                     }}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Value"
@@ -591,34 +695,38 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               </div>
             )}
 
-            {action.type === 'common_event' && (
+            {action.type === "common_event" && (
               <input
                 type="number"
-                value={action.commonEventId || ''}
+                value={action.commonEventId || ""}
                 onChange={(e) => {
-                  const val = parseIntSafe(e.target.value)
-                  if (val !== undefined) updateAction(index, { commonEventId: val })
+                  const val = parseIntSafe(e.target.value);
+                  if (val !== undefined)
+                    updateAction(index, { commonEventId: val });
                 }}
                 className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                 placeholder="Common Event ID"
               />
             )}
 
-            {action.type === 'show_text' && (
+            {action.type === "show_text" && (
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <DebouncedInput
-                    value={action.faceName || ''}
-                    onChange={(value) => updateAction(index, { faceName: value })}
+                    value={action.faceName || ""}
+                    onChange={(value) =>
+                      updateAction(index, { faceName: value })
+                    }
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Face Name"
                   />
                   <input
                     type="number"
-                    value={action.faceIndex ?? ''}
+                    value={action.faceIndex ?? ""}
                     onChange={(e) => {
-                      const val = parseIntSafe(e.target.value)
-                      if (val !== undefined) updateAction(index, { faceIndex: val })
+                      const val = parseIntSafe(e.target.value);
+                      if (val !== undefined)
+                        updateAction(index, { faceIndex: val });
                     }}
                     className="w-16 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Idx"
@@ -627,7 +735,7 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   />
                 </div>
                 <DebouncedTextarea
-                  value={action.text || ''}
+                  value={action.text || ""}
                   onChange={(value) => updateAction(index, { text: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   rows={3}
@@ -636,28 +744,34 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               </div>
             )}
 
-            {action.type === 'plugin_command' && (
+            {action.type === "plugin_command" && (
               <div className="space-y-2">
                 <DebouncedInput
-                  value={action.pluginName || ''}
-                  onChange={(value) => updateAction(index, { pluginName: value })}
+                  value={action.pluginName || ""}
+                  onChange={(value) =>
+                    updateAction(index, { pluginName: value })
+                  }
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Plugin Name"
                 />
                 <DebouncedInput
-                  value={action.commandName || ''}
-                  onChange={(value) => updateAction(index, { commandName: value })}
+                  value={action.commandName || ""}
+                  onChange={(value) =>
+                    updateAction(index, { commandName: value })
+                  }
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Command Name"
                 />
                 <DebouncedTextarea
-                  value={action.commandArgs ? JSON.stringify(action.commandArgs) : ''}
+                  value={
+                    action.commandArgs ? JSON.stringify(action.commandArgs) : ""
+                  }
                   onChange={(value) => {
                     try {
-                      const args = value ? JSON.parse(value) : undefined
-                      updateAction(index, { commandArgs: args })
+                      const args = value ? JSON.parse(value) : undefined;
+                      updateAction(index, { commandArgs: args });
                     } catch (e) {
-                      if (!(e instanceof SyntaxError)) throw e
+                      if (!(e instanceof SyntaxError)) throw e;
                       // Invalid JSON — user still typing, ignore
                     }
                   }}
@@ -671,36 +785,40 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // ============================================
 // Condition Properties
 // ============================================
 interface ConditionPropertiesProps {
-  node: InteractionNode
-  updateNode: (id: string, data: Partial<InteractionNode>) => void
+  node: InteractionNode;
+  updateNode: (id: string, data: Partial<InteractionNode>) => void;
 }
 
 function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
   // Safe: parent renders this component only when selectedNode.type === 'condition'
-  const data = node.data as ConditionNodeData
-  const condition = data.condition || { id: uuid(), type: 'switch' as const }
-  const { switches, variables } = useProjectStore()
+  const data = node.data as ConditionNodeData;
+  const condition = data.condition || { id: uuid(), type: "switch" as const };
+  const { switches, variables } = useProjectStore();
 
   const updateCondition = (updates: Partial<Condition>) => {
     updateNode(node.id, {
-      data: { ...data, condition: { ...condition, ...updates } }
-    })
-  }
+      data: { ...data, condition: { ...condition, ...updates } },
+    });
+  };
 
   return (
     <div className="space-y-4">
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">Condition Type</label>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Condition Type
+        </label>
         <select
           value={condition.type}
-          onChange={(e) => updateCondition({ type: e.target.value as Condition['type'] })}
+          onChange={(e) =>
+            updateCondition({ type: e.target.value as Condition["type"] })
+          }
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value="switch">Switch</option>
@@ -709,10 +827,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         </select>
       </div>
 
-      {condition.type === 'switch' && (
+      {condition.type === "switch" && (
         <>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Switch</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Switch
+            </label>
             <SearchableSelect
               items={switches}
               value={condition.switchId ?? null}
@@ -721,10 +841,14 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Value</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Value
+            </label>
             <select
-              value={condition.switchValue || 'on'}
-              onChange={(e) => updateCondition({ switchValue: e.target.value as 'on' | 'off' })}
+              value={condition.switchValue || "on"}
+              onChange={(e) =>
+                updateCondition({ switchValue: e.target.value as "on" | "off" })
+              }
               className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
             >
               <option value="on">ON</option>
@@ -734,10 +858,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         </>
       )}
 
-      {condition.type === 'variable' && (
+      {condition.type === "variable" && (
         <>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Variable</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Variable
+            </label>
             <SearchableSelect
               items={variables}
               value={condition.variableId ?? null}
@@ -746,11 +872,16 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Operator</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Operator
+            </label>
             <select
-              value={condition.variableOperator || '=='}
+              value={condition.variableOperator || "=="}
               onChange={(e) =>
-                updateCondition({ variableOperator: e.target.value as Condition['variableOperator'] })
+                updateCondition({
+                  variableOperator: e.target
+                    .value as Condition["variableOperator"],
+                })
               }
               className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
             >
@@ -763,13 +894,16 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Compare Value</label>
+            <label className="mb-1 block text-xs text-muted-foreground">
+              Compare Value
+            </label>
             <input
               type="number"
-              value={condition.variableCompareValue || ''}
+              value={condition.variableCompareValue || ""}
               onChange={(e) => {
-                const val = parseIntSafe(e.target.value)
-                if (val !== undefined) updateCondition({ variableCompareValue: val })
+                const val = parseIntSafe(e.target.value);
+                if (val !== undefined)
+                  updateCondition({ variableCompareValue: val });
               }}
               className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
               placeholder="Value"
@@ -778,11 +912,13 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         </>
       )}
 
-      {condition.type === 'script' && (
+      {condition.type === "script" && (
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">Script (returns boolean)</label>
+          <label className="mb-1 block text-xs text-muted-foreground">
+            Script (returns boolean)
+          </label>
           <DebouncedTextarea
-            value={condition.script || ''}
+            value={condition.script || ""}
             onChange={(value) => updateCondition({ script: value })}
             className="w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs"
             rows={4}
@@ -791,5 +927,5 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

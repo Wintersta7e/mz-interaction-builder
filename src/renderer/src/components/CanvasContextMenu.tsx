@@ -1,86 +1,106 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Play, List, Zap, GitBranch, Square } from 'lucide-react'
-import type { InteractionNodeType } from '../types'
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Play, List, Zap, GitBranch, Square } from "lucide-react";
+import type { InteractionNodeType } from "../types";
 
 interface MenuPosition {
-  x: number
-  y: number
+  x: number;
+  y: number;
 }
 
 interface CanvasContextMenuProps {
-  position: MenuPosition
-  onAddNode: (type: InteractionNodeType) => void
-  onClose: () => void
+  position: MenuPosition;
+  onAddNode: (type: InteractionNodeType) => void;
+  onClose: () => void;
 }
 
 const menuItems: {
-  type: InteractionNodeType
-  label: string
-  icon: React.ReactNode
-  color: string
+  type: InteractionNodeType;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
 }[] = [
-  { type: 'start', label: 'Start', icon: <Play className="h-4 w-4" />, color: '#34d399' },
-  { type: 'menu', label: 'Choice Menu', icon: <List className="h-4 w-4" />, color: '#a78bfa' },
-  { type: 'action', label: 'Action', icon: <Zap className="h-4 w-4" />, color: '#38bdf8' },
   {
-    type: 'condition',
-    label: 'Condition',
-    icon: <GitBranch className="h-4 w-4" />,
-    color: '#fbbf24'
+    type: "start",
+    label: "Start",
+    icon: <Play className="h-4 w-4" />,
+    color: "#34d399",
   },
-  { type: 'end', label: 'End', icon: <Square className="h-4 w-4" />, color: '#fb7185' }
-]
+  {
+    type: "menu",
+    label: "Choice Menu",
+    icon: <List className="h-4 w-4" />,
+    color: "#a78bfa",
+  },
+  {
+    type: "action",
+    label: "Action",
+    icon: <Zap className="h-4 w-4" />,
+    color: "#38bdf8",
+  },
+  {
+    type: "condition",
+    label: "Condition",
+    icon: <GitBranch className="h-4 w-4" />,
+    color: "#fbbf24",
+  },
+  {
+    type: "end",
+    label: "End",
+    icon: <Square className="h-4 w-4" />,
+    color: "#fb7185",
+  },
+];
 
 export function CanvasContextMenu({
   position,
   onAddNode,
-  onClose
+  onClose,
 }: CanvasContextMenuProps): React.JSX.Element {
-  const menuRef = useRef<HTMLDivElement>(null)
-  const [clampedPosition, setClampedPosition] = useState(position)
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [clampedPosition, setClampedPosition] = useState(position);
 
   // Clamp menu position to stay within viewport (B8)
   useLayoutEffect(() => {
-    const menu = menuRef.current
+    const menu = menuRef.current;
     if (!menu) {
-      setClampedPosition(position)
-      return
+      setClampedPosition(position);
+      return;
     }
 
-    const parent = menu.parentElement
+    const parent = menu.parentElement;
     if (!parent) {
-      setClampedPosition(position)
-      return
+      setClampedPosition(position);
+      return;
     }
 
-    const menuRect = menu.getBoundingClientRect()
-    const parentRect = parent.getBoundingClientRect()
-    const maxX = parentRect.width - menuRect.width
-    const maxY = parentRect.height - menuRect.height
+    const menuRect = menu.getBoundingClientRect();
+    const parentRect = parent.getBoundingClientRect();
+    const maxX = parentRect.width - menuRect.width;
+    const maxY = parentRect.height - menuRect.height;
 
     setClampedPosition({
       x: Math.max(0, Math.min(position.x, maxX)),
-      y: Math.max(0, Math.min(position.y, maxY))
-    })
-  }, [position])
+      y: Math.max(0, Math.min(position.y, maxY)),
+    });
+  }, [position]);
 
   // Close on click outside or Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose()
+        onClose();
       }
-    }
+    };
     const handleEscape = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('keydown', handleEscape)
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [onClose])
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
 
   return (
     <div
@@ -96,8 +116,8 @@ export function CanvasContextMenu({
           key={item.type}
           className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
           onClick={() => {
-            onAddNode(item.type)
-            onClose()
+            onAddNode(item.type);
+            onClose();
           }}
         >
           <span style={{ color: item.color }}>{item.icon}</span>
@@ -105,5 +125,5 @@ export function CanvasContextMenu({
         </button>
       ))}
     </div>
-  )
+  );
 }

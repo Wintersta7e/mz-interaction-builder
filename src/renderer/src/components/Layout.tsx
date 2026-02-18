@@ -1,14 +1,20 @@
-import { ReactNode } from 'react'
+import { ReactNode } from "react";
 
 interface LayoutProps {
-  toolbar: ReactNode
-  palette: ReactNode
-  canvas: ReactNode
-  properties: ReactNode
-  statusbar: ReactNode
+  toolbar: ReactNode;
+  palette: ReactNode;
+  canvas: ReactNode;
+  properties: ReactNode;
+  statusbar: ReactNode;
 }
 
-export function Layout({ toolbar, palette, canvas, properties, statusbar }: LayoutProps) {
+export function Layout({
+  toolbar,
+  palette,
+  canvas,
+  properties,
+  statusbar,
+}: LayoutProps) {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Toolbar */}
@@ -33,5 +39,5 @@ export function Layout({ toolbar, palette, canvas, properties, statusbar }: Layo
       {/* Status Bar */}
       <div className="flex-shrink-0 border-t border-border">{statusbar}</div>
     </div>
-  )
+  );
 }
