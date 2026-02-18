@@ -1,4 +1,3 @@
-import { useCallback } from 'react'
 import { Bookmark, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { Play, List, Zap, GitBranch, Square } from 'lucide-react'
 import { useDocumentStore, useUIStore } from '../stores'
@@ -31,13 +30,6 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
   const showBookmarks = useUIStore((s) => s.showBookmarks)
   const setShowBookmarks = useUIStore((s) => s.setShowBookmarks)
 
-  const handleClick = useCallback(
-    (nodeId: string) => {
-      onNavigateToNode(nodeId)
-    },
-    [onNavigateToNode]
-  )
-
   if (bookmarks.length === 0) return null
 
   return (
@@ -64,10 +56,10 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
             if (!node) return null
             const nodeType = node.type as InteractionNodeType
             return (
-              <div
+              <button
                 key={nodeId}
-                className="group flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer"
-                onClick={() => handleClick(nodeId)}
+                className="group flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer text-left"
+                onClick={() => onNavigateToNode(nodeId)}
               >
                 <span style={{ color: nodeColors[nodeType] }}>
                   {nodeIcons[nodeType]}
@@ -75,16 +67,25 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
                 <span className="flex-1 truncate text-foreground">
                   {node.data.label}
                 </span>
-                <button
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => {
                     e.stopPropagation()
                     removeBookmark(nodeId)
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      removeBookmark(nodeId)
+                    }
+                  }}
                   className="hidden rounded p-0.5 text-muted-foreground hover:text-foreground group-hover:block"
                 >
                   <X className="h-3 w-3" />
-                </button>
-              </div>
+                </span>
+              </button>
             )
           })}
         </div>
