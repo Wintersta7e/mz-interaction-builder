@@ -34,6 +34,8 @@ import type { AutoLayoutOptions } from "../lib/autoLayout";
 import { alignNodes, distributeNodes } from "../lib/alignNodes";
 import type { AlignMode, DistributeMode } from "../lib/alignNodes";
 import { AlignmentToolbar } from "./AlignmentToolbar";
+import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
+import { AlignmentGuides } from "./AlignmentGuides";
 import {
   useDocumentStore,
   useUIStore,
@@ -224,6 +226,31 @@ function CanvasInner() {
 
       if (isDragComplete) isDraggingRef.current = false;
 
+      // Compute alignment guides during drag (Phase 4E)
+      const positionChanges = changes.filter(
+        (
+          c,
+        ): c is NodeChange<InteractionNode> & {
+          type: "position";
+          dragging: true;
+        } => c.type === "position" && "dragging" in c && c.dragging === true,
+      );
+
+      if (positionChanges.length === 1) {
+        const draggedId = positionChanges[0].id;
+        const draggedNode = nodesRef.current.find((n) => n.id === draggedId);
+        if (draggedNode && positionChanges[0].position) {
+          const updatedDragging = {
+            ...draggedNode,
+            position: positionChanges[0].position,
+          };
+          const others = nodesRef.current.filter((n) => n.id !== draggedId);
+          setGuideLines(computeGuideLines(updatedDragging, others));
+        }
+      }
+
+      if (isDragComplete) setGuideLines([]);
+
       const significantChange = isRemoveOrAdd || isDragComplete;
 
       if (significantChange) {
@@ -305,6 +332,9 @@ function CanvasInner() {
     },
     [setSelectedNodeId, setHighlightedPaths, clearHighlightedPaths],
   );
+
+  // Alignment guide lines shown during node drag (Phase 4E)
+  const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -857,6 +887,7 @@ function CanvasInner() {
             />
           )}
         </ReactFlow>
+        <AlignmentGuides guides={guideLines} />
         {contextMenu && (
           <CanvasContextMenu
             position={{ x: contextMenu.x, y: contextMenu.y }}
