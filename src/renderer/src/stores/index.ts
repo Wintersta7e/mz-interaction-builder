@@ -349,7 +349,8 @@ export const useUIStore = create<UIState>()(
       clearHighlightedPaths: () =>
         set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
       setShowBookmarks: (showBookmarks) => set({ showBookmarks }),
-      toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
+      toggleSnapToGrid: () =>
+        set((state) => ({ snapToGrid: !state.snapToGrid })),
       triggerAutoLayout: (layoutTrigger) => set({ layoutTrigger }),
       clearLayoutTrigger: () => set({ layoutTrigger: null }),
     }),

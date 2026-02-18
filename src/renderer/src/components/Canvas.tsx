@@ -71,6 +71,8 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
       };
     case "end":
       return { type: "end", label: "End" };
+    case "group":
+      return { type: "group", label: "Group", color: "blue", collapsed: false };
   }
 }
 
@@ -81,15 +83,17 @@ const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
   action: "#38bdf8",
   condition: "#fbbf24",
   end: "#fb7185",
+  group: "#60a5fa",
 };
 
-// Quick-add hotkeys: press 1-5 to create a node at viewport center
+// Quick-add hotkeys: press 1-6 to create a node at viewport center
 const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
   "1": "start",
   "2": "menu",
   "3": "action",
   "4": "condition",
   "5": "end",
+  "6": "group",
 };
 
 function getEdgeTypeAndData(
@@ -338,6 +342,7 @@ function CanvasInner() {
         "action",
         "condition",
         "end",
+        "group",
       ];
       if (!validTypes.includes(rawType as InteractionNodeType)) return;
       const type = rawType as InteractionNodeType;
@@ -352,6 +357,9 @@ function CanvasInner() {
         type,
         position,
         data: getDefaultNodeData(type),
+        ...(type === "group"
+          ? { style: { width: 400, height: 300 }, zIndex: -1 }
+          : {}),
       };
 
       // Push current document to history before making changes
@@ -486,6 +494,9 @@ function CanvasInner() {
         type,
         position: contextMenu.flowPosition,
         data: getDefaultNodeData(type),
+        ...(type === "group"
+          ? { style: { width: 400, height: 300 }, zIndex: -1 }
+          : {}),
       };
       push(useDocumentStore.getState().document);
       addNode(newNode);
@@ -738,7 +749,7 @@ function CanvasInner() {
         }
       }
 
-      // Number keys 1-5: quick-add node at viewport center
+      // Number keys 1-6: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key];
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
@@ -755,6 +766,9 @@ function CanvasInner() {
           type: nodeType,
           position: centerPosition,
           data: getDefaultNodeData(nodeType),
+          ...(nodeType === "group"
+            ? { style: { width: 400, height: 300 }, zIndex: -1 }
+            : {}),
         };
 
         push(useDocumentStore.getState().document);

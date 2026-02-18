@@ -6,7 +6,8 @@ export type InteractionNodeType =
   | "menu"
   | "action"
   | "condition"
-  | "end";
+  | "end"
+  | "group";
 
 // Base node data interface (index signature needed for React Flow Node<T> compatibility)
 export interface BaseNodeData {
@@ -112,13 +113,30 @@ export interface EndNodeData extends BaseNodeData {
   type: "end";
 }
 
+// Group color presets
+export type GroupColor =
+  | "blue"
+  | "green"
+  | "purple"
+  | "amber"
+  | "rose"
+  | "gray";
+
+// Group/frame node - visual container (excluded from export)
+export interface GroupNodeData extends BaseNodeData {
+  type: "group";
+  color: GroupColor;
+  collapsed: boolean;
+}
+
 // Union type for all node data
 export type InteractionNodeData =
   | StartNodeData
   | MenuNodeData
   | ActionNodeData
   | ConditionNodeData
-  | EndNodeData;
+  | EndNodeData
+  | GroupNodeData;
 
 // Custom node type for React Flow — extends RF Node so it's directly compatible
 export type InteractionNode = Node<InteractionNodeData, InteractionNodeType>;

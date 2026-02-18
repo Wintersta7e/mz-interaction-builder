@@ -17,18 +17,54 @@ interface AlignmentToolbarProps {
   onDistribute: (mode: DistributeMode) => void;
 }
 
-const alignButtons: { mode: AlignMode; icon: typeof AlignHorizontalJustifyStart; title: string }[] = [
-  { mode: "left", icon: AlignHorizontalJustifyStart, title: "Align Left (Alt+L)" },
-  { mode: "center", icon: AlignHorizontalJustifyCenter, title: "Align Center (Alt+C)" },
-  { mode: "right", icon: AlignHorizontalJustifyEnd, title: "Align Right (Alt+R)" },
+const alignButtons: {
+  mode: AlignMode;
+  icon: typeof AlignHorizontalJustifyStart;
+  title: string;
+}[] = [
+  {
+    mode: "left",
+    icon: AlignHorizontalJustifyStart,
+    title: "Align Left (Alt+L)",
+  },
+  {
+    mode: "center",
+    icon: AlignHorizontalJustifyCenter,
+    title: "Align Center (Alt+C)",
+  },
+  {
+    mode: "right",
+    icon: AlignHorizontalJustifyEnd,
+    title: "Align Right (Alt+R)",
+  },
   { mode: "top", icon: AlignVerticalJustifyStart, title: "Align Top (Alt+T)" },
-  { mode: "middle", icon: AlignVerticalJustifyCenter, title: "Align Middle (Alt+M)" },
-  { mode: "bottom", icon: AlignVerticalJustifyEnd, title: "Align Bottom (Alt+B)" },
+  {
+    mode: "middle",
+    icon: AlignVerticalJustifyCenter,
+    title: "Align Middle (Alt+M)",
+  },
+  {
+    mode: "bottom",
+    icon: AlignVerticalJustifyEnd,
+    title: "Align Bottom (Alt+B)",
+  },
 ];
 
-const distributeButtons: { mode: DistributeMode; icon: typeof AlignHorizontalSpaceAround; title: string }[] = [
-  { mode: "horizontal", icon: AlignHorizontalSpaceAround, title: "Distribute Horizontally" },
-  { mode: "vertical", icon: AlignVerticalSpaceAround, title: "Distribute Vertically" },
+const distributeButtons: {
+  mode: DistributeMode;
+  icon: typeof AlignHorizontalSpaceAround;
+  title: string;
+}[] = [
+  {
+    mode: "horizontal",
+    icon: AlignHorizontalSpaceAround,
+    title: "Distribute Horizontally",
+  },
+  {
+    mode: "vertical",
+    icon: AlignVerticalSpaceAround,
+    title: "Distribute Vertically",
+  },
 ];
 
 export function AlignmentToolbar({

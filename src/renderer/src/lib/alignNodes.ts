@@ -1,6 +1,12 @@
 import type { InteractionNode } from "../types";
 
-export type AlignMode = "left" | "center" | "right" | "top" | "middle" | "bottom";
+export type AlignMode =
+  | "left"
+  | "center"
+  | "right"
+  | "top"
+  | "middle"
+  | "bottom";
 export type DistributeMode = "horizontal" | "vertical";
 
 const DEFAULT_WIDTH = 180;

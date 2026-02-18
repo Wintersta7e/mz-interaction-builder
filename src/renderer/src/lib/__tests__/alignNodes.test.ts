@@ -34,9 +34,7 @@ describe("alignNodes", () => {
     const result = alignNodes(nodes, "right");
     // rightmost right edge = 200 + 180 = 380
     expect(
-      result.every(
-        (n) => n.position.x + (n.measured?.width ?? 180) === 380,
-      ),
+      result.every((n) => n.position.x + (n.measured?.width ?? 180) === 380),
     ).toBe(true);
   });
 
@@ -58,9 +56,7 @@ describe("alignNodes", () => {
     const result = alignNodes(nodes, "bottom");
     // bottommost bottom edge = 80 + 80 = 160
     expect(
-      result.every(
-        (n) => n.position.y + (n.measured?.height ?? 80) === 160,
-      ),
+      result.every((n) => n.position.y + (n.measured?.height ?? 80) === 160),
     ).toBe(true);
   });
 
