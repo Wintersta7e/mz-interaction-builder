@@ -35,3 +35,7 @@ CLAUDE.md
 # Internal planning docs
 InitialPlan.md
 code-review.md
+docs/plans/
+
+# TypeScript build info
+*.tsbuildinfo
