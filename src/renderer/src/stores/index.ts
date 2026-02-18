@@ -40,6 +40,10 @@ interface DocumentState {
   addPreset: (preset: VariablePreset) => void
   updatePreset: (id: string, preset: Partial<VariablePreset>) => void
   removePreset: (id: string) => void
+
+  // Bookmarks
+  toggleBookmark: (nodeId: string) => void
+  removeBookmark: (nodeId: string) => void
 }
 
 export const useDocumentStore = create<DocumentState>()((set) => ({
@@ -77,7 +81,8 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
         ...state.document,
         nodes: state.document.nodes.filter((n) => n.id !== id),
         // Also remove connected edges
-        edges: state.document.edges.filter((e) => e.source !== id && e.target !== id)
+        edges: state.document.edges.filter((e) => e.source !== id && e.target !== id),
+        bookmarks: (state.document.bookmarks ?? []).filter((bid) => bid !== id)
       },
       isDirty: true
     })),
@@ -134,6 +139,30 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
       document: {
         ...state.document,
         variables: state.document.variables.filter((p) => p.id !== id)
+      },
+      isDirty: true
+    })),
+
+  // Bookmarks
+  toggleBookmark: (nodeId) =>
+    set((state) => {
+      const bookmarks = state.document.bookmarks ?? []
+      const exists = bookmarks.includes(nodeId)
+      return {
+        document: {
+          ...state.document,
+          bookmarks: exists
+            ? bookmarks.filter((id) => id !== nodeId)
+            : [...bookmarks, nodeId]
+        },
+        isDirty: true
+      }
+    }),
+  removeBookmark: (nodeId) =>
+    set((state) => ({
+      document: {
+        ...state.document,
+        bookmarks: (state.document.bookmarks ?? []).filter((id) => id !== nodeId)
       },
       isDirty: true
     }))
@@ -217,6 +246,16 @@ interface UIState {
   propertiesWidth: number
   showMinimap: boolean
   zoom: number
+  // Search (Phase 3A)
+  searchOpen: boolean
+  searchTerm: string
+  searchMatches: string[]
+  searchCurrentIndex: number
+  // Path highlighting (Phase 3B)
+  highlightedNodeIds: string[]
+  highlightedEdgeIds: string[]
+  // Bookmarks (Phase 3C)
+  showBookmarks: boolean
 
   setSelectedNodeId: (id: string | null) => void
   setSelectedEdgeId: (id: string | null) => void
@@ -225,6 +264,13 @@ interface UIState {
   setShowMinimap: (show: boolean) => void
   setZoom: (zoom: number) => void
   clearSelection: () => void
+  setSearchOpen: (open: boolean) => void
+  setSearchTerm: (term: string) => void
+  setSearchMatches: (matches: string[]) => void
+  setSearchCurrentIndex: (index: number) => void
+  setHighlightedPaths: (nodeIds: string[], edgeIds: string[]) => void
+  clearHighlightedPaths: () => void
+  setShowBookmarks: (show: boolean) => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -236,6 +282,13 @@ export const useUIStore = create<UIState>()(
       propertiesWidth: 320,
       showMinimap: true,
       zoom: 1,
+      searchOpen: false,
+      searchTerm: '',
+      searchMatches: [],
+      searchCurrentIndex: 0,
+      highlightedNodeIds: [],
+      highlightedEdgeIds: [],
+      showBookmarks: true,
 
       setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId, selectedEdgeId: null }),
       setSelectedEdgeId: (selectedEdgeId) => set({ selectedEdgeId, selectedNodeId: null }),
@@ -243,14 +296,22 @@ export const useUIStore = create<UIState>()(
       setPropertiesWidth: (propertiesWidth) => set({ propertiesWidth }),
       setShowMinimap: (showMinimap) => set({ showMinimap }),
       setZoom: (zoom) => set({ zoom }),
-      clearSelection: () => set({ selectedNodeId: null, selectedEdgeId: null })
+      clearSelection: () => set({ selectedNodeId: null, selectedEdgeId: null }),
+      setSearchOpen: (searchOpen) => set({ searchOpen, ...(searchOpen ? {} : { searchTerm: '', searchMatches: [], searchCurrentIndex: 0 }) }),
+      setSearchTerm: (searchTerm) => set({ searchTerm }),
+      setSearchMatches: (searchMatches) => set({ searchMatches }),
+      setSearchCurrentIndex: (searchCurrentIndex) => set({ searchCurrentIndex }),
+      setHighlightedPaths: (highlightedNodeIds, highlightedEdgeIds) => set({ highlightedNodeIds, highlightedEdgeIds }),
+      clearHighlightedPaths: () => set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
+      setShowBookmarks: (showBookmarks) => set({ showBookmarks })
     }),
     {
       name: 'mz-interaction-builder-ui',
       partialize: (state) => ({
         paletteWidth: state.paletteWidth,
         propertiesWidth: state.propertiesWidth,
-        showMinimap: state.showMinimap
+        showMinimap: state.showMinimap,
+        showBookmarks: state.showBookmarks
       })
     }
   )
