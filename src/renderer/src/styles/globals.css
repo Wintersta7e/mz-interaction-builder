@@ -190,3 +190,18 @@ textarea:disabled {
   transform: translateY(-1px);
   box-shadow: 0 8px 24px hsl(0 0% 0% / 0.4);
 }
+
+/* Search highlight pulse (Phase 3A) */
+@keyframes search-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.6); }
+  50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0); }
+}
+
+.search-highlight-current .interaction-node {
+  box-shadow: 0 0 0 3px hsl(var(--primary)) !important;
+  animation: search-pulse 1.5s ease-in-out infinite;
+}
+
+.search-highlight-match .interaction-node {
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3) !important;
+}

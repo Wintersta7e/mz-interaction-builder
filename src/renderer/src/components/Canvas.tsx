@@ -23,6 +23,8 @@ import '@xyflow/react/dist/style.css'
 import { nodeTypes } from '../nodes'
 import { edgeTypes } from '../edges'
 import { CanvasContextMenu } from './CanvasContextMenu'
+import { SearchPanel } from './SearchPanel'
+import { searchNodes } from '../lib/searchNodes'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -104,6 +106,13 @@ function CanvasInner() {
   const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } = useUIStore()
   const { push } = useHistoryStore()
   const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow()
+
+  const searchOpen = useUIStore((s) => s.searchOpen)
+  const searchTerm = useUIStore((s) => s.searchTerm)
+  const searchMatches = useUIStore((s) => s.searchMatches)
+  const searchCurrentIndex = useUIStore((s) => s.searchCurrentIndex)
+  const setSearchMatches = useUIStore((s) => s.setSearchMatches)
+  const setSearchCurrentIndex = useUIStore((s) => s.setSearchCurrentIndex)
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
@@ -284,6 +293,59 @@ function CanvasInner() {
     [screenToFlowPosition]
   )
 
+  // Recompute search matches when term or nodes change
+  useEffect(() => {
+    if (!searchOpen || !searchTerm.trim()) {
+      setSearchMatches([])
+      setSearchCurrentIndex(0)
+      return
+    }
+    const matches = searchNodes(document.nodes, searchTerm)
+    setSearchMatches(matches)
+    setSearchCurrentIndex(matches.length > 0 ? 0 : -1)
+  }, [searchTerm, searchOpen, document.nodes, setSearchMatches, setSearchCurrentIndex])
+
+  // Navigate to a node (pan + zoom) — shared by search & future features
+  const navigateToNode = useCallback(
+    (nodeId: string) => {
+      const node = getNodes().find((n) => n.id === nodeId)
+      if (node) {
+        setCenter(node.position.x + 90, node.position.y + 40, { zoom: 1, duration: 300 })
+        setSelectedNodeId(nodeId)
+      }
+    },
+    [getNodes, setCenter, setSelectedNodeId]
+  )
+
+  // Apply search highlight classes to matching nodes
+  useEffect(() => {
+    const wrapper = reactFlowWrapper.current
+    if (!wrapper) return
+
+    // Clear all search highlights first
+    wrapper.querySelectorAll('.search-highlight-current, .search-highlight-match').forEach((el) => {
+      el.classList.remove('search-highlight-current', 'search-highlight-match')
+    })
+
+    if (searchMatches.length === 0) return
+
+    // Apply match highlights
+    for (const nodeId of searchMatches) {
+      const el = wrapper.querySelector(`[data-id="${nodeId}"]`)
+      if (el) el.classList.add('search-highlight-match')
+    }
+
+    // Apply current highlight
+    if (searchCurrentIndex >= 0 && searchCurrentIndex < searchMatches.length) {
+      const currentId = searchMatches[searchCurrentIndex]
+      const el = wrapper.querySelector(`[data-id="${currentId}"]`)
+      if (el) {
+        el.classList.remove('search-highlight-match')
+        el.classList.add('search-highlight-current')
+      }
+    }
+  }, [searchMatches, searchCurrentIndex])
+
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return
@@ -308,6 +370,13 @@ function CanvasInner() {
   // Handle Delete key to remove selected node and Copy/Paste
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F: Open search (Phase 3A) — works even when input is focused
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        useUIStore.getState().setSearchOpen(true)
+        return
+      }
+
       // Don't handle if user is typing in an input field
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
@@ -543,6 +612,7 @@ function CanvasInner() {
           onClose={() => setContextMenu(null)}
         />
       )}
+      {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
     </div>
   )
 }
