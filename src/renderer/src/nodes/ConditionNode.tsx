@@ -1,15 +1,18 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { GitBranch } from 'lucide-react'
+import { GitBranch, Star } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { useDocumentStore } from '../stores'
 import type { ConditionNodeData } from '../types'
 
 interface ConditionNodeProps {
+  id: string
   data: ConditionNodeData
   selected?: boolean
 }
 
-function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
+function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
   const condition = data.condition
 
   const getConditionSummary = (): string => {
@@ -50,6 +53,9 @@ function ConditionNodeComponent({ data, selected }: ConditionNodeProps) {
       <div className="flex items-center gap-2 px-3 py-2">
         <GitBranch className="h-4 w-4" style={{ color: '#fbbf24' }} />
         <span className="text-sm font-medium">{data.label || 'Condition'}</span>
+        {bookmarked && (
+          <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
+        )}
       </div>
 
       {/* Content */}

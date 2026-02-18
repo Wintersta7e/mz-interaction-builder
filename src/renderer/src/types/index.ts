@@ -161,6 +161,7 @@ export interface InteractionDocument {
   edges: InteractionEdge[]
   variables: VariablePreset[]
   projectPath?: string
+  bookmarks?: string[]
 }
 
 // Default empty document
@@ -178,6 +179,7 @@ export function createEmptyDocument(): InteractionDocument {
       }
     ],
     edges: [],
-    variables: []
+    variables: [],
+    bookmarks: []
   }
 }

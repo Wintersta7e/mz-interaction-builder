@@ -13,10 +13,18 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 - **Direct Export** - Export to RPG Maker map events with one click
 - **Undo/Redo** - Full history support with Ctrl+Z/Ctrl+Y
 - **Copy/Paste** - Duplicate nodes with Ctrl+C/Ctrl+V
+- **Multi-Select** - Drag rectangle selection, bulk delete, bulk copy/paste
 - **Validation** - Real-time warnings for unconnected nodes, missing branches
 - **Auto-Save** - Automatically saves every 30 seconds when file path exists
 - **Help System** - Press F1 or ? for keyboard shortcuts and node reference
-- **Dark Theme** - Consistent with other MZ tools
+- **Dark Theme** - Blue-tinted palette with Inter/JetBrains Mono fonts
+- **Search** - Ctrl+F to find nodes by label or content
+- **Path Highlighting** - Alt+Click a node to trace upstream/downstream connections
+- **Bookmarks** - Pin important nodes for quick navigation
+- **Breadcrumb Trail** - Shows shortest path from Start to selected node
+- **Zoom Controls** - Fit All, Fit Selection, Fit to Start hotkeys
+- **Context Menu** - Right-click canvas to quickly add nodes
+- **Quick-Add Hotkeys** - Press 1-5 to create nodes at viewport center
 
 ## Installation
 
@@ -113,7 +121,8 @@ Interactions are saved as `.mzinteraction` JSON files:
   "description": "",
   "nodes": [...],
   "edges": [...],
-  "variables": [...]
+  "variables": [...],
+  "bookmarks": [...]
 }
 ```
 
@@ -126,12 +135,22 @@ Interactions are saved as `.mzinteraction` JSON files:
 | Ctrl+S | Save file |
 | Ctrl+Z | Undo |
 | Ctrl+Y / Ctrl+Shift+Z | Redo |
-| Ctrl+C | Copy selected node |
-| Ctrl+V | Paste node |
-| Delete / Backspace | Delete selected node or edge |
+| Ctrl+C | Copy selected nodes |
+| Ctrl+V | Paste nodes |
+| Delete / Backspace | Delete selected nodes or edges |
+| Ctrl+F | Search nodes |
+| Ctrl+0 | Zoom to fit all nodes |
+| Ctrl+1 | Zoom to fit selection |
+| Home | Zoom to Start node |
+| B | Toggle bookmark on selected node |
+| Alt+Click | Highlight upstream path |
+| Shift+Alt+Click | Highlight downstream path |
+| Escape | Clear highlights |
+| 1-5 | Quick-add node (Start, Menu, Action, Condition, End) |
+| Right-Click | Context menu to add nodes |
 | F1 / ? | Show help |
 | Scroll Wheel | Zoom in/out |
-| Click + Drag | Pan canvas |
+| Click + Drag | Pan canvas (or rectangle select) |
 | Click Edge | Select edge (for deletion) |
 
 ## Variable Presets
@@ -180,12 +199,18 @@ src/
 ├── preload/        # IPC bridge
 └── renderer/
     └── src/
-        ├── components/   # UI components
-        ├── nodes/        # Custom React Flow nodes
-        ├── stores/       # Zustand state management
+        ├── components/   # Canvas, SearchPanel, BookmarkPanel, BreadcrumbTrail, PropertiesPanel, etc.
+        ├── edges/        # InteractionEdge (custom color-coded edge component)
+        ├── nodes/        # BaseNode + 5 node types
+        ├── hooks/        # useDebouncedSync
+        ├── stores/       # Zustand: Document, History, UI, Project
         ├── lib/
-        │   ├── export/   # RPG Maker command generation
-        │   └── presets/  # Variable presets
+        │   ├── export/          # RPG Maker command generation
+        │   ├── presets/         # Variable presets
+        │   ├── graphTraversal.ts # BFS upstream/downstream/shortest path
+        │   ├── searchNodes.ts   # Node text extraction and search
+        │   └── __tests__/       # Unit tests
+        ├── styles/       # globals.css with CSS variables
         └── types/        # TypeScript interfaces
 ```
 

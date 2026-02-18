@@ -23,6 +23,12 @@ import '@xyflow/react/dist/style.css'
 import { nodeTypes } from '../nodes'
 import { edgeTypes } from '../edges'
 import { CanvasContextMenu } from './CanvasContextMenu'
+import { SearchPanel } from './SearchPanel'
+import { findUpstreamNodes, findDownstreamNodes } from '../lib/graphTraversal'
+import { BookmarkPanel } from './BookmarkPanel'
+import { BreadcrumbTrail } from './BreadcrumbTrail'
+import { useCanvasSearch } from '../hooks/useCanvasSearch'
+import { usePathHighlighting } from '../hooks/usePathHighlighting'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -103,7 +109,14 @@ function CanvasInner() {
   const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore()
   const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } = useUIStore()
   const { push } = useHistoryStore()
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow()
+
+  const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths)
+  const clearHighlightedPaths = useUIStore((s) => s.clearHighlightedPaths)
+
+  // Extracted hooks for search and path highlighting (M3)
+  const { searchOpen } = useCanvasSearch(reactFlowWrapper, document.nodes)
+  usePathHighlighting(reactFlowWrapper)
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
@@ -205,11 +218,21 @@ function CanvasInner() {
     [setEdgesState, addDocEdge, push]
   )
 
+  // M1: Use getState() to read edges at call-time, avoiding dependency on document.nodes/edges
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: InteractionNode) => {
+    (event: React.MouseEvent, node: InteractionNode) => {
+      if (event.altKey) {
+        // Alt+Click = upstream, Shift+Alt+Click = downstream (Phase 3B)
+        const traverseFn = event.shiftKey ? findDownstreamNodes : findUpstreamNodes
+        const { edges: docEdges } = useDocumentStore.getState().document
+        const result = traverseFn(node.id, docEdges)
+        setHighlightedPaths(Array.from(result.nodeIds), Array.from(result.edgeIds))
+      } else {
+        clearHighlightedPaths()
+      }
       setSelectedNodeId(node.id)
     },
-    [setSelectedNodeId]
+    [setSelectedNodeId, setHighlightedPaths, clearHighlightedPaths]
   )
 
   const [contextMenu, setContextMenu] = useState<{
@@ -221,7 +244,8 @@ function CanvasInner() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
     setContextMenu(null)
-  }, [setSelectedNodeId])
+    clearHighlightedPaths()
+  }, [setSelectedNodeId, clearHighlightedPaths])
 
   const onEdgeClick = useCallback(() => {
     // Deselect node when edge is clicked
@@ -284,6 +308,20 @@ function CanvasInner() {
     [screenToFlowPosition]
   )
 
+  // L2: Navigate to a node using measured dimensions for accurate centering
+  const navigateToNode = useCallback(
+    (nodeId: string) => {
+      const node = getNodes().find((n) => n.id === nodeId)
+      if (node) {
+        const w = node.measured?.width ?? 180
+        const h = node.measured?.height ?? 80
+        setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: 1, duration: 300 })
+        setSelectedNodeId(nodeId)
+      }
+    },
+    [getNodes, setCenter, setSelectedNodeId]
+  )
+
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return
@@ -308,6 +346,18 @@ function CanvasInner() {
   // Handle Delete key to remove selected node and Copy/Paste
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+F: Open search (Phase 3A) — works even when input is focused
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        useUIStore.getState().setSearchOpen(true)
+        return
+      }
+
+      // Escape: clear path highlights (Phase 3B)
+      if (e.key === 'Escape') {
+        clearHighlightedPaths()
+      }
+
       // Don't handle if user is typing in an input field
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
@@ -423,6 +473,44 @@ function CanvasInner() {
         setEdges(allEdges)
       }
 
+      // Ctrl+0: Fit All (Phase 3D)
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault()
+        fitView({ padding: 0.1, duration: 300 })
+      }
+
+      // Ctrl+1: Fit Selection (Phase 3D)
+      if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault()
+        const selected = getNodes().filter((n) => n.selected)
+        if (selected.length > 0) {
+          fitView({ nodes: selected, padding: 0.1, duration: 300 })
+        } else if (selectedNodeIdRef.current) {
+          const node = getNodes().find((n) => n.id === selectedNodeIdRef.current)
+          if (node) fitView({ nodes: [node], padding: 0.1, duration: 300 })
+        }
+      }
+
+      // Home: Fit to Start (Phase 3D) — L2: use measured dimensions
+      if (e.key === 'Home') {
+        e.preventDefault()
+        const startNode = getNodes().find((n) => n.type === 'start')
+        if (startNode) {
+          const w = startNode.measured?.width ?? 180
+          const h = startNode.measured?.height ?? 80
+          setCenter(startNode.position.x + w / 2, startNode.position.y + h / 2, { zoom: 1, duration: 300 })
+        }
+      }
+
+      // B: toggle bookmark (Phase 3C)
+      if (e.key.toLowerCase() === 'b' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const nodeId = selectedNodeIdRef.current
+        if (nodeId) {
+          e.preventDefault()
+          useDocumentStore.getState().toggleBookmark(nodeId)
+        }
+      }
+
       // Number keys 1-5: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key]
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -451,7 +539,7 @@ function CanvasInner() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
+  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition, fitView, setCenter, getNodes, clearHighlightedPaths])
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(
@@ -461,61 +549,66 @@ function CanvasInner() {
   )
 
   return (
-    <div ref={reactFlowWrapper} className="h-full w-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={handleEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
-        onPaneClick={onPaneClick}
-        onPaneContextMenu={onPaneContextMenu}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onMoveEnd={onMoveEnd}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        snapToGrid
-        snapGrid={[16, 16]}
-        defaultViewport={{ x: 0, y: 0, zoom }}
-        minZoom={0.25}
-        maxZoom={2}
-        edgesFocusable={true}
-        elementsSelectable={true}
-        selectionOnDrag
-        selectionMode={SelectionMode.Partial}
-        className="bg-background"
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          color="hsl(230 15% 15%)"
-          gap={20}
-          size={1.5}
-        />
-        <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
-        {showMinimap && (
-          <MiniMap
-            nodeStrokeWidth={3}
-            className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
-            maskColor="hsl(230 25% 7% / 0.8)"
-            nodeBorderRadius={4}
-            nodeColor={miniMapNodeColor}
-            pannable
-            zoomable
-            style={{ width: 180, height: 120 }}
+    <div className="flex h-full w-full flex-col">
+      <BreadcrumbTrail onNavigateToNode={navigateToNode} />
+      <div ref={reactFlowWrapper} className="relative flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          onEdgeClick={onEdgeClick}
+          onPaneClick={onPaneClick}
+          onPaneContextMenu={onPaneContextMenu}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onMoveEnd={onMoveEnd}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          snapToGrid
+          snapGrid={[16, 16]}
+          defaultViewport={{ x: 0, y: 0, zoom }}
+          minZoom={0.25}
+          maxZoom={2}
+          edgesFocusable={true}
+          elementsSelectable={true}
+          selectionOnDrag
+          selectionMode={SelectionMode.Partial}
+          className="bg-background"
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            color="hsl(230 15% 15%)"
+            gap={20}
+            size={1.5}
+          />
+          <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
+          {showMinimap && (
+            <MiniMap
+              nodeStrokeWidth={3}
+              className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
+              maskColor="hsl(230 25% 7% / 0.8)"
+              nodeBorderRadius={4}
+              nodeColor={miniMapNodeColor}
+              pannable
+              zoomable
+              style={{ width: 180, height: 120 }}
+            />
+          )}
+        </ReactFlow>
+        {contextMenu && (
+          <CanvasContextMenu
+            position={{ x: contextMenu.x, y: contextMenu.y }}
+            onAddNode={handleContextMenuAddNode}
+            onClose={() => setContextMenu(null)}
           />
         )}
-      </ReactFlow>
-      {contextMenu && (
-        <CanvasContextMenu
-          position={{ x: contextMenu.x, y: contextMenu.y }}
-          onAddNode={handleContextMenuAddNode}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
+        {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+        <BookmarkPanel onNavigateToNode={navigateToNode} />
+      </div>
     </div>
   )
 }

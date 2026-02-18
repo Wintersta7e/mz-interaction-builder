@@ -1,10 +1,12 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { List } from 'lucide-react'
+import { List, Star } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { useDocumentStore } from '../stores'
 import type { MenuNodeData } from '../types'
 
 interface MenuNodeProps {
+  id: string
   data: MenuNodeData
   selected?: boolean
 }
@@ -16,7 +18,8 @@ const CONTENT_PADDING = 12 // content: p-3 = 12px
 const CHOICE_HEIGHT = 30 // choice row: py-1.5 + text-sm ≈ 30px
 const CHOICE_GAP = 8 // gap: space-y-2 = 8px
 
-function MenuNodeComponent({ data, selected }: MenuNodeProps) {
+function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
   const choices = data.choices || []
 
   // Calculate the vertical position of each choice handle relative to the node top
@@ -60,6 +63,9 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
       <div className="flex items-center gap-2 px-3 py-2">
         <List className="h-4 w-4" style={{ color: '#a78bfa' }} />
         <span className="text-sm font-medium">{data.label || 'Choice Menu'}</span>
+        {bookmarked && (
+          <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
+        )}
       </div>
 
       {/* Content - Choices */}

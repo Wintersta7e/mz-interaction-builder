@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { Handle, Position } from '@xyflow/react'
+import { Star } from 'lucide-react'
 import { cn } from '../lib/utils'
 
 interface BaseNodeProps {
@@ -8,6 +9,7 @@ interface BaseNodeProps {
   icon: ReactNode
   label: string
   selected?: boolean
+  bookmarked?: boolean
   hasInput?: boolean
   hasOutput?: boolean
   outputCount?: number
@@ -19,6 +21,7 @@ export function BaseNode({
   icon,
   label,
   selected,
+  bookmarked,
   hasInput = true,
   hasOutput = true,
   outputCount = 1
@@ -47,6 +50,9 @@ export function BaseNode({
       <div className="flex items-center gap-2 px-3 py-2">
         <span style={{ color: accentColor }}>{icon}</span>
         <span className="text-sm font-medium text-foreground">{label}</span>
+        {bookmarked && (
+          <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
+        )}
       </div>
 
       {/* Content */}
