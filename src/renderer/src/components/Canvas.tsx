@@ -25,6 +25,7 @@ import { edgeTypes } from '../edges'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { SearchPanel } from './SearchPanel'
 import { searchNodes } from '../lib/searchNodes'
+import { findUpstreamNodes, findDownstreamNodes } from '../lib/graphTraversal'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
 import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
@@ -113,6 +114,11 @@ function CanvasInner() {
   const searchCurrentIndex = useUIStore((s) => s.searchCurrentIndex)
   const setSearchMatches = useUIStore((s) => s.setSearchMatches)
   const setSearchCurrentIndex = useUIStore((s) => s.setSearchCurrentIndex)
+
+  const highlightedNodeIds = useUIStore((s) => s.highlightedNodeIds)
+  const highlightedEdgeIds = useUIStore((s) => s.highlightedEdgeIds)
+  const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths)
+  const clearHighlightedPaths = useUIStore((s) => s.clearHighlightedPaths)
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
@@ -215,10 +221,18 @@ function CanvasInner() {
   )
 
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: InteractionNode) => {
+    (event: React.MouseEvent, node: InteractionNode) => {
+      if (event.altKey) {
+        // Alt+Click = upstream, Shift+Alt+Click = downstream (Phase 3B)
+        const traverseFn = event.shiftKey ? findDownstreamNodes : findUpstreamNodes
+        const result = traverseFn(node.id, document.nodes, document.edges)
+        setHighlightedPaths(Array.from(result.nodeIds), Array.from(result.edgeIds))
+      } else {
+        clearHighlightedPaths()
+      }
       setSelectedNodeId(node.id)
     },
-    [setSelectedNodeId]
+    [setSelectedNodeId, document.nodes, document.edges, setHighlightedPaths, clearHighlightedPaths]
   )
 
   const [contextMenu, setContextMenu] = useState<{
@@ -230,7 +244,8 @@ function CanvasInner() {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
     setContextMenu(null)
-  }, [setSelectedNodeId])
+    clearHighlightedPaths()
+  }, [setSelectedNodeId, clearHighlightedPaths])
 
   const onEdgeClick = useCallback(() => {
     // Deselect node when edge is clicked
@@ -346,6 +361,54 @@ function CanvasInner() {
     }
   }, [searchMatches, searchCurrentIndex])
 
+  // Apply path highlighting classes (Phase 3B)
+  const isHighlighting = highlightedNodeIds.length > 0 || highlightedEdgeIds.length > 0
+
+  useEffect(() => {
+    const rfEl = reactFlowWrapper.current?.querySelector('.react-flow') as HTMLElement | null
+    if (!rfEl) return
+
+    if (isHighlighting) {
+      rfEl.setAttribute('data-highlighting', '')
+    } else {
+      rfEl.removeAttribute('data-highlighting')
+    }
+
+    const highlightedNodeSet = new Set(highlightedNodeIds)
+    const highlightedEdgeSet = new Set(highlightedEdgeIds)
+
+    // Apply .highlighted to matching nodes
+    rfEl.querySelectorAll('.react-flow__node').forEach((el) => {
+      const id = el.getAttribute('data-id')
+      if (id && highlightedNodeSet.has(id)) {
+        el.classList.add('highlighted')
+      } else {
+        el.classList.remove('highlighted')
+      }
+    })
+
+    // Apply .highlighted to matching edges
+    // React Flow v12 edge wrappers use data-id attribute
+    rfEl.querySelectorAll('.react-flow__edge').forEach((el) => {
+      // Try data-id first, then fall back to data-testid
+      let id = el.getAttribute('data-id')
+      if (!id) {
+        const testId = el.getAttribute('data-testid')
+        if (testId) id = testId.replace('rf__edge-', '')
+      }
+      if (id && highlightedEdgeSet.has(id)) {
+        el.classList.add('highlighted')
+      } else {
+        el.classList.remove('highlighted')
+      }
+    })
+
+    return () => {
+      rfEl.removeAttribute('data-highlighting')
+      rfEl.querySelectorAll('.highlighted').forEach((el) => el.classList.remove('highlighted'))
+    }
+  }, [isHighlighting, highlightedNodeIds, highlightedEdgeIds])
+
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return
@@ -375,6 +438,11 @@ function CanvasInner() {
         e.preventDefault()
         useUIStore.getState().setSearchOpen(true)
         return
+      }
+
+      // Escape: clear path highlights (Phase 3B)
+      if (e.key === 'Escape') {
+        clearHighlightedPaths()
       }
 
       // Don't handle if user is typing in an input field
@@ -547,7 +615,7 @@ function CanvasInner() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition, fitView, setCenter, getNodes])
+  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition, fitView, setCenter, getNodes, clearHighlightedPaths])
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(

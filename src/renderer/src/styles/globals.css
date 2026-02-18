@@ -205,3 +205,22 @@ textarea:disabled {
 .search-highlight-match .interaction-node {
   box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3) !important;
 }
+
+/* Path highlighting (Phase 3B) — dim non-highlighted elements */
+.react-flow[data-highlighting] .react-flow__node {
+  opacity: 0.2;
+  transition: opacity 0.2s ease;
+}
+
+.react-flow[data-highlighting] .react-flow__edge {
+  opacity: 0.1;
+  transition: opacity 0.2s ease;
+}
+
+.react-flow[data-highlighting] .react-flow__node.highlighted {
+  opacity: 1;
+}
+
+.react-flow[data-highlighting] .react-flow__edge.highlighted {
+  opacity: 1;
+}
