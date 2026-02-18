@@ -1,7 +1,8 @@
-import { useCallback, useRef, useEffect } from 'react'
+import { useCallback, useRef, useEffect, useState } from 'react'
 import {
   ReactFlow,
   Background,
+  BackgroundVariant,
   Controls,
   MiniMap,
   useNodesState,
@@ -12,16 +13,18 @@ import {
   Connection,
   ReactFlowProvider,
   useReactFlow,
-  Node as RFNode,
-  Edge as RFEdge,
-  NodeChange,
-  EdgeChange
+  SelectionMode,
+  type NodeChange,
+  type EdgeChange,
+  type OnMoveEnd
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { nodeTypes } from '../nodes'
+import { edgeTypes } from '../edges'
+import { CanvasContextMenu } from './CanvasContextMenu'
 import { useDocumentStore, useUIStore, useHistoryStore, generateId } from '../stores'
-import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData } from '../types'
+import type { InteractionNodeType, InteractionNode, InteractionEdge, InteractionNodeData, InteractionEdgeData } from '../types'
 
 function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
   switch (type) {
@@ -35,22 +38,75 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
       return { type: 'condition', label: 'Condition', condition: { id: generateId('cond'), type: 'switch' } }
     case 'end':
       return { type: 'end', label: 'End' }
-    default:
-      return { type: 'start', label: 'Start' }
+  }
+}
+
+// Node accent color mapping (matches CSS variables and node components)
+const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
+  start: '#34d399',
+  menu: '#a78bfa',
+  action: '#38bdf8',
+  condition: '#fbbf24',
+  end: '#fb7185'
+}
+
+// Quick-add hotkeys: press 1-5 to create a node at viewport center
+const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
+  '1': 'start',
+  '2': 'menu',
+  '3': 'action',
+  '4': 'condition',
+  '5': 'end'
+}
+
+function getEdgeTypeAndData(
+  connection: Connection,
+  nodes: InteractionNode[]
+): { type: string; data: InteractionEdgeData } {
+  const sourceNode = nodes.find((n) => n.id === connection.source)
+  const targetNode = nodes.find((n) => n.id === connection.target)
+  const sourceType = sourceNode?.type as InteractionNodeType | undefined
+  const targetType = targetNode?.type as InteractionNodeType | undefined
+
+  const sourceColor = sourceType ? NODE_ACCENT_COLORS[sourceType] : '#9ca3af'
+  const targetColor = targetType ? NODE_ACCENT_COLORS[targetType] : '#9ca3af'
+
+  if (sourceType === 'condition' && connection.sourceHandle === 'true') {
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'condition-true', sourceColor: '#34d399', targetColor, conditionBranch: 'true' }
+    }
+  }
+  if (sourceType === 'condition' && connection.sourceHandle === 'false') {
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'condition-false', sourceColor: '#fb7185', targetColor, conditionBranch: 'false' }
+    }
+  }
+  if (sourceType === 'menu' && connection.sourceHandle?.startsWith('choice-')) {
+    const parsed = parseInt(connection.sourceHandle.replace('choice-', ''), 10)
+    const choiceIndex = Number.isNaN(parsed) ? 0 : parsed
+    return {
+      type: 'interaction',
+      data: { edgeStyle: 'choice', sourceColor: '#a78bfa', targetColor, choiceIndex }
+    }
+  }
+
+  return {
+    type: 'interaction',
+    data: { edgeStyle: 'default', sourceColor, targetColor }
   }
 }
 
 function CanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
-  const { document, setNodes, setEdges, addNode, addEdge: addDocEdge, removeNode } = useDocumentStore()
+  const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore()
   const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } = useUIStore()
   const { push } = useHistoryStore()
   const { screenToFlowPosition } = useReactFlow()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes as any[])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges as any[])
+  const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes)
+  const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges)
 
   // Refs to track latest state for use in callbacks (avoids stale closures)
   const nodesRef = useRef(nodes)
@@ -62,21 +118,37 @@ function CanvasInner() {
     edgesRef.current = edges
   }, [edges])
 
+  // Track drag state to prevent double history push (B5)
+  const isDraggingRef = useRef(false)
+
+  // P4: Cache selectedNodeId in ref to avoid re-creating keydown handler
+  const selectedNodeIdRef = useRef(selectedNodeId)
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId
+  }, [selectedNodeId])
+
   // Sync local state when document changes (e.g., file load, undo/redo)
   useEffect(() => {
-    setNodesState(document.nodes as any[])
-    setEdgesState(document.edges as any[])
+    setNodesState(document.nodes)
+    setEdgesState(document.edges)
   }, [document.nodes, document.edges, setNodesState, setEdgesState])
 
   // Sync nodes/edges changes to document store
   const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      // Check for significant changes first
-      const significantChange = changes.some(
-        (c) => c.type === 'remove' || c.type === 'add' || (c.type === 'position' && !c.dragging)
-      )
+    (changes: NodeChange<InteractionNode>[]) => {
+      // Track drag state to prevent double history push (B5)
+      const dragStart = changes.some((c) => c.type === 'position' && c.dragging)
+      const dragEnd = changes.some((c) => c.type === 'position' && !c.dragging)
 
-      // Push current document to history BEFORE applying changes
+      if (dragStart) isDraggingRef.current = true
+
+      const isRemoveOrAdd = changes.some((c) => c.type === 'remove' || c.type === 'add')
+      const isDragComplete = dragEnd && isDraggingRef.current
+
+      if (isDragComplete) isDraggingRef.current = false
+
+      const significantChange = isRemoveOrAdd || isDragComplete
+
       if (significantChange) {
         push(useDocumentStore.getState().document)
       }
@@ -84,17 +156,17 @@ function CanvasInner() {
       // Apply changes to local ReactFlow state
       onNodesChange(changes)
 
-      // Sync to document store using computed new nodes
+      // Sync to document store (M6: applies same changes to same snapshot, producing correct result)
       if (significantChange) {
-        const newNodes = applyNodeChanges(changes, nodesRef.current) as InteractionNode[]
-        setNodes(newNodes)
+        const updatedNodes = applyNodeChanges(changes, nodesRef.current)
+        setNodes(updatedNodes)
       }
     },
     [onNodesChange, setNodes, push]
   )
 
   const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => {
+    (changes: EdgeChange<InteractionEdge>[]) => {
       const significantChange = changes.some((c) => c.type === 'remove' || c.type === 'add')
 
       // Push current document to history BEFORE applying changes
@@ -107,7 +179,7 @@ function CanvasInner() {
 
       // Sync to document store using computed new edges
       if (significantChange) {
-        const newEdges = applyEdgeChanges(changes, edgesRef.current) as InteractionEdge[]
+        const newEdges = applyEdgeChanges(changes, edgesRef.current)
         setEdges(newEdges)
       }
     },
@@ -118,25 +190,37 @@ function CanvasInner() {
     (connection: Connection) => {
       // Push current document to history before making changes
       push(useDocumentStore.getState().document)
-      const newEdge = {
+      const { type, data } = getEdgeTypeAndData(connection, nodesRef.current)
+      const newEdge: InteractionEdge = {
         ...connection,
-        id: generateId('edge')
-      } as RFEdge
+        id: generateId('edge'),
+        type,
+        data,
+        sourceHandle: connection.sourceHandle ?? undefined,
+        targetHandle: connection.targetHandle ?? undefined
+      }
       setEdgesState((eds) => addEdge(newEdge, eds))
-      addDocEdge(newEdge as InteractionEdge)
+      addDocEdge(newEdge)
     },
     [setEdgesState, addDocEdge, push]
   )
 
   const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: RFNode) => {
+    (_event: React.MouseEvent, node: InteractionNode) => {
       setSelectedNodeId(node.id)
     },
     [setSelectedNodeId]
   )
 
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    flowPosition: { x: number; y: number }
+  } | null>(null)
+
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null)
+    setContextMenu(null)
   }, [setSelectedNodeId])
 
   const onEdgeClick = useCallback(() => {
@@ -153,8 +237,11 @@ function CanvasInner() {
     (event: React.DragEvent) => {
       event.preventDefault()
 
-      const type = event.dataTransfer.getData('application/interaction-node') as InteractionNodeType
-      if (!type) return
+      const rawType = event.dataTransfer.getData('application/interaction-node')
+      if (!rawType) return
+      const validTypes: InteractionNodeType[] = ['start', 'menu', 'action', 'condition', 'end']
+      if (!validTypes.includes(rawType as InteractionNodeType)) return
+      const type = rawType as InteractionNodeType
 
       const position = screenToFlowPosition({
         x: event.clientX,
@@ -171,20 +258,52 @@ function CanvasInner() {
       // Push current document to history before making changes
       push(useDocumentStore.getState().document)
       addNode(newNode)
-      setNodesState((nds) => [...nds, newNode as unknown as RFNode])
+      setNodesState((nds) => [...nds, newNode])
     },
     [screenToFlowPosition, addNode, setNodesState, push]
   )
 
-  const onMoveEnd = useCallback(
-    (_event: any, viewport: { zoom: number }) => {
+  const onMoveEnd: OnMoveEnd = useCallback(
+    (_event, viewport) => {
       setZoom(viewport.zoom)
     },
     [setZoom]
   )
 
+  const onPaneContextMenu = useCallback(
+    (event: MouseEvent | React.MouseEvent) => {
+      event.preventDefault()
+      const flowPosition = screenToFlowPosition({ x: event.clientX, y: event.clientY })
+      const bounds = reactFlowWrapper.current?.getBoundingClientRect()
+      setContextMenu({
+        x: event.clientX - (bounds?.left ?? 0),
+        y: event.clientY - (bounds?.top ?? 0),
+        flowPosition
+      })
+    },
+    [screenToFlowPosition]
+  )
+
+  const handleContextMenuAddNode = useCallback(
+    (type: InteractionNodeType) => {
+      if (!contextMenu) return
+      const newNode: InteractionNode = {
+        id: generateId(type),
+        type,
+        position: contextMenu.flowPosition,
+        data: getDefaultNodeData(type)
+      }
+      push(useDocumentStore.getState().document)
+      addNode(newNode)
+      setNodesState((nds) => [...nds, newNode])
+      setSelectedNodeId(newNode.id)
+      setContextMenu(null)
+    },
+    [contextMenu, push, addNode, setNodesState, setSelectedNodeId]
+  )
+
   // Clipboard for copy/paste
-  const clipboardRef = useRef<InteractionNode | null>(null)
+  const clipboardRef = useRef<{ nodes: InteractionNode[]; edges: InteractionEdge[] } | null>(null)
 
   // Handle Delete key to remove selected node and Copy/Paste
   useEffect(() => {
@@ -195,74 +314,151 @@ function CanvasInner() {
         return
       }
 
-      // Delete/Backspace - remove selected node or edges
+      // Delete/Backspace - remove selected nodes and/or edges
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        // Check for selected edges first (use ref for latest value)
+        const currentNodes = nodesRef.current
         const currentEdges = edgesRef.current
-        const selectedEdges = currentEdges.filter((edge: RFEdge) => edge.selected)
-        if (selectedEdges.length > 0) {
-          e.preventDefault()
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          const selectedEdgeIds = selectedEdges.map((edge: RFEdge) => edge.id)
-          setEdgesState((eds: RFEdge[]) => eds.filter((edge) => !selectedEdgeIds.includes(edge.id)))
-          setEdges(currentEdges.filter((edge: RFEdge) => !selectedEdgeIds.includes(edge.id)) as InteractionEdge[])
-          return
-        }
+        const selectedNodes = currentNodes.filter((n) => n.selected)
+        const selectedEdgesArr = currentEdges.filter((edge) => edge.selected)
 
-        // Then check for selected node
-        if (selectedNodeId) {
-          e.preventDefault()
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          removeNode(selectedNodeId)
-          setNodesState((nds) => nds.filter((n) => n.id !== selectedNodeId))
-          // Also remove connected edges
-          setEdgesState((eds: RFEdge[]) => eds.filter((edge) => edge.source !== selectedNodeId && edge.target !== selectedNodeId))
-          setSelectedNodeId(null)
-        }
+        if (selectedNodes.length === 0 && selectedEdgesArr.length === 0) return
+
+        e.preventDefault()
+        push(useDocumentStore.getState().document)
+
+        const selectedNodeIds = new Set(selectedNodes.map((n) => n.id))
+        const selectedEdgeIds = new Set(selectedEdgesArr.map((edge) => edge.id))
+
+        // Remove selected nodes and any edges connected to them, plus selected edges
+        const newNodes = currentNodes.filter((n) => !selectedNodeIds.has(n.id))
+        const newEdges = currentEdges.filter(
+          (edge) =>
+            !selectedEdgeIds.has(edge.id) &&
+            !selectedNodeIds.has(edge.source) &&
+            !selectedNodeIds.has(edge.target)
+        )
+
+        // Updates to both ReactFlow state and Zustand are synchronous within this handler.
+        // React 18 batches them into a single render, so they cannot diverge mid-update.
+        setNodesState(newNodes)
+        setEdgesState(newEdges)
+        setNodes(newNodes)
+        setEdges(newEdges)
+        setSelectedNodeId(null)
       }
 
-      // Ctrl+C - copy selected node
+      // Ctrl+C - copy selected nodes and internal edges
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-        if (selectedNodeId) {
-          // Get fresh document state
-          const currentDoc = useDocumentStore.getState().document
-          const node = currentDoc.nodes.find((n) => n.id === selectedNodeId)
-          if (node) {
-            e.preventDefault()
-            clipboardRef.current = JSON.parse(JSON.stringify(node)) // Deep clone
-          }
+        const currentNodes = nodesRef.current
+        const currentEdges = edgesRef.current
+        let nodesToCopy = currentNodes.filter((n) => n.selected)
+
+        // Fall back to single selected node from ReactFlow state (same source)
+        if (nodesToCopy.length === 0 && selectedNodeIdRef.current) {
+          const node = currentNodes.find((n) => n.id === selectedNodeIdRef.current)
+          if (node) nodesToCopy = [node]
+        }
+
+        if (nodesToCopy.length === 0) return
+
+        e.preventDefault()
+        const selectedIds = new Set(nodesToCopy.map((n) => n.id))
+        const internalEdges = currentEdges.filter(
+          (edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target)
+        )
+
+        clipboardRef.current = {
+          nodes: structuredClone(nodesToCopy),
+          edges: structuredClone(internalEdges)
         }
       }
 
-      // Ctrl+V - paste node
+      // Ctrl+V - paste nodes and remap edges
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-        if (clipboardRef.current) {
-          e.preventDefault()
-          const pastedNode: InteractionNode = {
-            ...JSON.parse(JSON.stringify(clipboardRef.current)),
-            id: generateId(clipboardRef.current.type),
-            position: {
-              x: clipboardRef.current.position.x + 50,
-              y: clipboardRef.current.position.y + 50
-            }
-          }
-          // Update the clipboard position for subsequent pastes
-          clipboardRef.current.position = pastedNode.position
+        if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return
 
-          // Get fresh document state for history
-          push(useDocumentStore.getState().document)
-          addNode(pastedNode)
-          setNodesState((nds) => [...nds, pastedNode as unknown as RFNode])
-          setSelectedNodeId(pastedNode.id)
+        e.preventDefault()
+        push(useDocumentStore.getState().document)
+
+        const offset = { x: 20, y: 20 }
+        const idMap = new Map<string, string>()
+
+        // Create new nodes with new IDs and offset positions
+        const newNodes: InteractionNode[] = clipboardRef.current.nodes.map((node) => {
+          const newId = generateId(node.type || 'node')
+          idMap.set(node.id, newId)
+          return {
+            ...structuredClone(node),
+            id: newId,
+            position: { x: node.position.x + offset.x, y: node.position.y + offset.y },
+            selected: true
+          }
+        })
+
+        // Remap edges — only keep edges where BOTH endpoints were copied (B7)
+        const newEdges: InteractionEdge[] = clipboardRef.current.edges
+          .filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
+          .map((edge) => ({
+            ...structuredClone(edge),
+            id: generateId('edge'),
+            source: idMap.get(edge.source)!,
+            target: idMap.get(edge.target)!
+          }))
+
+        // Update clipboard for next paste — fresh clone, don't mutate original (B4)
+        clipboardRef.current = {
+          nodes: clipboardRef.current.nodes.map((n) => ({
+            ...structuredClone(n),
+            position: { x: n.position.x + offset.x, y: n.position.y + offset.y }
+          })),
+          edges: clipboardRef.current.edges
         }
+
+        // Single-source update: compute new state from refs, set both local and store (B1)
+        const allNodes = [...nodesRef.current.map((n) => ({ ...n, selected: false })), ...newNodes]
+        const allEdges = [...edgesRef.current, ...newEdges]
+        setNodesState(allNodes)
+        setEdgesState(allEdges)
+        setNodes(allNodes)
+        setEdges(allEdges)
+      }
+
+      // Number keys 1-5: quick-add node at viewport center
+      const nodeType = HOTKEY_NODE_MAP[e.key]
+      if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        const wrapper = reactFlowWrapper.current
+        if (!wrapper) return
+        const bounds = wrapper.getBoundingClientRect()
+        const centerPosition = screenToFlowPosition({
+          x: bounds.left + bounds.width / 2,
+          y: bounds.top + bounds.height / 2
+        })
+
+        const newNode: InteractionNode = {
+          id: generateId(nodeType),
+          type: nodeType,
+          position: centerPosition,
+          data: getDefaultNodeData(nodeType)
+        }
+
+        push(useDocumentStore.getState().document)
+        addNode(newNode)
+        setNodesState((nds) => [...nds, newNode])
+        setSelectedNodeId(newNode.id)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedNodeId, push, removeNode, addNode, setNodesState, setEdgesState, setSelectedNodeId, setEdges])
+  }, [push, setNodes, setEdges, setNodesState, setEdgesState, setSelectedNodeId, screenToFlowPosition])
+
+  // P6: Memoize MiniMap nodeColor to avoid re-renders
+  const miniMapNodeColor = useCallback(
+    (node: { type?: string }) =>
+      NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || 'start'] || '#9ca3af',
+    []
+  )
 
   return (
     <div ref={reactFlowWrapper} className="h-full w-full">
@@ -275,10 +471,12 @@ function CanvasInner() {
         onNodeClick={onNodeClick}
         onEdgeClick={onEdgeClick}
         onPaneClick={onPaneClick}
+        onPaneContextMenu={onPaneContextMenu}
         onDragOver={onDragOver}
         onDrop={onDrop}
         onMoveEnd={onMoveEnd}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         snapToGrid
         snapGrid={[16, 16]}
@@ -287,19 +485,37 @@ function CanvasInner() {
         maxZoom={2}
         edgesFocusable={true}
         elementsSelectable={true}
-        selectNodesOnDrag={false}
+        selectionOnDrag
+        selectionMode={SelectionMode.Partial}
         className="bg-background"
       >
-        <Background color="hsl(var(--muted-foreground) / 0.2)" gap={16} />
-        <Controls className="!bg-card !border-border !shadow-lg" />
+        <Background
+          variant={BackgroundVariant.Dots}
+          color="hsl(230 15% 15%)"
+          gap={20}
+          size={1.5}
+        />
+        <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
         {showMinimap && (
           <MiniMap
             nodeStrokeWidth={3}
-            className="!bg-card !border-border"
-            maskColor="hsl(var(--background) / 0.8)"
+            className="!bg-card/60 !border-border !rounded-xl !backdrop-blur-md"
+            maskColor="hsl(230 25% 7% / 0.8)"
+            nodeBorderRadius={4}
+            nodeColor={miniMapNodeColor}
+            pannable
+            zoomable
+            style={{ width: 180, height: 120 }}
           />
         )}
       </ReactFlow>
+      {contextMenu && (
+        <CanvasContextMenu
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onAddNode={handleContextMenuAddNode}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   )
 }

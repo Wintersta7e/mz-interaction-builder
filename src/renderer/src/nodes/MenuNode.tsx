@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { List } from 'lucide-react'
+import { cn } from '../lib/utils'
 import type { MenuNodeData } from '../types'
 
 interface MenuNodeProps {
@@ -8,11 +9,12 @@ interface MenuNodeProps {
   selected?: boolean
 }
 
-// Constants for layout calculations
-const HEADER_HEIGHT = 40 // px-3 py-2 ≈ 40px
-const CONTENT_PADDING = 12 // p-3 = 12px
-const CHOICE_HEIGHT = 30 // py-1.5 + text ≈ 30px
-const CHOICE_GAP = 8 // space-y-2 = 8px
+// Constants for handle positioning — must match the Tailwind classes below.
+// If you change px-3/py-2/p-3/py-1.5/space-y-2, update these values.
+const HEADER_HEIGHT = 40 // header: px-3 py-2 + icon ≈ 40px
+const CONTENT_PADDING = 12 // content: p-3 = 12px
+const CHOICE_HEIGHT = 30 // choice row: py-1.5 + text-sm ≈ 30px
+const CHOICE_GAP = 8 // gap: space-y-2 = 8px
 
 function MenuNodeComponent({ data, selected }: MenuNodeProps) {
   const choices = data.choices || []
@@ -33,30 +35,35 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
 
   return (
     <div
-      className={`min-w-[200px] rounded-lg border-2 bg-card shadow-lg transition-all ${
-        selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-      }`}
-      style={{ borderColor: 'hsl(271, 91%, 65%)' }}
+      className={cn(
+        'interaction-node min-w-[200px] rounded-xl border shadow-lg'
+      )}
+      style={{
+        borderColor: selected ? '#a78bfa' : 'color-mix(in srgb, #a78bfa 30%, transparent)',
+        boxShadow: selected
+          ? '0 0 0 2px #a78bfa, 0 0 15px color-mix(in srgb, #a78bfa 40%, transparent)'
+          : '0 4px 12px hsl(0 0% 0% / 0.3)'
+      }}
     >
       {/* Input Handle - on the left, vertically centered */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-3 !w-3 !border-2 !border-background !bg-muted-foreground"
-        style={{ top: getInputHandleTop(), left: -6 }}
+        className="!h-3 !w-3 !rounded-full !border-2 !border-background"
+        style={{ top: getInputHandleTop(), left: -6, backgroundColor: 'hsl(230 10% 50%)' }}
       />
 
+      {/* Accent strip */}
+      <div className="h-1 rounded-t-xl" style={{ backgroundColor: '#a78bfa' }} />
+
       {/* Header */}
-      <div
-        className="flex items-center gap-2 rounded-t-md px-3 py-2 text-white"
-        style={{ backgroundColor: 'hsl(271, 91%, 65%)' }}
-      >
-        <List className="h-4 w-4" />
-        <span className="font-semibold">{data.label || 'Choice Menu'}</span>
+      <div className="flex items-center gap-2 px-3 py-2">
+        <List className="h-4 w-4" style={{ color: '#a78bfa' }} />
+        <span className="text-sm font-medium">{data.label || 'Choice Menu'}</span>
       </div>
 
       {/* Content - Choices */}
-      <div className="p-3">
+      <div className="px-3 pb-3">
         {choices.length === 0 ? (
           <>
             <p className="text-xs text-muted-foreground">No choices defined</p>
@@ -65,8 +72,8 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
               type="source"
               position={Position.Right}
               id="default"
-              className="!h-3 !w-3 !border-2 !border-background !bg-muted-foreground"
-              style={{ top: HEADER_HEIGHT + CONTENT_PADDING + 10, right: -6 }}
+              className="!h-3 !w-3 !rounded-full !border-2 !border-background"
+              style={{ top: HEADER_HEIGHT + CONTENT_PADDING + 10, right: -6, backgroundColor: '#a78bfa' }}
             />
           </>
         ) : (
@@ -102,11 +109,11 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
           type="source"
           position={Position.Right}
           id={`choice-${index}`}
-          className="!h-3 !w-3 !border-2 !border-background"
+          className="!h-3 !w-3 !rounded-full !border-2 !border-background"
           style={{
             top: getChoiceHandleTop(index),
             right: -6,
-            backgroundColor: 'hsl(271, 91%, 65%)'
+            backgroundColor: '#a78bfa'
           }}
           title={choice.text || `Choice ${index + 1}`}
         />
@@ -115,4 +122,6 @@ function MenuNodeComponent({ data, selected }: MenuNodeProps) {
   )
 }
 
-export const MenuNode = memo(MenuNodeComponent)
+export const MenuNode = memo(MenuNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

@@ -10,13 +10,82 @@ import type {
 } from '../types'
 import { v4 as uuid } from 'uuid'
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useDebouncedSync } from '../hooks/useDebouncedSync'
+import { parseIntSafe } from '../lib/parseIntSafe'
+import { SearchableSelect } from './SearchableSelect'
+
+// ============================================
+// Debounced Input Wrappers
+// ============================================
+
+function DebouncedInput({
+  value,
+  onChange,
+  type = 'text',
+  className,
+  placeholder,
+  min,
+  max
+}: {
+  value: string | number
+  onChange: (value: string) => void
+  type?: string
+  className?: string
+  placeholder?: string
+  min?: number
+  max?: number
+}) {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(String(value ?? ''), onChange, 300)
+  return (
+    <input
+      type={type}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={flush}
+      className={className}
+      placeholder={placeholder}
+      min={min}
+      max={max}
+    />
+  )
+}
+
+function DebouncedTextarea({
+  value,
+  onChange,
+  className,
+  rows,
+  placeholder
+}: {
+  value: string
+  onChange: (value: string) => void
+  className?: string
+  rows?: number
+  placeholder?: string
+}) {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(value, onChange, 300)
+  return (
+    <textarea
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={flush}
+      className={className}
+      rows={rows}
+      placeholder={placeholder}
+    />
+  )
+}
 
 export function PropertiesPanel() {
-  const { selectedNodeId } = useUIStore()
-  const { document, updateNode } = useDocumentStore()
-
-  const selectedNode = document.nodes.find((n) => n.id === selectedNodeId)
+  const selectedNodeId = useUIStore((s) => s.selectedNodeId)
+  const updateNode = useDocumentStore((s) => s.updateNode)
+  const selectedNode = useDocumentStore(
+    useCallback(
+      (s) => (selectedNodeId ? s.document.nodes.find((n) => n.id === selectedNodeId) ?? null : null),
+      [selectedNodeId]
+    )
+  )
 
   if (!selectedNode) {
     return (
@@ -33,12 +102,11 @@ export function PropertiesPanel() {
       {/* Common properties */}
       <div className="mb-4">
         <label className="mb-1 block text-xs text-muted-foreground">Label</label>
-        <input
-          type="text"
+        <DebouncedInput
           value={selectedNode.data.label}
-          onChange={(e) =>
+          onChange={(value) =>
             updateNode(selectedNode.id, {
-              data: { ...selectedNode.data, label: e.target.value }
+              data: { ...selectedNode.data, label: value }
             })
           }
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
@@ -99,18 +167,12 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
 
       {currentCondition.type === 'switch' && (
         <div className="space-y-1">
-          <select
-            value={currentCondition.switchId || ''}
-            onChange={(e) => onChange({ ...currentCondition, switchId: parseInt(e.target.value, 10) })}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
-          >
-            <option value="">-- Select Switch --</option>
-            {switches.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.id}: {s.name || '(unnamed)'}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            items={switches}
+            value={currentCondition.switchId ?? null}
+            onChange={(id) => onChange({ ...currentCondition, switchId: id })}
+            placeholder="-- Select Switch --"
+          />
           <select
             value={currentCondition.switchValue || 'on'}
             onChange={(e) => onChange({ ...currentCondition, switchValue: e.target.value as 'on' | 'off' })}
@@ -124,18 +186,12 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
 
       {currentCondition.type === 'variable' && (
         <div className="space-y-1">
-          <select
-            value={currentCondition.variableId || ''}
-            onChange={(e) => onChange({ ...currentCondition, variableId: parseInt(e.target.value, 10) })}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
-          >
-            <option value="">-- Select Variable --</option>
-            {variables.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.id}: {v.name || '(unnamed)'}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            items={variables}
+            value={currentCondition.variableId ?? null}
+            onChange={(id) => onChange({ ...currentCondition, variableId: id })}
+            placeholder="-- Select Variable --"
+          />
           <div className="flex gap-1">
             <select
               value={currentCondition.variableOperator || '=='}
@@ -154,7 +210,10 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
             <input
               type="number"
               value={currentCondition.variableCompareValue || ''}
-              onChange={(e) => onChange({ ...currentCondition, variableCompareValue: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const val = parseIntSafe(e.target.value)
+                if (val !== undefined) onChange({ ...currentCondition, variableCompareValue: val })
+              }}
               className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
               placeholder="Value"
             />
@@ -163,9 +222,9 @@ function ConditionEditor({ condition, onChange, onRemove, label }: ConditionEdit
       )}
 
       {currentCondition.type === 'script' && (
-        <textarea
+        <DebouncedTextarea
           value={currentCondition.script || ''}
-          onChange={(e) => onChange({ ...currentCondition, script: e.target.value })}
+          onChange={(value) => onChange({ ...currentCondition, script: value })}
           className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
           rows={2}
           placeholder="JavaScript expression (returns boolean)"
@@ -184,6 +243,7 @@ interface MenuPropertiesProps {
 }
 
 function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'menu'
   const data = node.data as MenuNodeData
   const choices = data.choices || []
   const [expandedChoice, setExpandedChoice] = useState<string | null>(null)
@@ -249,10 +309,9 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     <ChevronDown className="h-3 w-3" />
                   </button>
                 </div>
-                <input
-                  type="text"
+                <DebouncedInput
                   value={choice.text}
-                  onChange={(e) => updateChoice(index, { text: e.target.value })}
+                  onChange={(value) => updateChoice(index, { text: value })}
                   className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder={`Choice ${index + 1}`}
                 />
@@ -361,11 +420,10 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
         <label className="mb-1 block text-xs text-muted-foreground">Window Background</label>
         <select
           value={data.windowBackground ?? 0}
-          onChange={(e) =>
-            updateNode(node.id, {
-              data: { ...data, windowBackground: parseInt(e.target.value, 10) as 0 | 1 | 2 }
-            })
-          }
+          onChange={(e) => {
+            const val = parseIntSafe(e.target.value, 0) as 0 | 1 | 2
+            updateNode(node.id, { data: { ...data, windowBackground: val } })
+          }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value={0}>Window</option>
@@ -378,11 +436,10 @@ function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
         <label className="mb-1 block text-xs text-muted-foreground">Window Position</label>
         <select
           value={data.windowPosition ?? 2}
-          onChange={(e) =>
-            updateNode(node.id, {
-              data: { ...data, windowPosition: parseInt(e.target.value, 10) as 0 | 1 | 2 }
-            })
-          }
+          onChange={(e) => {
+            const val = parseIntSafe(e.target.value, 2) as 0 | 1 | 2
+            updateNode(node.id, { data: { ...data, windowPosition: val } })
+          }}
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
         >
           <option value={0}>Left</option>
@@ -403,6 +460,7 @@ interface ActionPropertiesProps {
 }
 
 function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'action'
   const data = node.data as ActionNodeData
   const actions = data.actions || []
   const { switches, variables } = useProjectStore()
@@ -465,9 +523,9 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
             </div>
 
             {action.type === 'script' && (
-              <textarea
+              <DebouncedTextarea
                 value={action.script || ''}
-                onChange={(e) => updateAction(index, { script: e.target.value })}
+                onChange={(value) => updateAction(index, { script: value })}
                 className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
                 rows={3}
                 placeholder="JavaScript code..."
@@ -476,18 +534,12 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'set_switch' && (
               <div className="space-y-2">
-                <select
-                  value={action.switchId || ''}
-                  onChange={(e) => updateAction(index, { switchId: parseInt(e.target.value, 10) })}
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-                >
-                  <option value="">-- Select Switch --</option>
-                  {switches.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.id}: {s.name || '(unnamed)'}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  items={switches}
+                  value={action.switchId ?? null}
+                  onChange={(id) => updateAction(index, { switchId: id })}
+                  placeholder="-- Select Switch --"
+                />
                 <select
                   value={action.switchValue || 'on'}
                   onChange={(e) =>
@@ -504,18 +556,12 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'set_variable' && (
               <div className="space-y-2">
-                <select
-                  value={action.variableId || ''}
-                  onChange={(e) => updateAction(index, { variableId: parseInt(e.target.value, 10) })}
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-                >
-                  <option value="">-- Select Variable --</option>
-                  {variables.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.id}: {v.name || '(unnamed)'}
-                    </option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  items={variables}
+                  value={action.variableId ?? null}
+                  onChange={(id) => updateAction(index, { variableId: id })}
+                  placeholder="-- Select Variable --"
+                />
                 <div className="flex gap-2">
                   <select
                     value={action.variableOperation || 'set'}
@@ -534,7 +580,10 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                   <input
                     type="number"
                     value={action.variableValue || ''}
-                    onChange={(e) => updateAction(index, { variableValue: parseInt(e.target.value, 10) })}
+                    onChange={(e) => {
+                      const val = parseIntSafe(e.target.value)
+                      if (val !== undefined) updateAction(index, { variableValue: val })
+                    }}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Value"
                   />
@@ -546,7 +595,10 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               <input
                 type="number"
                 value={action.commonEventId || ''}
-                onChange={(e) => updateAction(index, { commonEventId: parseInt(e.target.value, 10) })}
+                onChange={(e) => {
+                  const val = parseIntSafe(e.target.value)
+                  if (val !== undefined) updateAction(index, { commonEventId: val })
+                }}
                 className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                 placeholder="Common Event ID"
               />
@@ -555,26 +607,28 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
             {action.type === 'show_text' && (
               <div className="space-y-2">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <DebouncedInput
                     value={action.faceName || ''}
-                    onChange={(e) => updateAction(index, { faceName: e.target.value })}
+                    onChange={(value) => updateAction(index, { faceName: value })}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Face Name"
                   />
                   <input
                     type="number"
                     value={action.faceIndex ?? ''}
-                    onChange={(e) => updateAction(index, { faceIndex: parseInt(e.target.value, 10) })}
+                    onChange={(e) => {
+                      const val = parseIntSafe(e.target.value)
+                      if (val !== undefined) updateAction(index, { faceIndex: val })
+                    }}
                     className="w-16 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Idx"
                     min={0}
                     max={7}
                   />
                 </div>
-                <textarea
+                <DebouncedTextarea
                   value={action.text || ''}
-                  onChange={(e) => updateAction(index, { text: e.target.value })}
+                  onChange={(value) => updateAction(index, { text: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   rows={3}
                   placeholder="Message text..."
@@ -584,28 +638,27 @@ function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
 
             {action.type === 'plugin_command' && (
               <div className="space-y-2">
-                <input
-                  type="text"
+                <DebouncedInput
                   value={action.pluginName || ''}
-                  onChange={(e) => updateAction(index, { pluginName: e.target.value })}
+                  onChange={(value) => updateAction(index, { pluginName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Plugin Name"
                 />
-                <input
-                  type="text"
+                <DebouncedInput
                   value={action.commandName || ''}
-                  onChange={(e) => updateAction(index, { commandName: e.target.value })}
+                  onChange={(value) => updateAction(index, { commandName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Command Name"
                 />
-                <textarea
+                <DebouncedTextarea
                   value={action.commandArgs ? JSON.stringify(action.commandArgs) : ''}
-                  onChange={(e) => {
+                  onChange={(value) => {
                     try {
-                      const args = e.target.value ? JSON.parse(e.target.value) : undefined
+                      const args = value ? JSON.parse(value) : undefined
                       updateAction(index, { commandArgs: args })
-                    } catch {
-                      // Invalid JSON, ignore
+                    } catch (e) {
+                      if (!(e instanceof SyntaxError)) throw e
+                      // Invalid JSON — user still typing, ignore
                     }
                   }}
                   className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
@@ -630,6 +683,7 @@ interface ConditionPropertiesProps {
 }
 
 function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
+  // Safe: parent renders this component only when selectedNode.type === 'condition'
   const data = node.data as ConditionNodeData
   const condition = data.condition || { id: uuid(), type: 'switch' as const }
   const { switches, variables } = useProjectStore()
@@ -659,18 +713,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         <>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Switch</label>
-            <select
-              value={condition.switchId || ''}
-              onChange={(e) => updateCondition({ switchId: parseInt(e.target.value, 10) })}
-              className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="">-- Select Switch --</option>
-              {switches.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.id}: {s.name || '(unnamed)'}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              items={switches}
+              value={condition.switchId ?? null}
+              onChange={(id) => updateCondition({ switchId: id })}
+              placeholder="-- Select Switch --"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Value</label>
@@ -690,18 +738,12 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
         <>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Variable</label>
-            <select
-              value={condition.variableId || ''}
-              onChange={(e) => updateCondition({ variableId: parseInt(e.target.value, 10) })}
-              className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="">-- Select Variable --</option>
-              {variables.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.id}: {v.name || '(unnamed)'}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              items={variables}
+              value={condition.variableId ?? null}
+              onChange={(id) => updateCondition({ variableId: id })}
+              placeholder="-- Select Variable --"
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Operator</label>
@@ -725,7 +767,10 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
             <input
               type="number"
               value={condition.variableCompareValue || ''}
-              onChange={(e) => updateCondition({ variableCompareValue: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const val = parseIntSafe(e.target.value)
+                if (val !== undefined) updateCondition({ variableCompareValue: val })
+              }}
               className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
               placeholder="Value"
             />
@@ -736,9 +781,9 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
       {condition.type === 'script' && (
         <div>
           <label className="mb-1 block text-xs text-muted-foreground">Script (returns boolean)</label>
-          <textarea
+          <DebouncedTextarea
             value={condition.script || ''}
-            onChange={(e) => updateCondition({ script: e.target.value })}
+            onChange={(value) => updateCondition({ script: value })}
             className="w-full rounded border border-border bg-background px-3 py-2 font-mono text-xs"
             rows={4}
             placeholder="return $gameVariables.value(1) > 0;"

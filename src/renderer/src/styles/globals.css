@@ -4,33 +4,40 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
+    --background: 230 25% 7%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 230 20% 11%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 230 20% 11%;
     --popover-foreground: 0 0% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 230 15% 18%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 230 15% 18%;
+    --muted-foreground: 230 10% 65%;
+    --accent: 230 15% 18%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 230 15% 18%;
+    --input: 230 15% 18%;
     --ring: 217 91% 60%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Node colors */
-    --node-start: 142 71% 45%;
-    --node-menu: 271 91% 65%;
-    --node-action: 217 91% 60%;
-    --node-condition: 45 93% 47%;
-    --node-end: 0 72% 51%;
+    /* Node accent colors (HSL for Tailwind) */
+    --node-start: 160 59% 52%;
+    --node-menu: 263 75% 76%;
+    --node-action: 199 89% 60%;
+    --node-condition: 43 96% 56%;
+    --node-end: 351 89% 68%;
+
+    /* Node accent hex values (for use in JS/inline styles) */
+    --node-start-hex: #34d399;
+    --node-menu-hex: #a78bfa;
+    --node-action-hex: #38bdf8;
+    --node-condition-hex: #fbbf24;
+    --node-end-hex: #fb7185;
   }
 }
 
@@ -40,9 +47,13 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     overflow: hidden;
   }
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
 }
 
 /* Titlebar drag region */
@@ -62,16 +73,46 @@
 .react-flow__handle {
   width: 10px;
   height: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px currentColor;
+}
+
+@keyframes edge-dash-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
 }
 
 .react-flow__edge-path {
-  stroke: hsl(var(--muted-foreground));
+  stroke: hsl(230 5% 65% / 0.5);
   stroke-width: 2;
+  stroke-dasharray: 6 4;
+  transition: stroke-width 0.15s ease, stroke-opacity 0.15s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3;
+  stroke-opacity: 0.8;
+  filter: drop-shadow(0 0 3px hsl(230 5% 65% / 0.3));
+  animation: edge-dash-flow 0.6s linear infinite;
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
   stroke: hsl(var(--primary));
   stroke-width: 3;
+  filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.4));
+  animation: edge-dash-flow 0.6s linear infinite;
+}
+
+.react-flow__connection-path {
+  stroke: hsl(var(--primary));
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  filter: drop-shadow(0 0 4px hsl(var(--primary) / 0.3));
 }
 
 .react-flow__minimap {
@@ -137,4 +178,15 @@ input:disabled,
 select:disabled,
 textarea:disabled {
   cursor: not-allowed;
+}
+
+/* Node styles */
+.interaction-node {
+  background: hsl(230 20% 11%);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.interaction-node:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px hsl(0 0% 0% / 0.4);
 }

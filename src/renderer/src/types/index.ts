@@ -1,9 +1,12 @@
+import type { Node, Edge } from '@xyflow/react'
+
 // Node types for the interaction builder
 export type InteractionNodeType = 'start' | 'menu' | 'action' | 'condition' | 'end'
 
-// Base node data interface
+// Base node data interface (index signature needed for React Flow Node<T> compatibility)
 export interface BaseNodeData {
   label: string
+  [key: string]: unknown
 }
 
 // Start node - entry point
@@ -112,30 +115,27 @@ export type InteractionNodeData =
   | ConditionNodeData
   | EndNodeData
 
-// Custom node type for React Flow
-export interface InteractionNode {
-  id: string
-  type: InteractionNodeType
-  position: { x: number; y: number }
-  data: InteractionNodeData
-}
+// Custom node type for React Flow — extends RF Node so it's directly compatible
+export type InteractionNode = Node<InteractionNodeData, InteractionNodeType>
 
 // Edge types
 export type InteractionEdgeType = 'default' | 'choice' | 'condition-true' | 'condition-false'
 
-// Custom edge with metadata
-export interface InteractionEdge {
-  id: string
-  source: string
-  target: string
-  sourceHandle?: string
-  targetHandle?: string
-  type?: InteractionEdgeType
-  data?: {
-    choiceIndex?: number
-    conditionBranch?: 'true' | 'false'
-  }
+// Edge style (visual style applied to rendered edges)
+export type EdgeStyle = 'default' | 'choice' | 'condition-true' | 'condition-false'
+
+// Edge data
+export interface InteractionEdgeData {
+  edgeStyle?: EdgeStyle
+  sourceColor?: string
+  targetColor?: string
+  choiceIndex?: number
+  conditionBranch?: 'true' | 'false'
+  [key: string]: unknown
 }
+
+// Custom edge type — extends RF Edge so it's directly compatible
+export type InteractionEdge = Edge<InteractionEdgeData>
 
 // Variable preset
 export interface VariablePreset {

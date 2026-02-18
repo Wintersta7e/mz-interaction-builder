@@ -11,7 +11,7 @@ interface StartNodeProps {
 function StartNodeComponent({ data, selected }: StartNodeProps) {
   return (
     <BaseNode
-      color="hsl(142, 71%, 45%)"
+      accentColor="#34d399"
       icon={<Play className="h-4 w-4" />}
       label={data.label || 'Start'}
       selected={selected}
@@ -23,4 +23,6 @@ function StartNodeComponent({ data, selected }: StartNodeProps) {
   )
 }
 
-export const StartNode = memo(StartNodeComponent)
+export const StartNode = memo(StartNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

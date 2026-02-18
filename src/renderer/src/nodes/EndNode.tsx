@@ -11,7 +11,7 @@ interface EndNodeProps {
 function EndNodeComponent({ data, selected }: EndNodeProps) {
   return (
     <BaseNode
-      color="hsl(0, 72%, 51%)"
+      accentColor="#fb7185"
       icon={<Square className="h-4 w-4" />}
       label={data.label || 'End'}
       selected={selected}
@@ -23,4 +23,6 @@ function EndNodeComponent({ data, selected }: EndNodeProps) {
   )
 }
 
-export const EndNode = memo(EndNodeComponent)
+export const EndNode = memo(EndNodeComponent, (prev, next) => {
+  return prev.selected === next.selected && prev.data === next.data
+})

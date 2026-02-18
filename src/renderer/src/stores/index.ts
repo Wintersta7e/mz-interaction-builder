@@ -175,6 +175,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     if (past.length === 0) return null
 
     const previous = past[past.length - 1]
+    // Snapshot read (not a subscription) — necessary to save current state before restoring
     const currentDoc = useDocumentStore.getState().document
 
     set({
@@ -190,6 +191,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     if (future.length === 0) return null
 
     const next = future[0]
+    // Snapshot read (not a subscription) — necessary to save current state before restoring
     const currentDoc = useDocumentStore.getState().document
 
     set({

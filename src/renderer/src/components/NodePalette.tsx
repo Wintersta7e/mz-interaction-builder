@@ -14,35 +14,35 @@ const nodeTypes: NodeTypeConfig[] = [
     type: 'start',
     label: 'Start',
     icon: <Play className="h-4 w-4" />,
-    color: 'hsl(142, 71%, 45%)',
+    color: '#34d399',
     description: 'Entry point'
   },
   {
     type: 'menu',
     label: 'Choice Menu',
     icon: <List className="h-4 w-4" />,
-    color: 'hsl(271, 91%, 65%)',
+    color: '#a78bfa',
     description: 'Show choices'
   },
   {
     type: 'action',
     label: 'Action',
     icon: <Zap className="h-4 w-4" />,
-    color: 'hsl(217, 91%, 60%)',
+    color: '#38bdf8',
     description: 'Execute actions'
   },
   {
     type: 'condition',
     label: 'Condition',
     icon: <GitBranch className="h-4 w-4" />,
-    color: 'hsl(45, 93%, 47%)',
+    color: '#fbbf24',
     description: 'Branch logic'
   },
   {
     type: 'end',
     label: 'End',
     icon: <Square className="h-4 w-4" />,
-    color: 'hsl(0, 72%, 51%)',
+    color: '#fb7185',
     description: 'Exit point'
   }
 ]
