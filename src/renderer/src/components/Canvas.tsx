@@ -155,8 +155,15 @@ function CanvasInner() {
     addNode,
     addEdge: addDocEdge,
   } = useDocumentStore();
-  const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } =
-    useUIStore();
+  const {
+    selectedNodeId,
+    setSelectedNodeId,
+    showMinimap,
+    zoom,
+    setZoom,
+    snapToGrid,
+    toggleSnapToGrid,
+  } = useUIStore();
   const { push } = useHistoryStore();
   const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow();
 
@@ -429,7 +436,9 @@ function CanvasInner() {
       const aligned = alignNodes(selected, mode);
       const alignedMap = new Map(aligned.map((n) => [n.id, n]));
       const updatedNodes = nodesRef.current.map((n) =>
-        alignedMap.has(n.id) ? { ...n, position: alignedMap.get(n.id)!.position } : n,
+        alignedMap.has(n.id)
+          ? { ...n, position: alignedMap.get(n.id)!.position }
+          : n,
       );
 
       setNodesState(updatedNodes);
@@ -511,6 +520,13 @@ function CanvasInner() {
       ) {
         e.preventDefault();
         applyAutoLayout();
+        return;
+      }
+
+      // Ctrl+G: Toggle snap-to-grid (Phase 4C)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        toggleSnapToGrid();
         return;
       }
 
@@ -765,6 +781,7 @@ function CanvasInner() {
     applyAutoLayout,
     applyAlign,
     applyDistribute,
+    toggleSnapToGrid,
   ]);
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
@@ -795,7 +812,7 @@ function CanvasInner() {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          snapToGrid
+          snapToGrid={snapToGrid}
           snapGrid={[16, 16]}
           defaultViewport={{ x: 0, y: 0, zoom }}
           minZoom={0.25}
@@ -808,9 +825,9 @@ function CanvasInner() {
         >
           <Background
             variant={BackgroundVariant.Dots}
-            color="hsl(230 15% 15%)"
+            color={snapToGrid ? "hsl(230 15% 22%)" : "hsl(230 15% 15%)"}
             gap={20}
-            size={1.5}
+            size={snapToGrid ? 2 : 1.5}
           />
           <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
           {showMinimap && (

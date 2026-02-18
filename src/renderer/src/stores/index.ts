@@ -270,8 +270,14 @@ interface UIState {
   highlightedEdgeIds: string[];
   // Bookmarks (Phase 3C)
   showBookmarks: boolean;
+  // Snap-to-grid (Phase 4C)
+  snapToGrid: boolean;
   // Auto-layout (Phase 4A)
-  layoutTrigger: { direction: 'LR' | 'TB'; nodeSpacing: number; rankSpacing: number } | null;
+  layoutTrigger: {
+    direction: "LR" | "TB";
+    nodeSpacing: number;
+    rankSpacing: number;
+  } | null;
 
   setSelectedNodeId: (id: string | null) => void;
   setSelectedEdgeId: (id: string | null) => void;
@@ -288,7 +294,12 @@ interface UIState {
   setHighlightedPaths: (nodeIds: string[], edgeIds: string[]) => void;
   clearHighlightedPaths: () => void;
   setShowBookmarks: (show: boolean) => void;
-  triggerAutoLayout: (options: { direction: 'LR' | 'TB'; nodeSpacing: number; rankSpacing: number }) => void;
+  toggleSnapToGrid: () => void;
+  triggerAutoLayout: (options: {
+    direction: "LR" | "TB";
+    nodeSpacing: number;
+    rankSpacing: number;
+  }) => void;
   clearLayoutTrigger: () => void;
 }
 
@@ -308,6 +319,7 @@ export const useUIStore = create<UIState>()(
       highlightedNodeIds: [],
       highlightedEdgeIds: [],
       showBookmarks: true,
+      snapToGrid: true,
       layoutTrigger: null,
 
       setSelectedNodeId: (selectedNodeId) =>
@@ -337,6 +349,7 @@ export const useUIStore = create<UIState>()(
       clearHighlightedPaths: () =>
         set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
       setShowBookmarks: (showBookmarks) => set({ showBookmarks }),
+      toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
       triggerAutoLayout: (layoutTrigger) => set({ layoutTrigger }),
       clearLayoutTrigger: () => set({ layoutTrigger: null }),
     }),
@@ -347,6 +360,7 @@ export const useUIStore = create<UIState>()(
         propertiesWidth: state.propertiesWidth,
         showMinimap: state.showMinimap,
         showBookmarks: state.showBookmarks,
+        snapToGrid: state.snapToGrid,
       }),
     },
   ),

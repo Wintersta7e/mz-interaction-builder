@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   LayoutGrid,
   ChevronDown,
+  Grid3x3,
 } from "lucide-react";
 import {
   useDocumentStore,
@@ -49,6 +50,8 @@ export function Toolbar({
   const { projectPath } = useProjectStore();
   const setDocument = useDocumentStore((s) => s.setDocument);
   const triggerAutoLayout = useUIStore((s) => s.triggerAutoLayout);
+  const snapToGrid = useUIStore((s) => s.snapToGrid);
+  const toggleSnapToGrid = useUIStore((s) => s.toggleSnapToGrid);
   const [layoutDirection, setLayoutDirection] = useState<"LR" | "TB">("LR");
   const [nodeSpacing, setNodeSpacing] = useState(80);
   const [rankSpacing, setRankSpacing] = useState(200);
@@ -165,7 +168,13 @@ export function Toolbar({
         {/* Layout */}
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => triggerAutoLayout({ direction: layoutDirection, nodeSpacing, rankSpacing })}
+            onClick={() =>
+              triggerAutoLayout({
+                direction: layoutDirection,
+                nodeSpacing,
+                rankSpacing,
+              })
+            }
             className="flex h-8 items-center gap-1.5 rounded-l px-2 hover:bg-muted"
             title="Auto Layout (Ctrl+Shift+L)"
           >
@@ -188,7 +197,9 @@ export function Toolbar({
                 align="start"
               >
                 <div className="space-y-3">
-                  <div className="text-xs font-medium text-muted-foreground">Layout Settings</div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Layout Settings
+                  </div>
                   <div className="space-y-1">
                     <label className="text-xs">Direction</label>
                     <div className="flex gap-1">
@@ -215,7 +226,9 @@ export function Toolbar({
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs">Node Spacing: {nodeSpacing}px</label>
+                    <label className="text-xs">
+                      Node Spacing: {nodeSpacing}px
+                    </label>
                     <input
                       type="range"
                       min={20}
@@ -226,7 +239,9 @@ export function Toolbar({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs">Rank Spacing: {rankSpacing}px</label>
+                    <label className="text-xs">
+                      Rank Spacing: {rankSpacing}px
+                    </label>
                     <input
                       type="range"
                       min={50}
@@ -237,7 +252,13 @@ export function Toolbar({
                     />
                   </div>
                   <button
-                    onClick={() => triggerAutoLayout({ direction: layoutDirection, nodeSpacing, rankSpacing })}
+                    onClick={() =>
+                      triggerAutoLayout({
+                        direction: layoutDirection,
+                        nodeSpacing,
+                        rankSpacing,
+                      })
+                    }
                     className="w-full rounded bg-primary px-2 py-1.5 text-xs text-primary-foreground hover:bg-primary/90"
                   >
                     Apply Layout
@@ -247,6 +268,17 @@ export function Toolbar({
             </Popover.Portal>
           </Popover.Root>
         </div>
+
+        {/* Grid snap */}
+        <button
+          onClick={toggleSnapToGrid}
+          className={`flex h-8 w-8 items-center justify-center rounded hover:bg-muted ${
+            snapToGrid ? "text-primary" : "text-muted-foreground"
+          }`}
+          title={`Snap to Grid (Ctrl+G) — ${snapToGrid ? "On" : "Off"}`}
+        >
+          <Grid3x3 className="h-4 w-4" />
+        </button>
 
         <div className="mx-2 h-6 w-px bg-border" />
 
