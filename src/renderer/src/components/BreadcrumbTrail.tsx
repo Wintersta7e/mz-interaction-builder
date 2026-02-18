@@ -2,6 +2,11 @@ import { useMemo, useCallback } from 'react'
 import { ChevronRight, MoreHorizontal } from 'lucide-react'
 import { useDocumentStore, useUIStore } from '../stores'
 import { findShortestPath } from '../lib/graphTraversal'
+import type { DocumentState } from '../stores'
+
+// Stable selector: returns primitive string|null — only re-renders when start node ID changes
+const selectStartNodeId = (s: DocumentState) =>
+  s.document.nodes.find((n) => n.type === 'start')?.id ?? null
 
 interface BreadcrumbTrailProps {
   onNavigateToNode: (nodeId: string) => void
@@ -10,15 +15,15 @@ interface BreadcrumbTrailProps {
 export function BreadcrumbTrail({ onNavigateToNode }: BreadcrumbTrailProps) {
   const nodes = useDocumentStore((s) => s.document.nodes)
   const edges = useDocumentStore((s) => s.document.edges)
+  const startNodeId = useDocumentStore(selectStartNodeId)
   const selectedNodeId = useUIStore((s) => s.selectedNodeId)
 
+  // M2: Only recompute BFS when edges, selection, or start node changes — not on position updates
   const path = useMemo(() => {
-    if (!selectedNodeId) return null
-    const startNode = nodes.find((n) => n.type === 'start')
-    if (!startNode) return null
-    if (startNode.id === selectedNodeId) return [startNode.id]
-    return findShortestPath(startNode.id, selectedNodeId, nodes, edges)
-  }, [selectedNodeId, nodes, edges])
+    if (!selectedNodeId || !startNodeId) return null
+    if (startNodeId === selectedNodeId) return [startNodeId]
+    return findShortestPath(startNodeId, selectedNodeId, edges)
+  }, [selectedNodeId, startNodeId, edges])
 
   const handleClick = useCallback(
     (nodeId: string) => {

@@ -210,11 +210,13 @@ textarea:disabled {
 .react-flow[data-highlighting] .react-flow__node {
   opacity: 0.2;
   transition: opacity 0.2s ease;
+  will-change: opacity;
 }
 
 .react-flow[data-highlighting] .react-flow__edge {
   opacity: 0.1;
   transition: opacity 0.2s ease;
+  will-change: opacity;
 }
 
 .react-flow[data-highlighting] .react-flow__node.highlighted {

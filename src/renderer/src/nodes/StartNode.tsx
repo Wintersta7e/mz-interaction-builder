@@ -11,7 +11,7 @@ interface StartNodeProps {
 }
 
 function StartNodeComponent({ id, data, selected }: StartNodeProps) {
-  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? []
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
 
   return (
     <BaseNode
@@ -19,7 +19,7 @@ function StartNodeComponent({ id, data, selected }: StartNodeProps) {
       icon={<Play className="h-4 w-4" />}
       label={data.label || 'Start'}
       selected={selected}
-      bookmarked={bookmarks.includes(id)}
+      bookmarked={bookmarked}
       hasInput={false}
       hasOutput={true}
     >

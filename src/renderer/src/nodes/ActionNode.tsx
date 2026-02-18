@@ -11,7 +11,7 @@ interface ActionNodeProps {
 }
 
 function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
-  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? []
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
   const actions = data.actions || []
 
   const getActionLabel = (type: string): string => {
@@ -39,7 +39,7 @@ function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
       icon={<Zap className="h-4 w-4" />}
       label={data.label || 'Action'}
       selected={selected}
-      bookmarked={bookmarks.includes(id)}
+      bookmarked={bookmarked}
       hasInput={true}
       hasOutput={true}
     >

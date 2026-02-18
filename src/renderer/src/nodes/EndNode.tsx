@@ -11,7 +11,7 @@ interface EndNodeProps {
 }
 
 function EndNodeComponent({ id, data, selected }: EndNodeProps) {
-  const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? []
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id))
 
   return (
     <BaseNode
@@ -19,7 +19,7 @@ function EndNodeComponent({ id, data, selected }: EndNodeProps) {
       icon={<Square className="h-4 w-4" />}
       label={data.label || 'End'}
       selected={selected}
-      bookmarked={bookmarks.includes(id)}
+      bookmarked={bookmarked}
       hasInput={true}
       hasOutput={false}
     >

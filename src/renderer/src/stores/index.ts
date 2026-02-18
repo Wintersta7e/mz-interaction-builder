@@ -12,7 +12,7 @@ import { v4 as uuid } from 'uuid'
 // ============================================
 // Document Store - Main graph state
 // ============================================
-interface DocumentState {
+export interface DocumentState {
   document: InteractionDocument
   savedPath: string | null
   isDirty: boolean
@@ -268,6 +268,7 @@ interface UIState {
   setSearchTerm: (term: string) => void
   setSearchMatches: (matches: string[]) => void
   setSearchCurrentIndex: (index: number) => void
+  setSearchResults: (matches: string[], currentIndex: number) => void
   setHighlightedPaths: (nodeIds: string[], edgeIds: string[]) => void
   clearHighlightedPaths: () => void
   setShowBookmarks: (show: boolean) => void
@@ -301,6 +302,7 @@ export const useUIStore = create<UIState>()(
       setSearchTerm: (searchTerm) => set({ searchTerm }),
       setSearchMatches: (searchMatches) => set({ searchMatches }),
       setSearchCurrentIndex: (searchCurrentIndex) => set({ searchCurrentIndex }),
+      setSearchResults: (searchMatches, searchCurrentIndex) => set({ searchMatches, searchCurrentIndex }),
       setHighlightedPaths: (highlightedNodeIds, highlightedEdgeIds) => set({ highlightedNodeIds, highlightedEdgeIds }),
       clearHighlightedPaths: () => set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
       setShowBookmarks: (showBookmarks) => set({ showBookmarks })

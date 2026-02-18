@@ -1,4 +1,4 @@
-import type { InteractionNode, InteractionEdge } from '../types'
+import type { InteractionEdge } from '../types'
 
 interface TraversalResult {
   nodeIds: Set<string>
@@ -8,15 +8,15 @@ interface TraversalResult {
 /** BFS backward from nodeId, collecting all upstream nodes and edges */
 export function findUpstreamNodes(
   nodeId: string,
-  _nodes: InteractionNode[],
   edges: InteractionEdge[]
 ): TraversalResult {
   const nodeIds = new Set<string>([nodeId])
   const edgeIds = new Set<string>()
   const queue = [nodeId]
+  let head = 0
 
-  while (queue.length > 0) {
-    const current = queue.shift()!
+  while (head < queue.length) {
+    const current = queue[head++]
     for (const edge of edges) {
       if (edge.target === current && !nodeIds.has(edge.source)) {
         nodeIds.add(edge.source)
@@ -32,15 +32,15 @@ export function findUpstreamNodes(
 /** BFS forward from nodeId, collecting all downstream nodes and edges */
 export function findDownstreamNodes(
   nodeId: string,
-  _nodes: InteractionNode[],
   edges: InteractionEdge[]
 ): TraversalResult {
   const nodeIds = new Set<string>([nodeId])
   const edgeIds = new Set<string>()
   const queue = [nodeId]
+  let head = 0
 
-  while (queue.length > 0) {
-    const current = queue.shift()!
+  while (head < queue.length) {
+    const current = queue[head++]
     for (const edge of edges) {
       if (edge.source === current && !nodeIds.has(edge.target)) {
         nodeIds.add(edge.target)
@@ -57,7 +57,6 @@ export function findDownstreamNodes(
 export function findShortestPath(
   sourceId: string,
   targetId: string,
-  _nodes: InteractionNode[],
   edges: InteractionEdge[]
 ): string[] | null {
   if (sourceId === targetId) return [sourceId]
@@ -65,9 +64,10 @@ export function findShortestPath(
   const visited = new Set<string>([sourceId])
   const parent = new Map<string, string>()
   const queue = [sourceId]
+  let head = 0
 
-  while (queue.length > 0) {
-    const current = queue.shift()!
+  while (head < queue.length) {
+    const current = queue[head++]
     for (const edge of edges) {
       if (edge.source === current && !visited.has(edge.target)) {
         visited.add(edge.target)
