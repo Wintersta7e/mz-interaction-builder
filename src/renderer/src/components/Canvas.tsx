@@ -31,6 +31,9 @@ import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
 import { autoLayout } from "../lib/autoLayout";
 import type { AutoLayoutOptions } from "../lib/autoLayout";
+import { alignNodes, distributeNodes } from "../lib/alignNodes";
+import type { AlignMode, DistributeMode } from "../lib/alignNodes";
+import { AlignmentToolbar } from "./AlignmentToolbar";
 import {
   useDocumentStore,
   useUIStore,
@@ -415,6 +418,46 @@ function CanvasInner() {
     [push, setNodesState, setNodes, fitView],
   );
 
+  // Align selected nodes (Phase 4B)
+  const applyAlign = useCallback(
+    (mode: AlignMode) => {
+      const selected = nodesRef.current.filter((n) => n.selected);
+      if (selected.length < 2) return;
+
+      push(useDocumentStore.getState().document);
+
+      const aligned = alignNodes(selected, mode);
+      const alignedMap = new Map(aligned.map((n) => [n.id, n]));
+      const updatedNodes = nodesRef.current.map((n) =>
+        alignedMap.has(n.id) ? { ...n, position: alignedMap.get(n.id)!.position } : n,
+      );
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+    },
+    [push, setNodesState, setNodes],
+  );
+
+  // Distribute selected nodes (Phase 4B)
+  const applyDistribute = useCallback(
+    (mode: DistributeMode) => {
+      const selected = nodesRef.current.filter((n) => n.selected);
+      if (selected.length < 3) return; // need 3+ to distribute
+
+      push(useDocumentStore.getState().document);
+
+      const distributed = distributeNodes(selected, mode);
+      const distMap = new Map(distributed.map((n) => [n.id, n]));
+      const updatedNodes = nodesRef.current.map((n) =>
+        distMap.has(n.id) ? { ...n, position: distMap.get(n.id)!.position } : n,
+      );
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+    },
+    [push, setNodesState, setNodes],
+  );
+
   // Watch for layout trigger from Toolbar (Phase 4A)
   const layoutTrigger = useUIStore((s) => s.layoutTrigger);
   const clearLayoutTrigger = useUIStore((s) => s.clearLayoutTrigger);
@@ -461,7 +504,11 @@ function CanvasInner() {
       }
 
       // Ctrl+Shift+L: Auto-layout (Phase 4A)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "l") {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "l"
+      ) {
         e.preventDefault();
         applyAutoLayout();
         return;
@@ -480,6 +527,24 @@ function CanvasInner() {
         target.isContentEditable
       ) {
         return;
+      }
+
+      // Alt+L/C/R/T/M/B: Alignment shortcuts (Phase 4B)
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const alignMap: Record<string, AlignMode> = {
+          l: "left",
+          c: "center",
+          r: "right",
+          t: "top",
+          m: "middle",
+          b: "bottom",
+        };
+        const mode = alignMap[e.key.toLowerCase()];
+        if (mode) {
+          e.preventDefault();
+          applyAlign(mode);
+          return;
+        }
       }
 
       // Delete/Backspace - remove selected nodes and/or edges
@@ -698,6 +763,8 @@ function CanvasInner() {
     getNodes,
     clearHighlightedPaths,
     applyAutoLayout,
+    applyAlign,
+    applyDistribute,
   ]);
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
@@ -768,6 +835,11 @@ function CanvasInner() {
         )}
         {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
         <BookmarkPanel onNavigateToNode={navigateToNode} />
+        <AlignmentToolbar
+          selectedNodes={nodes.filter((n) => n.selected)}
+          onAlign={applyAlign}
+          onDistribute={applyDistribute}
+        />
       </div>
     </div>
   );
