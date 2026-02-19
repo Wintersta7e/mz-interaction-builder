@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Play, List, Zap, GitBranch, Square } from "lucide-react";
+import { Play, List, Zap, GitBranch, Square, Group } from "lucide-react";
 import type { InteractionNodeType } from "../types";
 
 interface MenuPosition {
@@ -48,6 +48,12 @@ const menuItems: {
     label: "End",
     icon: <Square className="h-4 w-4" />,
     color: "#fb7185",
+  },
+  {
+    type: "group",
+    label: "Group",
+    icon: <Group className="h-4 w-4" />,
+    color: "#60a5fa",
   },
 ];
 

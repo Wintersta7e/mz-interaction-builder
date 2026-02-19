@@ -168,6 +168,10 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       case "end":
         // End node - no commands needed, just stops
         return;
+
+      case "group":
+        // Visual container — not exported
+        return;
     }
 
     // Process next connected node

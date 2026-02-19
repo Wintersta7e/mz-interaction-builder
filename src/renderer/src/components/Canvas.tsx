@@ -29,6 +29,13 @@ import { BookmarkPanel } from "./BookmarkPanel";
 import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
+import { autoLayout } from "../lib/autoLayout";
+import type { AutoLayoutOptions } from "../lib/autoLayout";
+import { alignNodes, distributeNodes } from "../lib/alignNodes";
+import type { AlignMode, DistributeMode } from "../lib/alignNodes";
+import { AlignmentToolbar } from "./AlignmentToolbar";
+import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
+import { AlignmentGuides } from "./AlignmentGuides";
 import {
   useDocumentStore,
   useUIStore,
@@ -66,6 +73,8 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
       };
     case "end":
       return { type: "end", label: "End" };
+    case "group":
+      return { type: "group", label: "Group", color: "blue", collapsed: false };
   }
 }
 
@@ -76,15 +85,17 @@ const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
   action: "#38bdf8",
   condition: "#fbbf24",
   end: "#fb7185",
+  group: "#60a5fa",
 };
 
-// Quick-add hotkeys: press 1-5 to create a node at viewport center
+// Quick-add hotkeys: press 1-6 to create a node at viewport center
 const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
   "1": "start",
   "2": "menu",
   "3": "action",
   "4": "condition",
   "5": "end",
+  "6": "group",
 };
 
 function getEdgeTypeAndData(
@@ -150,8 +161,15 @@ function CanvasInner() {
     addNode,
     addEdge: addDocEdge,
   } = useDocumentStore();
-  const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom } =
-    useUIStore();
+  const {
+    selectedNodeId,
+    setSelectedNodeId,
+    showMinimap,
+    zoom,
+    setZoom,
+    snapToGrid,
+    toggleSnapToGrid,
+  } = useUIStore();
   const { push } = useHistoryStore();
   const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow();
 
@@ -207,6 +225,31 @@ function CanvasInner() {
       const isDragComplete = dragEnd && isDraggingRef.current;
 
       if (isDragComplete) isDraggingRef.current = false;
+
+      // Compute alignment guides during drag (Phase 4E)
+      const positionChanges = changes.filter(
+        (
+          c,
+        ): c is NodeChange<InteractionNode> & {
+          type: "position";
+          dragging: true;
+        } => c.type === "position" && "dragging" in c && c.dragging === true,
+      );
+
+      if (positionChanges.length === 1) {
+        const draggedId = positionChanges[0].id;
+        const draggedNode = nodesRef.current.find((n) => n.id === draggedId);
+        if (draggedNode && positionChanges[0].position) {
+          const updatedDragging = {
+            ...draggedNode,
+            position: positionChanges[0].position,
+          };
+          const others = nodesRef.current.filter((n) => n.id !== draggedId);
+          setGuideLines(computeGuideLines(updatedDragging, others));
+        }
+      }
+
+      if (isDragComplete) setGuideLines([]);
 
       const significantChange = isRemoveOrAdd || isDragComplete;
 
@@ -290,6 +333,9 @@ function CanvasInner() {
     [setSelectedNodeId, setHighlightedPaths, clearHighlightedPaths],
   );
 
+  // Alignment guide lines shown during node drag (Phase 4E)
+  const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
+
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -326,6 +372,7 @@ function CanvasInner() {
         "action",
         "condition",
         "end",
+        "group",
       ];
       if (!validTypes.includes(rawType as InteractionNodeType)) return;
       const type = rawType as InteractionNodeType;
@@ -340,6 +387,9 @@ function CanvasInner() {
         type,
         position,
         data: getDefaultNodeData(type),
+        ...(type === "group"
+          ? { style: { width: 400, height: 300 }, zIndex: -1 }
+          : {}),
       };
 
       // Push current document to history before making changes
@@ -391,6 +441,81 @@ function CanvasInner() {
     [getNodes, setCenter, setSelectedNodeId],
   );
 
+  // Auto-layout (Phase 4A)
+  const applyAutoLayout = useCallback(
+    (options: AutoLayoutOptions = {}) => {
+      const currentNodes = nodesRef.current;
+      const currentEdges = edgesRef.current;
+      if (currentNodes.length === 0) return;
+
+      push(useDocumentStore.getState().document);
+
+      const positions = autoLayout(currentNodes, currentEdges, options);
+      const updatedNodes = currentNodes.map((node) => {
+        const pos = positions.get(node.id);
+        return pos ? { ...node, position: pos } : node;
+      });
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+      fitView({ padding: 0.1, duration: 300 });
+    },
+    [push, setNodesState, setNodes, fitView],
+  );
+
+  // Align selected nodes (Phase 4B)
+  const applyAlign = useCallback(
+    (mode: AlignMode) => {
+      const selected = nodesRef.current.filter((n) => n.selected);
+      if (selected.length < 2) return;
+
+      push(useDocumentStore.getState().document);
+
+      const aligned = alignNodes(selected, mode);
+      const alignedMap = new Map(aligned.map((n) => [n.id, n]));
+      const updatedNodes = nodesRef.current.map((n) =>
+        alignedMap.has(n.id)
+          ? { ...n, position: alignedMap.get(n.id)!.position }
+          : n,
+      );
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+    },
+    [push, setNodesState, setNodes],
+  );
+
+  // Distribute selected nodes (Phase 4B)
+  const applyDistribute = useCallback(
+    (mode: DistributeMode) => {
+      const selected = nodesRef.current.filter((n) => n.selected);
+      if (selected.length < 3) return; // need 3+ to distribute
+
+      push(useDocumentStore.getState().document);
+
+      const distributed = distributeNodes(selected, mode);
+      const distMap = new Map(distributed.map((n) => [n.id, n]));
+      const updatedNodes = nodesRef.current.map((n) =>
+        distMap.has(n.id) ? { ...n, position: distMap.get(n.id)!.position } : n,
+      );
+
+      setNodesState(updatedNodes);
+      setNodes(updatedNodes);
+    },
+    [push, setNodesState, setNodes],
+  );
+
+  // Watch for layout trigger from Toolbar (Phase 4A)
+  const layoutTrigger = useUIStore((s) => s.layoutTrigger);
+  const clearLayoutTrigger = useUIStore((s) => s.clearLayoutTrigger);
+
+  useEffect(() => {
+    if (layoutTrigger) {
+      applyAutoLayout(layoutTrigger);
+      clearLayoutTrigger();
+    }
+  }, [layoutTrigger, applyAutoLayout, clearLayoutTrigger]);
+
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return;
@@ -399,6 +524,9 @@ function CanvasInner() {
         type,
         position: contextMenu.flowPosition,
         data: getDefaultNodeData(type),
+        ...(type === "group"
+          ? { style: { width: 400, height: 300 }, zIndex: -1 }
+          : {}),
       };
       push(useDocumentStore.getState().document);
       addNode(newNode);
@@ -425,6 +553,24 @@ function CanvasInner() {
         return;
       }
 
+      // Ctrl+Shift+L: Auto-layout (Phase 4A)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "l"
+      ) {
+        e.preventDefault();
+        applyAutoLayout();
+        return;
+      }
+
+      // Ctrl+G: Toggle snap-to-grid (Phase 4C)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        toggleSnapToGrid();
+        return;
+      }
+
       // Escape: clear path highlights (Phase 3B)
       if (e.key === "Escape") {
         clearHighlightedPaths();
@@ -438,6 +584,24 @@ function CanvasInner() {
         target.isContentEditable
       ) {
         return;
+      }
+
+      // Alt+L/C/R/T/M/B: Alignment shortcuts (Phase 4B)
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const alignMap: Record<string, AlignMode> = {
+          l: "left",
+          c: "center",
+          r: "right",
+          t: "top",
+          m: "middle",
+          b: "bottom",
+        };
+        const mode = alignMap[e.key.toLowerCase()];
+        if (mode) {
+          e.preventDefault();
+          applyAlign(mode);
+          return;
+        }
       }
 
       // Delete/Backspace - remove selected nodes and/or edges
@@ -615,7 +779,7 @@ function CanvasInner() {
         }
       }
 
-      // Number keys 1-5: quick-add node at viewport center
+      // Number keys 1-6: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key];
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
@@ -632,6 +796,9 @@ function CanvasInner() {
           type: nodeType,
           position: centerPosition,
           data: getDefaultNodeData(nodeType),
+          ...(nodeType === "group"
+            ? { style: { width: 400, height: 300 }, zIndex: -1 }
+            : {}),
         };
 
         push(useDocumentStore.getState().document);
@@ -655,6 +822,10 @@ function CanvasInner() {
     setCenter,
     getNodes,
     clearHighlightedPaths,
+    applyAutoLayout,
+    applyAlign,
+    applyDistribute,
+    toggleSnapToGrid,
   ]);
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
@@ -685,7 +856,7 @@ function CanvasInner() {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
-          snapToGrid
+          snapToGrid={snapToGrid}
           snapGrid={[16, 16]}
           defaultViewport={{ x: 0, y: 0, zoom }}
           minZoom={0.25}
@@ -698,9 +869,9 @@ function CanvasInner() {
         >
           <Background
             variant={BackgroundVariant.Dots}
-            color="hsl(230 15% 15%)"
+            color={snapToGrid ? "hsl(230 15% 22%)" : "hsl(230 15% 15%)"}
             gap={20}
-            size={1.5}
+            size={snapToGrid ? 2 : 1.5}
           />
           <Controls className="!bg-card/80 !border-border !shadow-lg !backdrop-blur-sm !rounded-xl" />
           {showMinimap && (
@@ -716,6 +887,7 @@ function CanvasInner() {
             />
           )}
         </ReactFlow>
+        <AlignmentGuides guides={guideLines} />
         {contextMenu && (
           <CanvasContextMenu
             position={{ x: contextMenu.x, y: contextMenu.y }}
@@ -725,6 +897,11 @@ function CanvasInner() {
         )}
         {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
         <BookmarkPanel onNavigateToNode={navigateToNode} />
+        <AlignmentToolbar
+          selectedNodes={nodes.filter((n) => n.selected)}
+          onAlign={applyAlign}
+          onDistribute={applyDistribute}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import type {
   MenuNodeData,
   ActionNodeData,
   ConditionNodeData,
+  GroupColor,
   MenuChoice,
   Action,
   Condition,
@@ -22,6 +23,15 @@ import { useState, useCallback } from "react";
 import { useDebouncedSync } from "../hooks/useDebouncedSync";
 import { parseIntSafe } from "../lib/parseIntSafe";
 import { SearchableSelect } from "./SearchableSelect";
+
+const GROUP_COLORS: Record<string, string> = {
+  blue: "hsl(210 80% 60%)",
+  green: "hsl(150 60% 50%)",
+  purple: "hsl(270 60% 60%)",
+  amber: "hsl(40 90% 55%)",
+  rose: "hsl(350 70% 60%)",
+  gray: "hsl(220 10% 50%)",
+};
 
 // ============================================
 // Debounced Input Wrappers
@@ -147,6 +157,36 @@ export function PropertiesPanel() {
       )}
       {selectedNode.type === "condition" && (
         <ConditionProperties node={selectedNode} updateNode={updateNode} />
+      )}
+      {selectedNode.type === "group" && selectedNode.data.type === "group" && (
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              Color
+            </label>
+            <div className="flex gap-1.5">
+              {(
+                ["blue", "green", "purple", "amber", "rose", "gray"] as const
+              ).map((c) => (
+                <button
+                  key={c}
+                  onClick={() =>
+                    updateNode(selectedNode.id, {
+                      data: { ...selectedNode.data, color: c as GroupColor },
+                    })
+                  }
+                  className={`h-6 w-6 rounded-full border-2 ${
+                    selectedNode.data.color === c
+                      ? "border-white"
+                      : "border-transparent"
+                  }`}
+                  style={{ backgroundColor: GROUP_COLORS[c] }}
+                  title={c}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
