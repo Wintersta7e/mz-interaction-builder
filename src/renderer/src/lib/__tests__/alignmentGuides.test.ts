@@ -122,14 +122,22 @@ describe("computeGuideLines", () => {
       id: "a",
       type: "action",
       position: { x: 100, y: 0 },
-      data: { type: "action", label: "a", actions: [] } as InteractionNode["data"],
+      data: {
+        type: "action",
+        label: "a",
+        actions: [],
+      } as InteractionNode["data"],
     };
     const others: InteractionNode[] = [
       {
         id: "b",
         type: "action",
         position: { x: 100, y: 200 },
-        data: { type: "action", label: "b", actions: [] } as InteractionNode["data"],
+        data: {
+          type: "action",
+          label: "b",
+          actions: [],
+        } as InteractionNode["data"],
       },
     ];
     const guides = computeGuideLines(dragging, others);
@@ -140,10 +148,7 @@ describe("computeGuideLines", () => {
 
   it("returns guides from multiple other nodes", () => {
     const dragging = makeNode("a", 100, 50);
-    const others = [
-      makeNode("b", 100, 200),
-      makeNode("c", 0, 50),
-    ];
+    const others = [makeNode("b", 100, 200), makeNode("c", 0, 50)];
     const guides = computeGuideLines(dragging, others);
     expect(
       guides.some((g) => g.orientation === "vertical" && g.position === 100),

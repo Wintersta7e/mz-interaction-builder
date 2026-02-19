@@ -1,5 +1,13 @@
 import { Bookmark, ChevronDown, ChevronRight, X } from "lucide-react";
-import { Play, List, Zap, GitBranch, Square, Group } from "lucide-react";
+import {
+  Play,
+  List,
+  Zap,
+  GitBranch,
+  Square,
+  Group,
+  MessageSquare,
+} from "lucide-react";
 import { useDocumentStore, useUIStore } from "../stores";
 import type { InteractionNodeType } from "../types";
 
@@ -10,6 +18,7 @@ const nodeIcons: Record<InteractionNodeType, React.ReactNode> = {
   condition: <GitBranch className="h-3 w-3" />,
   end: <Square className="h-3 w-3" />,
   group: <Group className="h-3 w-3" />,
+  comment: <MessageSquare className="h-3 w-3" />,
 };
 
 const nodeColors: Record<InteractionNodeType, string> = {
@@ -19,6 +28,7 @@ const nodeColors: Record<InteractionNodeType, string> = {
   condition: "#fbbf24",
   end: "#fb7185",
   group: "#60a5fa",
+  comment: "#f59e0b",
 };
 
 interface BookmarkPanelProps {

@@ -124,7 +124,11 @@ describe("autoLayout", () => {
         id: "g1",
         type: "group",
         position: { x: 0, y: 0 },
-        data: { type: "group", label: "Group", color: "blue" } as InteractionNode["data"],
+        data: {
+          type: "group",
+          label: "Group",
+          color: "blue",
+        } as InteractionNode["data"],
       },
     ];
     const edges: InteractionEdge[] = [{ id: "e1", source: "a", target: "b" }];
@@ -133,6 +137,29 @@ describe("autoLayout", () => {
 
     expect(positions.size).toBe(2);
     expect(positions.has("g1")).toBe(false);
+  });
+
+  it("excludes comment nodes from layout", () => {
+    const nodes: InteractionNode[] = [
+      makeNode("a", "start"),
+      makeNode("b", "end"),
+      {
+        id: "c1",
+        type: "comment",
+        position: { x: 0, y: 0 },
+        data: {
+          type: "comment",
+          label: "Note",
+          text: "test",
+        } as InteractionNode["data"],
+      },
+    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "a", target: "b" }];
+
+    const positions = autoLayout(nodes, edges);
+
+    expect(positions.size).toBe(2);
+    expect(positions.has("c1")).toBe(false);
   });
 
   it("uses measured dimensions when available", () => {
@@ -148,10 +175,13 @@ describe("autoLayout", () => {
     const positions = autoLayout(nodes, edges, { direction: "LR" });
 
     const defaultNodes = [makeNode("a", "start"), makeNode("b", "end")];
-    const defaultPositions = autoLayout(defaultNodes, edges, { direction: "LR" });
+    const defaultPositions = autoLayout(defaultNodes, edges, {
+      direction: "LR",
+    });
 
     const measuredGap = positions.get("b")!.x - positions.get("a")!.x;
-    const defaultGap = defaultPositions.get("b")!.x - defaultPositions.get("a")!.x;
+    const defaultGap =
+      defaultPositions.get("b")!.x - defaultPositions.get("a")!.x;
     expect(measuredGap).toBeGreaterThan(defaultGap);
   });
 

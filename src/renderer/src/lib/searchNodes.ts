@@ -4,6 +4,7 @@ import type {
   MenuNodeData,
   ActionNodeData,
   ConditionNodeData,
+  CommentNodeData,
 } from "../types";
 
 /** Extract all searchable text from a node as a single lowercase string */
@@ -30,6 +31,11 @@ export function getSearchableText(node: InteractionNode): string {
     case "condition": {
       const condData = data as ConditionNodeData;
       if (condData.condition.script) parts.push(condData.condition.script);
+      break;
+    }
+    case "comment": {
+      const commentData = data as CommentNodeData;
+      if (commentData.text) parts.push(commentData.text);
       break;
     }
   }

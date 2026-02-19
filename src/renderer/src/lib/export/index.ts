@@ -170,7 +170,8 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
         return;
 
       case "group":
-        // Visual container — not exported
+      case "comment":
+        // Visual-only nodes — not exported
         return;
     }
 

@@ -71,7 +71,9 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
 
       {/* Content */}
       <div className="relative px-3 pb-3">
-        <p className="text-xs text-muted-foreground">{getConditionSummary()}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
+          {getConditionSummary()}
+        </p>
 
         {/* Branch labels */}
         <div className="mt-2 flex justify-between text-xs">
