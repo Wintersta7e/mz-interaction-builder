@@ -115,4 +115,59 @@ describe("autoLayout", () => {
 
     expect(wideGap).toBeGreaterThan(tightGap);
   });
+
+  it("excludes group nodes from layout", () => {
+    const nodes: InteractionNode[] = [
+      makeNode("a", "start"),
+      makeNode("b", "end"),
+      {
+        id: "g1",
+        type: "group",
+        position: { x: 0, y: 0 },
+        data: { type: "group", label: "Group", color: "blue" } as InteractionNode["data"],
+      },
+    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "a", target: "b" }];
+
+    const positions = autoLayout(nodes, edges);
+
+    expect(positions.size).toBe(2);
+    expect(positions.has("g1")).toBe(false);
+  });
+
+  it("uses measured dimensions when available", () => {
+    const nodes: InteractionNode[] = [
+      {
+        ...makeNode("a", "start"),
+        measured: { width: 300, height: 150 },
+      },
+      makeNode("b", "end"),
+    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "a", target: "b" }];
+
+    const positions = autoLayout(nodes, edges, { direction: "LR" });
+
+    const defaultNodes = [makeNode("a", "start"), makeNode("b", "end")];
+    const defaultPositions = autoLayout(defaultNodes, edges, { direction: "LR" });
+
+    const measuredGap = positions.get("b")!.x - positions.get("a")!.x;
+    const defaultGap = defaultPositions.get("b")!.x - defaultPositions.get("a")!.x;
+    expect(measuredGap).toBeGreaterThan(defaultGap);
+  });
+
+  it("handles disconnected nodes (no edges between them)", () => {
+    const nodes = [
+      makeNode("a", "start", 0, 0),
+      makeNode("b", "action", 500, 0),
+      makeNode("c", "end", 1000, 0),
+    ];
+
+    const positions = autoLayout(nodes, []);
+
+    expect(positions.size).toBe(3);
+    for (const [, pos] of positions) {
+      expect(typeof pos.x).toBe("number");
+      expect(typeof pos.y).toBe("number");
+    }
+  });
 });

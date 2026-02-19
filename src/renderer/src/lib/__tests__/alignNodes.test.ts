@@ -77,6 +77,28 @@ describe("alignNodes", () => {
       expect(n.position.y).toBe(original[i].position.y);
     });
   });
+
+  it("returns empty array for empty input", () => {
+    expect(alignNodes([], "left")).toEqual([]);
+  });
+
+  it("handles single node — position unchanged", () => {
+    const single = [makeNode("a", 42, 99)];
+    const result = alignNodes(single, "left");
+    expect(result[0].position.x).toBe(42);
+    expect(result[0].position.y).toBe(99);
+  });
+
+  it("handles nodes with different measured sizes", () => {
+    const mixed = [
+      makeNode("a", 0, 0, 100, 50),
+      makeNode("b", 200, 100, 300, 120),
+    ];
+    const result = alignNodes(mixed, "right");
+    // rightmost right edge = 200 + 300 = 500
+    expect(result[0].position.x + 100).toBe(500);
+    expect(result[1].position.x + 300).toBe(500);
+  });
 });
 
 describe("distributeNodes", () => {
@@ -132,5 +154,32 @@ describe("distributeNodes", () => {
     nodes.forEach((n, i) => {
       expect(n.position.x).toBe(original[i].position.x);
     });
+  });
+
+  it("returns cloned nodes for single node", () => {
+    const nodes = [makeNode("a", 50, 50)];
+    const result = distributeNodes(nodes, "horizontal");
+    expect(result.length).toBe(1);
+    expect(result[0].position.x).toBe(50);
+    expect(result[0]).not.toBe(nodes[0]);
+  });
+
+  it("distributes 5 nodes evenly", () => {
+    const nodes = [
+      makeNode("a", 0, 0),
+      makeNode("b", 10, 0),
+      makeNode("c", 20, 0),
+      makeNode("d", 30, 0),
+      makeNode("e", 400, 0),
+    ];
+    const result = distributeNodes(nodes, "horizontal");
+    const xs = result
+      .sort((a, b) => a.position.x - b.position.x)
+      .map((n) => n.position.x);
+    expect(xs[0]).toBe(0);
+    expect(xs[4]).toBe(400);
+    expect(xs[1]).toBe(100);
+    expect(xs[2]).toBe(200);
+    expect(xs[3]).toBe(300);
   });
 });
