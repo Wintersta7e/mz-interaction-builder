@@ -1,32 +1,55 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.0] - 2026-02-19
 
 ### Added
-- Dark theme overhaul — blue-tinted palette with Inter and JetBrains Mono fonts
+
+#### Visual Overhaul (Phase 2)
+- Dark theme — blue-tinted palette with Inter and JetBrains Mono fonts
 - Node visual upgrade — accent color strips, glassmorphism panels, glow selection
 - Color-coded edge system — SVG gradients, animated dashes on hover, pill labels
 - Enhanced minimap with accent-colored nodes and styled controls
+- Inline node previews — Action, Condition, and Menu nodes show content summaries on canvas
+- Comment/Note node — non-functional annotation with dashed amber border, resizable
+
+#### Workflow (Phase 1)
 - Canvas context menu — right-click to add nodes at cursor position
-- Quick-add hotkeys — press 1-5 to create node types at viewport center
+- Quick-add hotkeys — press 1-7 to create node types at viewport center
 - Multi-select — drag rectangle selection, bulk delete, bulk copy/paste with edge remapping
-- Graph traversal library — BFS upstream, downstream, shortest path
+
+#### Navigation (Phase 3)
 - Search panel — Ctrl+F with match cycling and highlight pulse
 - Path highlighting — Alt+Click upstream, Shift+Alt+Click downstream
 - Bookmarks — B hotkey, star indicator, collapsible panel
 - Breadcrumb trail — shortest path from Start to selected node
 - Zoom-to-fit — Ctrl+0 Fit All, Ctrl+1 Fit Selection, Home Fit to Start
+
+#### Organizing (Phase 4)
+- Auto-layout engine — dagre-based LR/TB layout with configurable spacing
+- Alignment tools — 6 align modes + 2 distribute operations, floating toolbar, Alt+shortcuts
+- Snap-to-grid toggle — Ctrl+G hotkey, dynamic grid dots overlay
+- Group/frame nodes — visual containers with 6 color presets, resizable
+- Smart alignment guides — 5px snap threshold, SVG overlay during drag
+
+#### Performance (Phase 5)
 - SearchableSelect component with virtualized dropdowns for large lists
 - Input debouncing via `useDebouncedSync` hook
 - Node component memoization with custom equality checks
-- `parseIntSafe` utility for safe integer parsing
-- 42 unit tests across 5 test files (Vitest + React Testing Library)
+
+#### Infrastructure
+- GitHub Actions CI (typecheck + lint + test + build)
+- GitHub Actions Release (auto-publish Windows installer on `v*` tags)
+- Dependabot for weekly dependency updates
+- 85 unit tests across 8 test files (Vitest + React Testing Library)
+- Comprehensive user guide (`docs/USER_GUIDE.md`)
 
 ### Changed
-- Removed `any` type casts — fully typed Canvas, edges, and store selectors
+- 7 node types (added Group and Comment) — up from 5
+- Removed all `any` type casts — fully typed Canvas, edges, and store selectors
 - Edge animation restricted to hover-only for performance
 - SVG gradients use `objectBoundingBox` units for correct scaling
 - Zustand selectors use `useCallback` with targeted subscriptions
+- Upgraded to Electron 40, React 19, Vite 7, Zustand 5, @xyflow/react 12
 
 ### Fixed
 - Clipboard paste creating duplicate IDs when source still exists
