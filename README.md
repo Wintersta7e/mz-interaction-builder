@@ -8,18 +8,12 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
-<!-- Screenshots will be added after v2 is complete
-## Screenshots
-
-![Overview](screenshots/overview.png)
-![Node Editor](screenshots/node-editor.png)
-![Export](screenshots/export.png)
--->
+<img src="screenshots/node-graph.png" alt="Node graph — Start, Choice Menu, Actions, and Comment node" width="680" />
 
 ## Features
 
 - **Visual Node Graph** - Drag-and-drop interface using React Flow
-- **5 Node Types** - Start, Choice Menu, Action, Condition, End
+- **7 Node Types** - Start, Choice Menu, Action, Condition, End, Group, Comment
 - **Unlimited Choices** - Menu nodes support any number of choices
 - **Hide/Disable Conditions** - Conditionally show or gray out choices
 - **Loop Support** - Connect back to earlier nodes for repeating menus
@@ -28,7 +22,7 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 - **Undo/Redo** - Full history support with Ctrl+Z/Ctrl+Y
 - **Copy/Paste** - Duplicate nodes with Ctrl+C/Ctrl+V
 - **Multi-Select** - Drag rectangle selection, bulk delete, bulk copy/paste
-- **Validation** - Real-time warnings for unconnected nodes, missing branches
+- **Validation** - Real-time warnings for unconnected nodes and dead ends
 - **Auto-Save** - Automatically saves every 30 seconds when file path exists
 - **Help System** - Press F1 or ? for keyboard shortcuts and node reference
 - **Dark Theme** - Blue-tinted palette with Inter/JetBrains Mono fonts
@@ -38,7 +32,10 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 - **Breadcrumb Trail** - Shows shortest path from Start to selected node
 - **Zoom Controls** - Fit All, Fit Selection, Fit to Start hotkeys
 - **Context Menu** - Right-click canvas to quickly add nodes
-- **Quick-Add Hotkeys** - Press 1-5 to create nodes at viewport center
+- **Auto-Layout** - Dagre-powered automatic graph layout (LR/TB)
+- **Alignment Tools** - Align and distribute selected nodes
+- **Snap Guides** - Visual alignment guides when dragging nodes
+- **Quick-Add Hotkeys** - Press 1-7 to create nodes at viewport center
 
 ## Installation
 
@@ -59,6 +56,8 @@ npm run build
 
 ### Creating an Interaction
 
+<img src="screenshots/ui-overview.png" alt="UI layout — node palette, canvas, and properties panel" width="600" />
+
 1. **Add Nodes** - Drag nodes from the left palette onto the canvas
 2. **Connect Nodes** - Drag from output handles (right) to input handles (left)
 3. **Edit Properties** - Click a node to edit its properties in the right panel
@@ -73,6 +72,8 @@ npm run build
 | **Action** | Blue | Execute scripts, set variables, call events |
 | **Condition** | Amber | Branch based on switches, variables, or scripts |
 | **End** | Red | Exit the interaction |
+| **Group** | Blue | Visual container for organizing nodes |
+| **Comment** | Amber | Annotation note (not exported) |
 
 ### Choice Menu Node
 
@@ -103,6 +104,10 @@ Branch on:
 - **Script** - Evaluate JavaScript that returns true/false
 
 ## Exporting
+
+The toolbar includes a validation button that checks your graph for common issues before exporting:
+
+<img src="screenshots/validation.png" alt="Validation panel showing warnings" width="260" />
 
 ### Copy as JSON
 
@@ -160,7 +165,10 @@ Interactions are saved as `.mzinteraction` JSON files:
 | Alt+Click | Highlight upstream path |
 | Shift+Alt+Click | Highlight downstream path |
 | Escape | Clear highlights |
-| 1-5 | Quick-add node (Start, Menu, Action, Condition, End) |
+| Ctrl+Shift+L | Auto-layout graph |
+| Ctrl+G | Toggle snap-to-grid |
+| Alt+L/C/R/T/M/B | Align selected nodes |
+| 1-7 | Quick-add node (Start, Menu, Action, Condition, End, Group, Comment) |
 | Right-Click | Context menu to add nodes |
 | F1 / ? | Show help |
 | Scroll Wheel | Zoom in/out |
@@ -198,11 +206,12 @@ Loops are handled with Labels (118) and Jump to Label (119).
 
 ## Tech Stack
 
-- **Framework**: Electron + Vite
-- **UI**: React 18 + TypeScript
-- **Node Graph**: React Flow (@xyflow/react)
-- **State**: Zustand
-- **Styling**: Tailwind CSS + Radix UI
+- **Framework**: Electron 40 + Vite 7
+- **UI**: React 19 + TypeScript 5
+- **Node Graph**: React Flow (@xyflow/react 12)
+- **State**: Zustand 5
+- **Layout**: Dagre (auto-layout engine)
+- **Styling**: Tailwind CSS 3
 
 ## Project Structure
 
@@ -215,7 +224,7 @@ src/
     └── src/
         ├── components/   # Canvas, SearchPanel, BookmarkPanel, BreadcrumbTrail, PropertiesPanel, etc.
         ├── edges/        # InteractionEdge (custom color-coded edge component)
-        ├── nodes/        # BaseNode + 5 node types
+        ├── nodes/        # BaseNode + 7 node types
         ├── hooks/        # useDebouncedSync
         ├── stores/       # Zustand: Document, History, UI, Project
         ├── lib/

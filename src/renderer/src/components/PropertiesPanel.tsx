@@ -4,6 +4,7 @@ import type {
   MenuNodeData,
   ActionNodeData,
   ConditionNodeData,
+  CommentNodeData,
   GroupColor,
   MenuChoice,
   Action,
@@ -188,6 +189,10 @@ export function PropertiesPanel() {
           </div>
         </div>
       )}
+      {selectedNode.type === "comment" &&
+        selectedNode.data.type === "comment" && (
+          <CommentProperties node={selectedNode} updateNode={updateNode} />
+        )}
     </div>
   );
 }
@@ -966,6 +971,37 @@ function ConditionProperties({ node, updateNode }: ConditionPropertiesProps) {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+// ============================================
+// Comment Properties
+// ============================================
+interface CommentPropertiesProps {
+  node: InteractionNode;
+  updateNode: (id: string, data: Partial<InteractionNode>) => void;
+}
+
+function CommentProperties({ node, updateNode }: CommentPropertiesProps) {
+  const data = node.data as CommentNodeData;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="mb-1 block text-xs text-muted-foreground">
+          Note Text
+        </label>
+        <DebouncedTextarea
+          value={data.text || ""}
+          onChange={(value) =>
+            updateNode(node.id, { data: { ...data, text: value } })
+          }
+          className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
+          rows={6}
+          placeholder="Add notes, reminders, or documentation..."
+        />
+      </div>
     </div>
   );
 }

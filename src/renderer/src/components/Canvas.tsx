@@ -75,6 +75,8 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
       return { type: "end", label: "End" };
     case "group":
       return { type: "group", label: "Group", color: "blue", collapsed: false };
+    case "comment":
+      return { type: "comment", label: "Note", text: "" };
   }
 }
 
@@ -86,6 +88,7 @@ const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
   condition: "#fbbf24",
   end: "#fb7185",
   group: "#60a5fa",
+  comment: "#f59e0b",
 };
 
 // Quick-add hotkeys: press 1-6 to create a node at viewport center
@@ -96,6 +99,7 @@ const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
   "4": "condition",
   "5": "end",
   "6": "group",
+  "7": "comment",
 };
 
 function getEdgeTypeAndData(
@@ -373,6 +377,7 @@ function CanvasInner() {
         "condition",
         "end",
         "group",
+        "comment",
       ];
       if (!validTypes.includes(rawType as InteractionNodeType)) return;
       const type = rawType as InteractionNodeType;
@@ -389,7 +394,9 @@ function CanvasInner() {
         data: getDefaultNodeData(type),
         ...(type === "group"
           ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : {}),
+          : type === "comment"
+            ? { style: { width: 200, height: 100 } }
+            : {}),
       };
 
       // Push current document to history before making changes
@@ -526,7 +533,9 @@ function CanvasInner() {
         data: getDefaultNodeData(type),
         ...(type === "group"
           ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : {}),
+          : type === "comment"
+            ? { style: { width: 200, height: 100 } }
+            : {}),
       };
       push(useDocumentStore.getState().document);
       addNode(newNode);
@@ -798,7 +807,9 @@ function CanvasInner() {
           data: getDefaultNodeData(nodeType),
           ...(nodeType === "group"
             ? { style: { width: 400, height: 300 }, zIndex: -1 }
-            : {}),
+            : nodeType === "comment"
+              ? { style: { width: 200, height: 100 } }
+              : {}),
         };
 
         push(useDocumentStore.getState().document);

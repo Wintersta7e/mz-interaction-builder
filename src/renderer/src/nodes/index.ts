@@ -4,6 +4,7 @@ import { ActionNode } from "./ActionNode";
 import { ConditionNode } from "./ConditionNode";
 import { EndNode } from "./EndNode";
 import { GroupNode } from "./GroupNode";
+import { CommentNode } from "./CommentNode";
 
 export const nodeTypes = {
   start: StartNode,
@@ -12,6 +13,15 @@ export const nodeTypes = {
   condition: ConditionNode,
   end: EndNode,
   group: GroupNode,
+  comment: CommentNode,
 };
 
-export { StartNode, MenuNode, ActionNode, ConditionNode, EndNode, GroupNode };
+export {
+  StartNode,
+  MenuNode,
+  ActionNode,
+  ConditionNode,
+  EndNode,
+  GroupNode,
+  CommentNode,
+};

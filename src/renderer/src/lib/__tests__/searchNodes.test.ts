@@ -58,6 +58,16 @@ const testNodes: InteractionNode[] = [
     position: { x: 0, y: 0 },
     data: { type: "end", label: "End" },
   },
+  {
+    id: "n6",
+    type: "comment",
+    position: { x: 0, y: 0 },
+    data: {
+      type: "comment",
+      label: "Design Note",
+      text: "Remember to add branching for the festival scene",
+    },
+  },
 ];
 
 describe("getSearchableText", () => {
@@ -83,6 +93,12 @@ describe("getSearchableText", () => {
     const text = getSearchableText(testNodes[3]);
     expect(text).toContain("Check Flag");
     expect(text).toContain("$gameSwitches.value(42)");
+  });
+
+  it("extracts label and text from comment node", () => {
+    const text = getSearchableText(testNodes[5]);
+    expect(text).toContain("Design Note");
+    expect(text).toContain("festival scene");
   });
 });
 
@@ -114,5 +130,15 @@ describe("searchNodes", () => {
   it("finds nodes by show_text content", () => {
     const result = searchNodes(testNodes, "sara");
     expect(result).toEqual(["n3"]);
+  });
+
+  it("finds comment nodes by text content", () => {
+    const result = searchNodes(testNodes, "festival");
+    expect(result).toEqual(["n6"]);
+  });
+
+  it("finds comment nodes by label", () => {
+    const result = searchNodes(testNodes, "design note");
+    expect(result).toEqual(["n6"]);
   });
 });

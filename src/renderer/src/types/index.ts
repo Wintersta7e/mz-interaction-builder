@@ -7,7 +7,8 @@ export type InteractionNodeType =
   | "action"
   | "condition"
   | "end"
-  | "group";
+  | "group"
+  | "comment";
 
 // Base node data interface (index signature needed for React Flow Node<T> compatibility)
 export interface BaseNodeData {
@@ -129,6 +130,12 @@ export interface GroupNodeData extends BaseNodeData {
   collapsed: boolean;
 }
 
+// Comment/note node - annotation (excluded from export/layout)
+export interface CommentNodeData extends BaseNodeData {
+  type: "comment";
+  text: string;
+}
+
 // Union type for all node data
 export type InteractionNodeData =
   | StartNodeData
@@ -136,7 +143,8 @@ export type InteractionNodeData =
   | ActionNodeData
   | ConditionNodeData
   | EndNodeData
-  | GroupNodeData;
+  | GroupNodeData
+  | CommentNodeData;
 
 // Custom node type for React Flow — extends RF Node so it's directly compatible
 export type InteractionNode = Node<InteractionNodeData, InteractionNodeType>;

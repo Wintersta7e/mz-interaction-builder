@@ -1,4 +1,12 @@
-import { Play, List, Zap, GitBranch, Square, Group } from "lucide-react";
+import {
+  Play,
+  List,
+  Zap,
+  GitBranch,
+  Square,
+  Group,
+  MessageSquare,
+} from "lucide-react";
 import type { InteractionNodeType } from "../types";
 
 interface NodeTypeConfig {
@@ -51,6 +59,13 @@ const nodeTypes: NodeTypeConfig[] = [
     icon: <Group className="h-4 w-4" />,
     color: "#60a5fa",
     description: "Visual container",
+  },
+  {
+    type: "comment",
+    label: "Comment",
+    icon: <MessageSquare className="h-4 w-4" />,
+    color: "#f59e0b",
+    description: "Annotation note",
   },
 ];
 
