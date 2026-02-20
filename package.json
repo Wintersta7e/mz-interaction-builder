@@ -1,6 +1,6 @@
 {
   "name": "mz-interaction-builder",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Visual node-graph editor for creating RPG Maker MZ interactions",
   "main": "./out/main/index.js",
   "author": "MZ Interaction Builder",

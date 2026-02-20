@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1] - 2026-02-20
+
+### Fixed
+- Release now builds as portable exe with custom app icon and file association icon
+- Switched from NSIS installer to portable-only format
+- Old releases auto-cleaned (keeps latest 3)
+
 ## [2.0.0] - 2026-02-19
 
 ### Added
