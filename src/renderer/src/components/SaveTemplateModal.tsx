@@ -68,9 +68,15 @@ export function SaveTemplateModal({
       edges: internalEdges,
     };
 
-    const success = await saveTemplate(template);
-    if (success) {
+    const result = await saveTemplate(template);
+    if (result.success) {
       onClose();
+    } else {
+      await window.api.dialog.message({
+        type: "error",
+        title: "Template Error",
+        message: `Failed to save template: ${result.error}`,
+      });
     }
   };
 

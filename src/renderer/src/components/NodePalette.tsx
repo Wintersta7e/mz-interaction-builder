@@ -175,7 +175,14 @@ function TemplatePalette() {
       buttons: ["Delete", "Cancel"],
     });
     if (result === 0) {
-      await deleteTemplate(template.id);
+      const deleteResult = await deleteTemplate(template.id);
+      if (!deleteResult.success) {
+        await window.api.dialog.message({
+          type: "error",
+          title: "Template Error",
+          message: `Failed to delete template: ${deleteResult.error}`,
+        });
+      }
     }
   };
 

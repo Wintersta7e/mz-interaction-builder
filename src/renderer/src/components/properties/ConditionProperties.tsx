@@ -17,6 +17,7 @@ export function ConditionProperties({
       onChange={(condition) =>
         updateNode(node.id, { data: { ...data, condition } })
       }
+      scriptRows={4}
     />
   );
 }

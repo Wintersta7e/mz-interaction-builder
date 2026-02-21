@@ -9,6 +9,7 @@ export interface ConditionEditorProps {
   onChange: (condition: Condition) => void;
   onRemove?: () => void;
   label?: string;
+  scriptRows?: number;
 }
 
 export function ConditionEditor({
@@ -16,6 +17,7 @@ export function ConditionEditor({
   onChange,
   onRemove,
   label,
+  scriptRows = 2,
 }: ConditionEditorProps) {
   const { switches, variables } = useProjectStore();
   const currentCondition = condition || {
@@ -125,7 +127,7 @@ export function ConditionEditor({
           value={currentCondition.script || ""}
           onChange={(value) => onChange({ ...currentCondition, script: value })}
           className="w-full rounded border border-border bg-background px-2 py-1 font-mono text-xs"
-          rows={2}
+          rows={scriptRows}
           placeholder="JavaScript expression (returns boolean)"
         />
       )}
