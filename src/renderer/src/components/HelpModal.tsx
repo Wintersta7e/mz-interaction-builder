@@ -93,6 +93,14 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   Paste node
                 </div>
                 <div>
+                  <kbd className="rounded bg-background px-2 py-0.5">B</kbd>{" "}
+                  Toggle bookmark
+                </div>
+                <div>
+                  <kbd className="rounded bg-background px-2 py-0.5">M</kbd>{" "}
+                  Mute/Unmute node
+                </div>
+                <div>
                   <kbd className="rounded bg-background px-2 py-0.5">F1</kbd>{" "}
                   Help
                 </div>
@@ -129,6 +137,13 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   </li>
                   <li>
                     <strong>Right-drag / Middle-drag</strong> - Pan canvas
+                  </li>
+                  <li>
+                    <strong>Drag edge endpoint</strong> - Reconnect to different
+                    handle
+                  </li>
+                  <li>
+                    <strong>Drop edge on empty</strong> - Delete edge
                   </li>
                 </ul>
               </div>
