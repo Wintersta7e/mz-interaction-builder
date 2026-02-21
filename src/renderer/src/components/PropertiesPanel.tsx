@@ -27,15 +27,7 @@ import { parseIntSafe } from "../lib/parseIntSafe";
 import { cn } from "../lib/utils";
 import { SearchableSelect } from "./SearchableSelect";
 import { SaveTemplateModal } from "./SaveTemplateModal";
-
-const GROUP_COLORS: Record<string, string> = {
-  blue: "hsl(210 80% 60%)",
-  green: "hsl(150 60% 50%)",
-  purple: "hsl(270 60% 60%)",
-  amber: "hsl(40 90% 55%)",
-  rose: "hsl(350 70% 60%)",
-  gray: "hsl(220 10% 50%)",
-};
+import { GROUP_COLORS } from "../nodes/GroupNode";
 
 // ============================================
 // Debounced Input Wrappers
