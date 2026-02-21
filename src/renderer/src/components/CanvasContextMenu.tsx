@@ -173,7 +173,7 @@ export function CanvasContextMenu({
       )}
       {hasSelectedNodes && onToggleMute && (
         <>
-          {!onSaveAsTemplate && <div className="my-1 border-t border-border" />}
+          <div className="my-1 border-t border-border" />
           <button
             className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
             onClick={onToggleMute}
@@ -182,6 +182,7 @@ export function CanvasContextMenu({
               <VolumeX className="h-4 w-4" />
             </span>
             <span>{isMuted ? "Unmute Node" : "Mute Node"}</span>
+            <span className="ml-auto text-xs text-muted-foreground">M</span>
           </button>
         </>
       )}

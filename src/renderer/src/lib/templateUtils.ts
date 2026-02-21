@@ -13,13 +13,19 @@ export function normalizePositions(
   const minX = Math.min(...nodes.map((n) => n.position.x));
   const minY = Math.min(...nodes.map((n) => n.position.y));
 
-  return nodes.map((node) => ({
-    ...node,
-    position: {
-      x: node.position.x - minX,
-      y: node.position.y - minY,
-    },
-  }));
+  return nodes.map((node) => {
+    // S-5: Strip muted state when saving templates (templates represent "real" behavior)
+    const data = { ...node.data };
+    delete (data as Record<string, unknown>)["muted"];
+    return {
+      ...node,
+      position: {
+        x: node.position.x - minX,
+        y: node.position.y - minY,
+      },
+      data,
+    };
+  });
 }
 
 /**
