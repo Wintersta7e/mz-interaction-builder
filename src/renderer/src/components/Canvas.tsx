@@ -45,45 +45,15 @@ import {
   generateId,
 } from "../stores";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
+import { getEdgeTypeAndData } from "../lib/edgeUtils";
+import { createNode } from "../lib/nodeFactory";
 import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
 import type {
   InteractionNodeType,
   InteractionNode,
   InteractionEdge,
-  InteractionNodeData,
-  InteractionEdgeData,
 } from "../types";
-
-function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
-  switch (type) {
-    case "start":
-      return { type: "start", label: "Start" };
-    case "menu":
-      return {
-        type: "menu",
-        label: "Choice Menu",
-        choices: [],
-        cancelType: "disallow",
-        windowBackground: 0,
-        windowPosition: 2,
-      };
-    case "action":
-      return { type: "action", label: "Action", actions: [] };
-    case "condition":
-      return {
-        type: "condition",
-        label: "Condition",
-        condition: { id: generateId("cond"), type: "switch" },
-      };
-    case "end":
-      return { type: "end", label: "End" };
-    case "group":
-      return { type: "group", label: "Group", color: "blue", collapsed: false };
-    case "comment":
-      return { type: "comment", label: "Note", text: "" };
-  }
-}
 
 // Quick-add hotkeys: press 1-6 to create a node at viewport center
 const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
@@ -95,60 +65,6 @@ const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
   "6": "group",
   "7": "comment",
 };
-
-function getEdgeTypeAndData(
-  connection: Connection,
-  nodes: InteractionNode[],
-): { type: string; data: InteractionEdgeData } {
-  const sourceNode = nodes.find((n) => n.id === connection.source);
-  const targetNode = nodes.find((n) => n.id === connection.target);
-  const sourceType = sourceNode?.type as InteractionNodeType | undefined;
-  const targetType = targetNode?.type as InteractionNodeType | undefined;
-
-  const sourceColor = sourceType ? NODE_ACCENT_COLORS[sourceType] : "#9ca3af";
-  const targetColor = targetType ? NODE_ACCENT_COLORS[targetType] : "#9ca3af";
-
-  if (sourceType === "condition" && connection.sourceHandle === "true") {
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "condition-true",
-        sourceColor: NODE_ACCENT_COLORS.start,
-        targetColor,
-        conditionBranch: "true",
-      },
-    };
-  }
-  if (sourceType === "condition" && connection.sourceHandle === "false") {
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "condition-false",
-        sourceColor: NODE_ACCENT_COLORS.end,
-        targetColor,
-        conditionBranch: "false",
-      },
-    };
-  }
-  if (sourceType === "menu" && connection.sourceHandle?.startsWith("choice-")) {
-    const parsed = parseInt(connection.sourceHandle.replace("choice-", ""), 10);
-    const choiceIndex = Number.isNaN(parsed) ? 0 : parsed;
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "choice",
-        sourceColor: NODE_ACCENT_COLORS.menu,
-        targetColor,
-        choiceIndex,
-      },
-    };
-  }
-
-  return {
-    type: "interaction",
-    data: { edgeStyle: "default", sourceColor, targetColor },
-  };
-}
 
 function CanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -494,17 +410,7 @@ function CanvasInner() {
         y: event.clientY,
       });
 
-      const newNode: InteractionNode = {
-        id: generateId(type),
-        type,
-        position,
-        data: getDefaultNodeData(type),
-        ...(type === "group"
-          ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : type === "comment"
-            ? { style: { width: 200, height: 100 } }
-            : {}),
-      };
+      const newNode = createNode(type, position);
 
       // Push current document to history before making changes
       push(useDocumentStore.getState().document);
@@ -642,17 +548,7 @@ function CanvasInner() {
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return;
-      const newNode: InteractionNode = {
-        id: generateId(type),
-        type,
-        position: contextMenu.flowPosition,
-        data: getDefaultNodeData(type),
-        ...(type === "group"
-          ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : type === "comment"
-            ? { style: { width: 200, height: 100 } }
-            : {}),
-      };
+      const newNode = createNode(type, contextMenu.flowPosition);
       push(useDocumentStore.getState().document);
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
@@ -972,17 +868,7 @@ function CanvasInner() {
           y: bounds.top + bounds.height / 2,
         });
 
-        const newNode: InteractionNode = {
-          id: generateId(nodeType),
-          type: nodeType,
-          position: centerPosition,
-          data: getDefaultNodeData(nodeType),
-          ...(nodeType === "group"
-            ? { style: { width: 400, height: 300 }, zIndex: -1 }
-            : nodeType === "comment"
-              ? { style: { width: 200, height: 100 } }
-              : {}),
-        };
+        const newNode = createNode(nodeType, centerPosition);
 
         push(useDocumentStore.getState().document);
         addNode(newNode);
