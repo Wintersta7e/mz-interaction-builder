@@ -8,6 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   addEdge,
+  reconnectEdge,
   applyNodeChanges,
   applyEdgeChanges,
   Connection,
@@ -204,6 +205,9 @@ function CanvasInner() {
   // Track drag state to prevent double history push (B5)
   const isDraggingRef = useRef(false);
 
+  // Track whether an edge reconnection was successful (Phase 5F)
+  const edgeReconnectSuccessfulRef = useRef(false);
+
   // P4: Cache selectedNodeId in ref to avoid re-creating keydown handler
   const selectedNodeIdRef = useRef(selectedNodeId);
   useEffect(() => {
@@ -317,6 +321,40 @@ function CanvasInner() {
       addDocEdge(newEdge);
     },
     [setEdgesState, addDocEdge, push],
+  );
+
+  // Edge reconnection handlers (Phase 5F)
+  const onReconnectStart = useCallback(() => {
+    edgeReconnectSuccessfulRef.current = false;
+  }, []);
+
+  const onReconnect = useCallback(
+    (oldEdge: InteractionEdge, newConnection: Connection) => {
+      edgeReconnectSuccessfulRef.current = true;
+      push(useDocumentStore.getState().document);
+
+      const { type, data } = getEdgeTypeAndData(newConnection, nodesRef.current);
+      const updatedEdges = reconnectEdge(oldEdge, newConnection, edgesRef.current).map(
+        (e) => (e.id === oldEdge.id ? { ...e, type, data } : e),
+      );
+
+      setEdgesState(updatedEdges);
+      setEdges(updatedEdges);
+    },
+    [push, setEdgesState, setEdges],
+  );
+
+  const onReconnectEnd = useCallback(
+    (_event: MouseEvent | TouchEvent, edge: InteractionEdge) => {
+      if (!edgeReconnectSuccessfulRef.current) {
+        // Dropped on empty space — delete the edge
+        push(useDocumentStore.getState().document);
+        const updatedEdges = edgesRef.current.filter((e) => e.id !== edge.id);
+        setEdgesState(updatedEdges);
+        setEdges(updatedEdges);
+      }
+    },
+    [push, setEdgesState, setEdges],
   );
 
   // M1: Use getState() to read edges at call-time, avoiding dependency on document.nodes/edges
@@ -986,6 +1024,10 @@ function CanvasInner() {
           onDragOver={onDragOver}
           onDrop={onDrop}
           onMoveEnd={onMoveEnd}
+          edgesReconnectable
+          onReconnect={onReconnect}
+          onReconnectStart={onReconnectStart}
+          onReconnectEnd={onReconnectEnd}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
