@@ -222,3 +222,14 @@ export function createEmptyDocument(): InteractionDocument {
     bookmarks: [],
   };
 }
+
+// Node template for saving/loading reusable node configurations
+export interface NodeTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  createdAt: number;
+  nodes: InteractionNode[];
+  edges: InteractionEdge[];
+}

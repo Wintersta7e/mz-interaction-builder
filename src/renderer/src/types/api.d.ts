@@ -59,6 +59,17 @@ declare global {
           error?: string;
         }>;
       };
+      template: {
+        list: () => Promise<{
+          success: boolean;
+          templates: import("./index").NodeTemplate[];
+          error?: string;
+        }>;
+        save: (
+          template: import("./index").NodeTemplate,
+        ) => Promise<{ success: boolean; error?: string }>;
+        delete: (id: string) => Promise<{ success: boolean; error?: string }>;
+      };
       window: {
         minimize: () => void;
         maximize: () => void;

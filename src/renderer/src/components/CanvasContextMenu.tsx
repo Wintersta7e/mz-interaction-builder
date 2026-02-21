@@ -7,6 +7,7 @@ import {
   Square,
   Group,
   MessageSquare,
+  BookmarkPlus,
 } from "lucide-react";
 import type { InteractionNodeType } from "../types";
 
@@ -19,6 +20,8 @@ interface CanvasContextMenuProps {
   position: MenuPosition;
   onAddNode: (type: InteractionNodeType) => void;
   onClose: () => void;
+  onSaveAsTemplate?: () => void;
+  hasSelectedNodes?: boolean;
 }
 
 const menuItems: {
@@ -75,6 +78,8 @@ export function CanvasContextMenu({
   position,
   onAddNode,
   onClose,
+  onSaveAsTemplate,
+  hasSelectedNodes,
 }: CanvasContextMenuProps): React.JSX.Element {
   const menuRef = useRef<HTMLDivElement>(null);
   const [clampedPosition, setClampedPosition] = useState(position);
@@ -144,6 +149,23 @@ export function CanvasContextMenu({
           <span>{item.label}</span>
         </button>
       ))}
+      {hasSelectedNodes && onSaveAsTemplate && (
+        <>
+          <div className="my-1 border-t border-border" />
+          <button
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            onClick={() => {
+              onSaveAsTemplate();
+              onClose();
+            }}
+          >
+            <span className="text-muted-foreground">
+              <BookmarkPlus className="h-4 w-4" />
+            </span>
+            <span>Save as Template</span>
+          </button>
+        </>
+      )}
     </div>
   );
 }

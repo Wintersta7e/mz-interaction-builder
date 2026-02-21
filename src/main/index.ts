@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { setupFileHandlers } from "./ipc/file";
 import { setupDialogHandlers } from "./ipc/dialog";
 import { setupProjectHandlers } from "./ipc/project";
+import { setupTemplateHandlers } from "./ipc/templates";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -87,6 +88,7 @@ app.whenReady().then(() => {
   setupFileHandlers(ipcMain);
   setupDialogHandlers(ipcMain, dialog);
   setupProjectHandlers(ipcMain);
+  setupTemplateHandlers(ipcMain);
 
   createWindow();
   setupMaximizeListener();

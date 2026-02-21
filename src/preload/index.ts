@@ -55,6 +55,17 @@ export interface ProjectAPI {
   }) => Promise<{ success: boolean; commandCount?: number; error?: string }>;
 }
 
+// Template API
+export interface TemplateAPI {
+  list: () => Promise<{
+    success: boolean;
+    templates: unknown[];
+    error?: string;
+  }>;
+  save: (template: unknown) => Promise<{ success: boolean; error?: string }>;
+  delete: (id: string) => Promise<{ success: boolean; error?: string }>;
+}
+
 // Window API
 export interface WindowAPI {
   minimize: () => void;
@@ -104,10 +115,17 @@ const windowApi: WindowAPI = {
   },
 };
 
+const templateApi: TemplateAPI = {
+  list: () => ipcRenderer.invoke("templates:list"),
+  save: (template) => ipcRenderer.invoke("templates:save", template),
+  delete: (id) => ipcRenderer.invoke("templates:delete", id),
+};
+
 contextBridge.exposeInMainWorld("api", {
   file: fileApi,
   dialog: dialogApi,
   project: projectApi,
+  template: templateApi,
   window: windowApi,
 });
 
@@ -116,5 +134,6 @@ export type API = {
   file: FileAPI;
   dialog: DialogAPI;
   project: ProjectAPI;
+  template: TemplateAPI;
   window: WindowAPI;
 };

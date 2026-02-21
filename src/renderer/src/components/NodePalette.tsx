@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Play,
   List,
@@ -6,8 +7,12 @@ import {
   Square,
   Group,
   MessageSquare,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
-import type { InteractionNodeType } from "../types";
+import type { InteractionNodeType, NodeTemplate } from "../types";
+import { useTemplateStore } from "../stores/templateStore";
 
 interface NodeTypeConfig {
   type: InteractionNodeType;
@@ -123,6 +128,106 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
           Connect nodes by dragging from output handles (right) to input handles
           (left).
         </p>
+      </div>
+
+      <TemplatePalette />
+    </div>
+  );
+}
+
+function TemplatePalette() {
+  const { templates, isLoaded, deleteTemplate } = useTemplateStore();
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set(),
+  );
+
+  if (!isLoaded || templates.length === 0) return null;
+
+  // Group templates by category
+  const grouped = new Map<string, NodeTemplate[]>();
+  for (const template of templates) {
+    const cat = template.category || "General";
+    if (!grouped.has(cat)) grouped.set(cat, []);
+    grouped.get(cat)!.push(template);
+  }
+
+  // Sort categories alphabetically, but "General" last
+  const categories = Array.from(grouped.keys()).sort((a, b) => {
+    if (a === "General") return 1;
+    if (b === "General") return -1;
+    return a.localeCompare(b);
+  });
+
+  const toggleCategory = (cat: string) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, templateId: string) => {
+    e.dataTransfer.setData("application/interaction-template", templateId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    await deleteTemplate(id);
+  };
+
+  return (
+    <div className="mt-6">
+      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
+        TEMPLATES
+      </h2>
+      <div className="space-y-2">
+        {categories.map((cat) => (
+          <div key={cat}>
+            <button
+              onClick={() => toggleCategory(cat)}
+              className="flex w-full items-center gap-1 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              {collapsedCategories.has(cat) ? (
+                <ChevronRight className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+              {cat}
+            </button>
+            {!collapsedCategories.has(cat) && (
+              <div className="ml-1 space-y-1">
+                {grouped.get(cat)!.map((template) => (
+                  <div
+                    key={template.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, template.id)}
+                    className="group flex cursor-grab items-center gap-2 rounded-lg border border-border p-2 transition-colors hover:bg-muted active:cursor-grabbing"
+                    title={template.description || template.name}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">
+                        {template.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {template.nodes.length} node
+                        {template.nodes.length !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => handleDelete(e, template.id)}
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

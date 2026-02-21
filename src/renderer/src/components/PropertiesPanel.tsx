@@ -19,11 +19,13 @@ import {
   Eye,
   EyeOff,
   Ban,
+  Save,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useDebouncedSync } from "../hooks/useDebouncedSync";
 import { parseIntSafe } from "../lib/parseIntSafe";
 import { SearchableSelect } from "./SearchableSelect";
+import { SaveTemplateModal } from "./SaveTemplateModal";
 
 const GROUP_COLORS: Record<string, string> = {
   blue: "hsl(210 80% 60%)",
@@ -117,6 +119,8 @@ export function PropertiesPanel() {
     ),
   );
 
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+
   if (!selectedNode) {
     return (
       <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
@@ -193,6 +197,25 @@ export function PropertiesPanel() {
         selectedNode.data.type === "comment" && (
           <CommentProperties node={selectedNode} updateNode={updateNode} />
         )}
+      {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
+        <>
+          <div className="mt-6 border-t border-border pt-4">
+            <button
+              onClick={() => setSaveTemplateOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Save className="h-3.5 w-3.5" />
+              Save as Template
+            </button>
+          </div>
+          <SaveTemplateModal
+            isOpen={saveTemplateOpen}
+            onClose={() => setSaveTemplateOpen(false)}
+            nodes={[selectedNode]}
+            edges={[]}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -12,7 +12,12 @@ import { StatusBar } from "./components/StatusBar";
 import { ExportModal } from "./components/ExportModal";
 import { HelpModal } from "./components/HelpModal";
 import { ValidationPanel } from "./components/ValidationPanel";
-import { useDocumentStore, useHistoryStore, useProjectStore } from "./stores";
+import {
+  useDocumentStore,
+  useHistoryStore,
+  useProjectStore,
+  useTemplateStore,
+} from "./stores";
 import type { InteractionNodeType } from "./types";
 import "./types/api.d";
 import "./styles/globals.css";
@@ -39,6 +44,7 @@ export default function App() {
     setLoading,
     setError,
   } = useProjectStore();
+  const { loadTemplates } = useTemplateStore();
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -363,6 +369,11 @@ export default function App() {
       }
     };
   }, [isDirty, savedPath, document]);
+
+  // Load templates from disk on startup
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   // Toggle help with F1
   useEffect(() => {

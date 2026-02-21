@@ -34,6 +34,7 @@ import type { AutoLayoutOptions } from "../lib/autoLayout";
 import { alignNodes, distributeNodes } from "../lib/alignNodes";
 import type { AlignMode, DistributeMode } from "../lib/alignNodes";
 import { AlignmentToolbar } from "./AlignmentToolbar";
+import { SaveTemplateModal } from "./SaveTemplateModal";
 import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
 import { AlignmentGuides } from "./AlignmentGuides";
 import {
@@ -42,6 +43,8 @@ import {
   useHistoryStore,
   generateId,
 } from "../stores";
+import { useTemplateStore } from "../stores/templateStore";
+import { instantiateTemplate } from "../lib/templateUtils";
 import type {
   InteractionNodeType,
   InteractionNode,
@@ -175,6 +178,7 @@ function CanvasInner() {
     toggleSnapToGrid,
   } = useUIStore();
   const { push } = useHistoryStore();
+  const templates = useTemplateStore((s) => s.templates);
   const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow();
 
   const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths);
@@ -346,6 +350,31 @@ function CanvasInner() {
     flowPosition: { x: number; y: number };
   } | null>(null);
 
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateNodes, setTemplateNodes] = useState<InteractionNode[]>([]);
+  const [templateEdges, setTemplateEdges] = useState<InteractionEdge[]>([]);
+
+  const getSelectedNodesAndEdges = useCallback(() => {
+    const selectedNodes = nodesRef.current.filter((n) => n.selected);
+    if (selectedNodes.length === 0 && selectedNodeId) {
+      const node = nodesRef.current.find((n) => n.id === selectedNodeId);
+      if (node) return { nodes: [node], edges: [] as InteractionEdge[] };
+    }
+    const selectedIds = new Set(selectedNodes.map((n) => n.id));
+    const internalEdges = edgesRef.current.filter(
+      (e) => selectedIds.has(e.source) && selectedIds.has(e.target),
+    );
+    return { nodes: selectedNodes, edges: internalEdges };
+  }, [selectedNodeId]);
+
+  const handleSaveAsTemplate = useCallback(() => {
+    const { nodes: selNodes, edges: selEdges } = getSelectedNodesAndEdges();
+    if (selNodes.length === 0) return;
+    setTemplateNodes(selNodes);
+    setTemplateEdges(selEdges);
+    setSaveTemplateOpen(true);
+  }, [getSelectedNodesAndEdges]);
+
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setContextMenu(null);
@@ -365,6 +394,36 @@ function CanvasInner() {
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+
+      // Handle template drop
+      const templateId = event.dataTransfer.getData(
+        "application/interaction-template",
+      );
+      if (templateId) {
+        const template = templates.find((t) => t.id === templateId);
+        if (!template) return;
+
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
+        push(useDocumentStore.getState().document);
+
+        const { nodes: newNodes, edges: newEdges } = instantiateTemplate(
+          template.nodes,
+          template.edges,
+          position,
+        );
+
+        const allNodes = [...nodesRef.current, ...newNodes];
+        const allEdges = [...edgesRef.current, ...newEdges];
+        setNodesState(allNodes);
+        setEdgesState(allEdges);
+        setNodes(allNodes);
+        setEdges(allEdges);
+        return;
+      }
 
       const rawType = event.dataTransfer.getData(
         "application/interaction-node",
@@ -404,7 +463,16 @@ function CanvasInner() {
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
     },
-    [screenToFlowPosition, addNode, setNodesState, push],
+    [
+      screenToFlowPosition,
+      addNode,
+      setNodesState,
+      setEdgesState,
+      setNodes,
+      setEdges,
+      push,
+      templates,
+    ],
   );
 
   const onMoveEnd: OnMoveEnd = useCallback(
@@ -904,6 +972,10 @@ function CanvasInner() {
             position={{ x: contextMenu.x, y: contextMenu.y }}
             onAddNode={handleContextMenuAddNode}
             onClose={() => setContextMenu(null)}
+            onSaveAsTemplate={handleSaveAsTemplate}
+            hasSelectedNodes={
+              nodes.some((n) => n.selected) || selectedNodeId !== null
+            }
           />
         )}
         {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
@@ -912,6 +984,12 @@ function CanvasInner() {
           selectedNodes={nodes.filter((n) => n.selected)}
           onAlign={applyAlign}
           onDistribute={applyDistribute}
+        />
+        <SaveTemplateModal
+          isOpen={saveTemplateOpen}
+          onClose={() => setSaveTemplateOpen(false)}
+          nodes={templateNodes}
+          edges={templateEdges}
         />
       </div>
     </div>

@@ -435,3 +435,5 @@ export const useProjectStore = create<ProjectState>()(
 export function generateId(prefix: string = "node"): string {
   return `${prefix}-${uuid().slice(0, 8)}`;
 }
+
+export { useTemplateStore } from "./templateStore";
