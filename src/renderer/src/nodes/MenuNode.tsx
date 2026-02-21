@@ -51,6 +51,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
     <div
       className={cn(
         "interaction-node min-w-[200px] rounded-xl border shadow-lg",
+        data.muted && "border-dashed opacity-30",
       )}
       style={{
         borderColor: selected
@@ -82,11 +83,16 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <List className="h-4 w-4" style={{ color: "#a78bfa" }} />
-        <span className="text-sm font-medium">
+        <span className={cn("text-sm font-medium", data.muted && "line-through")}>
           {data.label || "Choice Menu"}
         </span>
         {bookmarked && (
           <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
+        )}
+        {data.muted && (
+          <span className="ml-auto rounded bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+            Muted
+          </span>
         )}
       </div>
 

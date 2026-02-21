@@ -22,6 +22,7 @@ function EndNodeComponent({ id, data, selected }: EndNodeProps) {
       label={data.label || "End"}
       selected={selected}
       bookmarked={bookmarked}
+      muted={!!data.muted}
       hasInput={true}
       hasOutput={false}
     >

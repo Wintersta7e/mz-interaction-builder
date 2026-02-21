@@ -64,6 +64,7 @@ function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
       label={data.label || "Action"}
       selected={selected}
       bookmarked={bookmarked}
+      muted={!!data.muted}
       hasInput={true}
       hasOutput={true}
     >

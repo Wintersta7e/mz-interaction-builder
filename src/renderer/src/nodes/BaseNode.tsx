@@ -10,6 +10,7 @@ interface BaseNodeProps {
   label: string;
   selected?: boolean;
   bookmarked?: boolean;
+  muted?: boolean;
   hasInput?: boolean;
   hasOutput?: boolean;
   outputCount?: number;
@@ -22,6 +23,7 @@ export function BaseNode({
   label,
   selected,
   bookmarked,
+  muted = false,
   hasInput = true,
   hasOutput = true,
   outputCount = 1,
@@ -30,6 +32,7 @@ export function BaseNode({
     <div
       className={cn(
         "interaction-node min-w-[180px] rounded-xl border shadow-lg",
+        muted && "border-dashed opacity-30",
       )}
       style={{
         borderColor: selected
@@ -49,9 +52,14 @@ export function BaseNode({
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <span style={{ color: accentColor }}>{icon}</span>
-        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className={cn("text-sm font-medium text-foreground", muted && "line-through")}>{label}</span>
         {bookmarked && (
           <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
+        )}
+        {muted && (
+          <span className="ml-auto rounded bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+            Muted
+          </span>
         )}
       </div>
 
