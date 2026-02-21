@@ -13,6 +13,7 @@ export type InteractionNodeType =
 // Base node data interface (index signature needed for React Flow Node<T> compatibility)
 export interface BaseNodeData {
   label: string;
+  muted?: boolean;
   [key: string]: unknown;
 }
 
