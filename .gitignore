@@ -38,3 +38,6 @@ docs/plans/
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Git worktrees
+.worktrees/
