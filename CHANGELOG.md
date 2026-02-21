@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.1.0] - 2026-02-21
+
+### Added
+- **Mute nodes** — toggle mute on any node (M hotkey, context menu, or properties panel) to skip it during export
+- **Edge reconnection** — drag edge endpoints to rewire connections without deleting and recreating
+- Visual mute styling across all node types with amber badge indicator
+
+### Changed
+- **Architecture refactoring** — decomposed god classes, centralized constants, extracted hooks
+  - Canvas.tsx: 1152 → 600 lines (−48%)
+  - PropertiesPanel.tsx: 1061 → 155 lines (−85%)
+  - Extracted `useCanvasKeyboard`, `useCanvasLayout` hooks
+  - Extracted `nodeColors`, `edgeUtils`, `nodeFactory`, `validateDocument` utility modules
+  - Extracted per-type property editors (Menu, Action, Condition, Comment)
+  - Extracted reusable `DebouncedInputs` and `ConditionEditor` components
+  - Centralized `NODE_ACCENT_COLORS` from 10+ files into single source of truth
+  - Export helpers: `TEMP_CHOICE_VAR`, `mapCancelType()`, `emitNodeOrJump()`
+  - `templateStore` returns result objects instead of showing dialogs
+- 132 tests across 9 test files (up from 85 across 8)
+- Added export modal screenshot and trademark disclaimer to README
+
 ## [2.0.1] - 2026-02-20
 
 ### Fixed

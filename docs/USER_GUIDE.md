@@ -374,6 +374,16 @@ Connections are color-coded:
 - **Purple** gradient — From a Choice Menu node
 - **Other colors** — Gradient from source node's color to target node's color
 
+### Reconnecting Edges
+
+You can rewire an existing connection without deleting and recreating it:
+
+1. Hover over a connected edge endpoint (source or target handle)
+2. Click and drag the endpoint to a different handle
+3. Release to reconnect — the old connection is replaced
+
+Dropping an edge endpoint on empty canvas space deletes the edge.
+
 ### Selecting Nodes
 
 - **Single select** — Click a node to select it and show its properties
@@ -401,6 +411,27 @@ Connections are color-coded:
 - Click and drag any node to reposition it
 - With snap-to-grid enabled (**Ctrl+G**), nodes snap to a 16-pixel grid
 - When dragging near other nodes, [alignment guides](#alignment-guides) appear to help you line things up
+
+### Muting Nodes
+
+Muted nodes are skipped during export without being deleted — useful for testing, temporarily disabling branches, or commenting out logic.
+
+**How to mute/unmute:**
+- **M key** — Toggle mute on selected node(s)
+- **Right-click context menu** — Select "Mute Node" / "Unmute Node"
+- **Properties panel** — Click the "Active" / "Muted" toggle button
+
+**Visual indicators:**
+- Muted nodes appear with reduced opacity and an amber "M" badge
+- Muted nodes are fully editable — only export behavior changes
+
+**Which nodes can be muted:**
+- Menu, Action, Condition, and End nodes can be muted
+- Start, Group, and Comment nodes cannot be muted
+
+**Export behavior:**
+- Muted nodes are bypassed — the export follows their outgoing connection as if the node wasn't there
+- If a muted node has no outgoing connection, execution stops at that point
 
 ---
 
@@ -665,6 +696,7 @@ You can create custom presets from the palette panel to organize your own freque
 | `Ctrl+1` | Fit selected node(s) in view |
 | `Home` | Jump to Start node at 100% zoom |
 | `B` | Toggle bookmark on selected node |
+| `M` | Mute/unmute selected node(s) |
 | `Escape` | Clear path highlights / close search |
 | Scroll Wheel | Zoom in/out |
 
@@ -713,6 +745,8 @@ Press the number key (no modifiers) to place a node at the viewport center:
 | Click empty canvas | Deselect all |
 | Right-click canvas | Open context menu |
 | Click edge | Select edge (for deletion) |
+| Drag edge endpoint | Reconnect to different handle |
+| Drop edge on empty | Delete edge |
 | Drag on empty canvas | Rectangle multi-select |
 | Right-drag / Middle-drag | Pan canvas |
 
@@ -732,7 +766,7 @@ Interactions are saved as `.mzinteraction` files — plain JSON with a `.mzinter
       "id": "start-a1b2c3d4",
       "type": "start",
       "position": { "x": 100, "y": 200 },
-      "data": { "type": "start", "label": "Start" }
+      "data": { "type": "start", "label": "Start", "muted": false }
     }
   ],
   "edges": [

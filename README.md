@@ -36,6 +36,8 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 - **Alignment Tools** - Align and distribute selected nodes
 - **Snap Guides** - Visual alignment guides when dragging nodes
 - **Quick-Add Hotkeys** - Press 1-7 to create nodes at viewport center
+- **Mute Nodes** - Skip nodes during export without deleting them (M hotkey)
+- **Edge Reconnection** - Drag edge endpoints to rewire connections
 
 ## Installation
 
@@ -164,6 +166,7 @@ Interactions are saved as `.mzinteraction` JSON files:
 | Ctrl+1 | Zoom to fit selection |
 | Home | Zoom to Start node |
 | B | Toggle bookmark on selected node |
+| M | Mute/unmute selected node |
 | Alt+Click | Highlight upstream path |
 | Shift+Alt+Click | Highlight downstream path |
 | Escape | Clear highlights |
@@ -176,6 +179,7 @@ Interactions are saved as `.mzinteraction` JSON files:
 | Scroll Wheel | Zoom in/out |
 | Click + Drag | Pan canvas (or rectangle select) |
 | Click Edge | Select edge (for deletion) |
+| Drag Edge Endpoint | Reconnect to different handle |
 
 ## Variable Presets
 
@@ -270,3 +274,7 @@ npm run build:linux
 ## License
 
 MIT
+
+---
+
+*"RPG Maker" is a trademark of Gotcha Gotcha Games Inc. This project is not affiliated with or endorsed by Gotcha Gotcha Games.*
