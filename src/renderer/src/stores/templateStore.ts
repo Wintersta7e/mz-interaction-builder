@@ -27,10 +27,20 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
   saveTemplate: async (template) => {
     const result = await window.api.template.save(template);
     if (result.success) {
-      set((state) => ({ templates: [...state.templates, template] }));
+      set((state) => ({
+        // Replace existing template with same ID, or append
+        templates: state.templates.some((t) => t.id === template.id)
+          ? state.templates.map((t) => (t.id === template.id ? template : t))
+          : [...state.templates, template],
+      }));
       return true;
     }
     console.error("Failed to save template:", result.error);
+    await window.api.dialog.message({
+      type: "error",
+      title: "Template Error",
+      message: `Failed to save template: ${result.error}`,
+    });
     return false;
   },
 
@@ -43,6 +53,11 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
       return true;
     }
     console.error("Failed to delete template:", result.error);
+    await window.api.dialog.message({
+      type: "error",
+      title: "Template Error",
+      message: `Failed to delete template: ${result.error}`,
+    });
     return false;
   },
 }));

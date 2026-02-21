@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useTemplateStore } from "../stores/templateStore";
@@ -22,6 +22,15 @@ export function SaveTemplateModal({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const { saveTemplate, templates } = useTemplateStore();
+
+  // Reset form state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setName("");
+      setDescription("");
+      setCategory("");
+    }
+  }, [isOpen]);
 
   const existingCategories = useMemo(() => {
     const cats = new Set(templates.map((t) => t.category).filter(Boolean));
@@ -61,9 +70,6 @@ export function SaveTemplateModal({
 
     const success = await saveTemplate(template);
     if (success) {
-      setName("");
-      setDescription("");
-      setCategory("");
       onClose();
     }
   };

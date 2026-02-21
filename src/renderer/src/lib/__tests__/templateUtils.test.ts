@@ -44,6 +44,20 @@ describe("normalizePositions", () => {
     normalizePositions(nodes);
     expect(nodes[0].position).toEqual(original);
   });
+
+  it("handles negative coordinates", () => {
+    const nodes = [makeNode("a", -200, -100), makeNode("b", 100, 50)];
+    const result = normalizePositions(nodes);
+    expect(result[0].position).toEqual({ x: 0, y: 0 });
+    expect(result[1].position).toEqual({ x: 300, y: 150 });
+  });
+
+  it("handles nodes already at origin", () => {
+    const nodes = [makeNode("a", 0, 0), makeNode("b", 50, 50)];
+    const result = normalizePositions(nodes);
+    expect(result[0].position).toEqual({ x: 0, y: 0 });
+    expect(result[1].position).toEqual({ x: 50, y: 50 });
+  });
 });
 
 describe("instantiateTemplate", () => {
@@ -92,5 +106,54 @@ describe("instantiateTemplate", () => {
     instantiateTemplate(nodes, edges, { x: 100, y: 100 });
     expect(nodes[0].id).toBe(originalId);
     expect(nodes[0].position).toEqual({ x: 0, y: 0 });
+  });
+
+  it("sets selected to false on all instantiated nodes", () => {
+    const nodes = [
+      { ...makeNode("a", 0, 0), selected: true },
+      { ...makeNode("b", 100, 0), selected: true },
+    ];
+    const result = instantiateTemplate(nodes, [], { x: 0, y: 0 });
+    expect(result.nodes[0].selected).toBe(false);
+    expect(result.nodes[1].selected).toBe(false);
+  });
+
+  it("preserves edge sourceHandle and data", () => {
+    const nodes = [makeNode("a", 0, 0), makeNode("b", 100, 0)];
+    const edges: InteractionEdge[] = [
+      {
+        id: "e1",
+        source: "a",
+        target: "b",
+        sourceHandle: "choice-0",
+        data: { edgeStyle: "choice" as const, choiceIndex: 0 },
+      },
+    ];
+    const result = instantiateTemplate(nodes, edges, { x: 0, y: 0 });
+    expect(result.edges[0].sourceHandle).toBe("choice-0");
+    expect(result.edges[0].data?.edgeStyle).toBe("choice");
+    expect(result.edges[0].data?.choiceIndex).toBe(0);
+  });
+
+  it("preserves node data through deep clone", () => {
+    const node = {
+      ...makeNode("a", 0, 0, "menu"),
+      data: {
+        type: "menu" as const,
+        label: "Test Menu",
+        choices: [
+          { id: "c1", text: "Option A" },
+          { id: "c2", text: "Option B" },
+        ],
+      },
+    } as InteractionNode;
+    const result = instantiateTemplate([node], [], { x: 0, y: 0 });
+    const data = result.nodes[0].data as { choices: { text: string }[] };
+    expect(data.choices).toHaveLength(2);
+    expect(data.choices[0].text).toBe("Option A");
+    // Verify deep clone (not same reference)
+    expect(data.choices).not.toBe(
+      (node.data as { choices: unknown[] }).choices,
+    );
   });
 });

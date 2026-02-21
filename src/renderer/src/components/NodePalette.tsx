@@ -172,10 +172,18 @@ function TemplatePalette() {
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = async (e: React.MouseEvent, template: NodeTemplate) => {
     e.stopPropagation();
     e.preventDefault();
-    await deleteTemplate(id);
+    const result = await window.api.dialog.message({
+      type: "question",
+      title: "Delete Template",
+      message: `Delete template "${template.name}"? This cannot be undone.`,
+      buttons: ["Delete", "Cancel"],
+    });
+    if (result === 0) {
+      await deleteTemplate(template.id);
+    }
   };
 
   return (
@@ -217,7 +225,7 @@ function TemplatePalette() {
                       </div>
                     </div>
                     <button
-                      onClick={(e) => handleDelete(e, template.id)}
+                      onClick={(e) => handleDelete(e, template)}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
                     >
                       <Trash2 className="h-3 w-3" />
