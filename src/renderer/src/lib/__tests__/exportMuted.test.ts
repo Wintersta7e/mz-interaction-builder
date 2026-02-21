@@ -149,9 +149,7 @@ describe("exportMuted — muted node bypass", () => {
     expect(scriptCmds[0].parameters[0]).toBe("console.log('A')");
 
     // No conditional branch commands (muted condition is bypassed)
-    const condCmds = commands.filter(
-      (c) => c.code === CODE.CONDITIONAL_BRANCH,
-    );
+    const condCmds = commands.filter((c) => c.code === CODE.CONDITIONAL_BRANCH);
     expect(condCmds).toHaveLength(0);
 
     // ActionB's script should NOT appear (false branch not followed)
@@ -193,9 +191,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "ActionA",
-          actions: [
-            { id: "a1", type: "script", script: "console.log('yes')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('yes')" }],
         },
       },
       {
@@ -205,9 +201,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "ActionB",
-          actions: [
-            { id: "a2", type: "script", script: "console.log('no')" },
-          ],
+          actions: [{ id: "a2", type: "script", script: "console.log('no')" }],
         },
       },
       {
@@ -243,9 +237,7 @@ describe("exportMuted — muted node bypass", () => {
     expect(scriptCmds[0].parameters[0]).toBe("console.log('yes')");
 
     // No Show Choices commands (muted menu is bypassed)
-    const choiceCmds = commands.filter(
-      (c) => c.code === CODE.SHOW_CHOICES,
-    );
+    const choiceCmds = commands.filter((c) => c.code === CODE.SHOW_CHOICES);
     expect(choiceCmds).toHaveLength(0);
 
     // ActionB's script should NOT appear
@@ -400,6 +392,380 @@ describe("exportMuted — muted node bypass", () => {
     expect(allScriptParams).not.toContain("console.log('skip2')");
   });
 
+  it("T-1: muted condition with no true edge follows fallback (false branch)", () => {
+    const nodes: InteractionNode[] = [
+      {
+        id: "start-1",
+        type: "start",
+        position: { x: 0, y: 0 },
+        data: { type: "start", label: "Start" },
+      },
+      {
+        id: "cond-1",
+        type: "condition",
+        position: { x: 200, y: 0 },
+        data: {
+          type: "condition",
+          label: "MutedCond",
+          muted: true,
+          condition: { id: "c1", type: "script", script: "true" },
+        },
+      },
+      {
+        id: "act-false",
+        type: "action",
+        position: { x: 400, y: 50 },
+        data: {
+          type: "action",
+          label: "FalseAction",
+          actions: [
+            { id: "a1", type: "script", script: "console.log('false-branch')" },
+          ],
+        },
+      },
+      {
+        id: "end-1",
+        type: "end",
+        position: { x: 600, y: 0 },
+        data: { type: "end", label: "End" },
+      },
+    ];
+    // Only false edge — no true edge exists
+    const edges: InteractionEdge[] = [
+      { id: "e1", source: "start-1", target: "cond-1" },
+      {
+        id: "e2",
+        source: "cond-1",
+        target: "act-false",
+        sourceHandle: "false",
+      },
+      { id: "e3", source: "act-false", target: "end-1" },
+    ];
+
+    const commands = exportToMZCommands(makeDoc(nodes, edges));
+
+    // Fallback should follow the false edge (only outgoing edge)
+    const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
+    expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
+    expect(scriptCmds[0].parameters[0]).toBe("console.log('false-branch')");
+  });
+
+  it("T-2: muted menu with no choice-0 edge follows fallback", () => {
+    const nodes: InteractionNode[] = [
+      {
+        id: "start-1",
+        type: "start",
+        position: { x: 0, y: 0 },
+        data: { type: "start", label: "Start" },
+      },
+      {
+        id: "menu-1",
+        type: "menu",
+        position: { x: 200, y: 0 },
+        data: {
+          type: "menu",
+          label: "MutedMenu",
+          muted: true,
+          choices: [
+            { id: "ch1", text: "Yes" },
+            { id: "ch2", text: "No" },
+          ],
+          cancelType: "disallow",
+          windowBackground: 0,
+          windowPosition: 2,
+        },
+      },
+      {
+        id: "act-1",
+        type: "action",
+        position: { x: 400, y: 50 },
+        data: {
+          type: "action",
+          label: "Choice1Action",
+          actions: [
+            { id: "a1", type: "script", script: "console.log('choice-1')" },
+          ],
+        },
+      },
+      {
+        id: "end-1",
+        type: "end",
+        position: { x: 600, y: 0 },
+        data: { type: "end", label: "End" },
+      },
+    ];
+    // Only choice-1 edge — no choice-0
+    const edges: InteractionEdge[] = [
+      { id: "e1", source: "start-1", target: "menu-1" },
+      {
+        id: "e2",
+        source: "menu-1",
+        target: "act-1",
+        sourceHandle: "choice-1",
+      },
+      { id: "e3", source: "act-1", target: "end-1" },
+    ];
+
+    const commands = exportToMZCommands(makeDoc(nodes, edges));
+
+    // Fallback should follow choice-1 edge (only outgoing edge)
+    const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
+    expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
+    expect(scriptCmds[0].parameters[0]).toBe("console.log('choice-1')");
+  });
+
+  it("T-3: muted node with no outgoing edges (dead end)", () => {
+    const nodes: InteractionNode[] = [
+      {
+        id: "start-1",
+        type: "start",
+        position: { x: 0, y: 0 },
+        data: { type: "start", label: "Start" },
+      },
+      {
+        id: "act-1",
+        type: "action",
+        position: { x: 200, y: 0 },
+        data: {
+          type: "action",
+          label: "MutedDeadEnd",
+          muted: true,
+          actions: [
+            { id: "a1", type: "script", script: "console.log('dead')" },
+          ],
+        },
+      },
+    ];
+    const edges: InteractionEdge[] = [
+      { id: "e1", source: "start-1", target: "act-1" },
+      // No outgoing edge from act-1
+    ];
+
+    const commands = exportToMZCommands(makeDoc(nodes, edges));
+
+    // No script commands (muted), only terminal END
+    const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
+    expect(scriptCmds).toHaveLength(0);
+    expect(commands[commands.length - 1]).toEqual({
+      code: CODE.END,
+      indent: 0,
+      parameters: [],
+    });
+  });
+
+  it("T-4: muted node inside a branch at indent > 0", () => {
+    const nodes: InteractionNode[] = [
+      {
+        id: "start-1",
+        type: "start",
+        position: { x: 0, y: 0 },
+        data: { type: "start", label: "Start" },
+      },
+      {
+        id: "cond-1",
+        type: "condition",
+        position: { x: 200, y: 0 },
+        data: {
+          type: "condition",
+          label: "Cond",
+          condition: { id: "c1", type: "script", script: "true" },
+        },
+      },
+      {
+        id: "muted-act",
+        type: "action",
+        position: { x: 400, y: -50 },
+        data: {
+          type: "action",
+          label: "MutedInBranch",
+          muted: true,
+          actions: [
+            {
+              id: "a1",
+              type: "script",
+              script: "console.log('skip-in-branch')",
+            },
+          ],
+        },
+      },
+      {
+        id: "act-after",
+        type: "action",
+        position: { x: 600, y: -50 },
+        data: {
+          type: "action",
+          label: "AfterMuted",
+          actions: [
+            { id: "a2", type: "script", script: "console.log('after-muted')" },
+          ],
+        },
+      },
+      {
+        id: "act-false",
+        type: "action",
+        position: { x: 400, y: 50 },
+        data: {
+          type: "action",
+          label: "FalseAction",
+          actions: [
+            { id: "a3", type: "script", script: "console.log('false-side')" },
+          ],
+        },
+      },
+      {
+        id: "end-1",
+        type: "end",
+        position: { x: 800, y: 0 },
+        data: { type: "end", label: "End" },
+      },
+    ];
+    const edges: InteractionEdge[] = [
+      { id: "e1", source: "start-1", target: "cond-1" },
+      {
+        id: "e2",
+        source: "cond-1",
+        target: "muted-act",
+        sourceHandle: "true",
+      },
+      { id: "e3", source: "muted-act", target: "act-after" },
+      { id: "e4", source: "act-after", target: "end-1" },
+      {
+        id: "e5",
+        source: "cond-1",
+        target: "act-false",
+        sourceHandle: "false",
+      },
+      { id: "e6", source: "act-false", target: "end-1" },
+    ];
+
+    const commands = exportToMZCommands(makeDoc(nodes, edges));
+
+    // Condition structure should be intact
+    const condCmds = commands.filter((c) => c.code === CODE.CONDITIONAL_BRANCH);
+    expect(condCmds).toHaveLength(1);
+
+    // Muted action's script should NOT appear
+    const allScriptParams = commands
+      .filter((c) => c.code === CODE.SCRIPT)
+      .map((c) => c.parameters[0]);
+    expect(allScriptParams).not.toContain("console.log('skip-in-branch')");
+
+    // The action after muted should appear
+    expect(allScriptParams).toContain("console.log('after-muted')");
+
+    // False branch action should appear
+    expect(allScriptParams).toContain("console.log('false-side')");
+  });
+
+  it("T-5: muted dynamic menu with hide/disable conditions", () => {
+    const nodes: InteractionNode[] = [
+      {
+        id: "start-1",
+        type: "start",
+        position: { x: 0, y: 0 },
+        data: { type: "start", label: "Start" },
+      },
+      {
+        id: "menu-1",
+        type: "menu",
+        position: { x: 200, y: 0 },
+        data: {
+          type: "menu",
+          label: "MutedDynMenu",
+          muted: true,
+          choices: [
+            {
+              id: "ch1",
+              text: "Option A",
+              hideCondition: {
+                id: "hc1",
+                type: "script",
+                script: "$gameSwitches.value(1)",
+              },
+            },
+            {
+              id: "ch2",
+              text: "Option B",
+              disableCondition: {
+                id: "dc1",
+                type: "script",
+                script: "$gameSwitches.value(2)",
+              },
+            },
+          ],
+          cancelType: "disallow",
+          windowBackground: 0,
+          windowPosition: 2,
+        },
+      },
+      {
+        id: "act-a",
+        type: "action",
+        position: { x: 400, y: -50 },
+        data: {
+          type: "action",
+          label: "ActionA",
+          actions: [
+            { id: "a1", type: "script", script: "console.log('optA')" },
+          ],
+        },
+      },
+      {
+        id: "act-b",
+        type: "action",
+        position: { x: 400, y: 50 },
+        data: {
+          type: "action",
+          label: "ActionB",
+          actions: [
+            { id: "a2", type: "script", script: "console.log('optB')" },
+          ],
+        },
+      },
+      {
+        id: "end-1",
+        type: "end",
+        position: { x: 600, y: 0 },
+        data: { type: "end", label: "End" },
+      },
+    ];
+    const edges: InteractionEdge[] = [
+      { id: "e1", source: "start-1", target: "menu-1" },
+      {
+        id: "e2",
+        source: "menu-1",
+        target: "act-a",
+        sourceHandle: "choice-0",
+      },
+      {
+        id: "e3",
+        source: "menu-1",
+        target: "act-b",
+        sourceHandle: "choice-1",
+      },
+      { id: "e4", source: "act-a", target: "end-1" },
+      { id: "e5", source: "act-b", target: "end-1" },
+    ];
+
+    const commands = exportToMZCommands(makeDoc(nodes, edges));
+
+    // No script commands for hide/disable conditions should leak through
+    const allScriptParams = commands
+      .filter((c) => c.code === CODE.SCRIPT || c.code === CODE.SCRIPT_LINE)
+      .map((c) => c.parameters[0]);
+    expect(allScriptParams).not.toContain("$gameSwitches.value(1)");
+    expect(allScriptParams).not.toContain("$gameSwitches.value(2)");
+
+    // No Show Choices commands
+    expect(commands.filter((c) => c.code === CODE.SHOW_CHOICES)).toHaveLength(
+      0,
+    );
+
+    // Only choice-0 path followed (ActionA)
+    expect(allScriptParams).toContain("console.log('optA')");
+    expect(allScriptParams).not.toContain("console.log('optB')");
+  });
+
   it("muted convergence node still gets label but skips commands", () => {
     // Graph: start -> mutedAction <- actionB (two incoming edges = convergence)
     //         start -> actionB -> mutedAction -> end
@@ -509,14 +875,10 @@ describe("exportMuted — muted node bypass", () => {
     const allScriptParams = commands
       .filter((c) => c.code === CODE.SCRIPT || c.code === CODE.SCRIPT_LINE)
       .map((c) => c.parameters[0]);
-    expect(allScriptParams).not.toContain(
-      "console.log('should not appear')",
-    );
+    expect(allScriptParams).not.toContain("console.log('should not appear')");
 
     // Both switch commands from ActionA and ActionB should be present
-    const switchCmds = commands.filter(
-      (c) => c.code === CODE.CONTROL_SWITCHES,
-    );
+    const switchCmds = commands.filter((c) => c.code === CODE.CONTROL_SWITCHES);
     expect(switchCmds.length).toBeGreaterThanOrEqual(2);
   });
 });
