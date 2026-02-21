@@ -9,6 +9,7 @@ import {
   MUTED_LABEL_CLASS,
 } from "./MutedBadge";
 import type { ConditionNodeData } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface ConditionNodeProps {
   id: string;
@@ -53,22 +54,25 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
       )}
       style={{
         borderColor: selected
-          ? "#fbbf24"
-          : "color-mix(in srgb, #fbbf24 30%, transparent)",
+          ? NODE_ACCENT_COLORS.condition
+          : `color-mix(in srgb, ${NODE_ACCENT_COLORS.condition} 30%, transparent)`,
         boxShadow: selected
-          ? "0 0 0 2px #fbbf24, 0 0 15px color-mix(in srgb, #fbbf24 40%, transparent)"
+          ? `0 0 0 2px ${NODE_ACCENT_COLORS.condition}, 0 0 15px color-mix(in srgb, ${NODE_ACCENT_COLORS.condition} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
       }}
     >
       {/* Accent strip */}
       <div
         className="h-1 rounded-t-xl"
-        style={{ backgroundColor: "#fbbf24" }}
+        style={{ backgroundColor: NODE_ACCENT_COLORS.condition }}
       />
 
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <GitBranch className="h-4 w-4" style={{ color: "#fbbf24" }} />
+        <GitBranch
+          className="h-4 w-4"
+          style={{ color: NODE_ACCENT_COLORS.condition }}
+        />
         <span
           className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}
         >

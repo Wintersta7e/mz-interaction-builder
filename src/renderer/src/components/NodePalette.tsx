@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import type { InteractionNodeType, NodeTemplate } from "../types";
 import { useTemplateStore } from "../stores/templateStore";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface NodeTypeConfig {
   type: InteractionNodeType;
   label: string;
   icon: React.ReactNode;
-  color: string;
   description: string;
 }
 
@@ -27,49 +27,42 @@ const nodeTypes: NodeTypeConfig[] = [
     type: "start",
     label: "Start",
     icon: <Play className="h-4 w-4" />,
-    color: "#34d399",
     description: "Entry point",
   },
   {
     type: "menu",
     label: "Choice Menu",
     icon: <List className="h-4 w-4" />,
-    color: "#a78bfa",
     description: "Show choices",
   },
   {
     type: "action",
     label: "Action",
     icon: <Zap className="h-4 w-4" />,
-    color: "#38bdf8",
     description: "Execute actions",
   },
   {
     type: "condition",
     label: "Condition",
     icon: <GitBranch className="h-4 w-4" />,
-    color: "#fbbf24",
     description: "Branch logic",
   },
   {
     type: "end",
     label: "End",
     icon: <Square className="h-4 w-4" />,
-    color: "#fb7185",
     description: "Exit point",
   },
   {
     type: "group",
     label: "Group",
     icon: <Group className="h-4 w-4" />,
-    color: "#60a5fa",
     description: "Visual container",
   },
   {
     type: "comment",
     label: "Comment",
     icon: <MessageSquare className="h-4 w-4" />,
-    color: "#f59e0b",
     description: "Annotation note",
   },
 ];
@@ -103,7 +96,7 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
           >
             <div
               className="flex h-8 w-8 items-center justify-center rounded text-white"
-              style={{ backgroundColor: node.color }}
+              style={{ backgroundColor: NODE_ACCENT_COLORS[node.type] }}
             >
               {node.icon}
             </div>

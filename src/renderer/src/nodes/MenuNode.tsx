@@ -9,6 +9,7 @@ import {
   MUTED_LABEL_CLASS,
 } from "./MutedBadge";
 import type { MenuNodeData } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface MenuNodeProps {
   id: string;
@@ -60,10 +61,10 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       )}
       style={{
         borderColor: selected
-          ? "#a78bfa"
-          : "color-mix(in srgb, #a78bfa 30%, transparent)",
+          ? NODE_ACCENT_COLORS.menu
+          : `color-mix(in srgb, ${NODE_ACCENT_COLORS.menu} 30%, transparent)`,
         boxShadow: selected
-          ? "0 0 0 2px #a78bfa, 0 0 15px color-mix(in srgb, #a78bfa 40%, transparent)"
+          ? `0 0 0 2px ${NODE_ACCENT_COLORS.menu}, 0 0 15px color-mix(in srgb, ${NODE_ACCENT_COLORS.menu} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
       }}
     >
@@ -82,12 +83,12 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       {/* Accent strip */}
       <div
         className="h-1 rounded-t-xl"
-        style={{ backgroundColor: "#a78bfa" }}
+        style={{ backgroundColor: NODE_ACCENT_COLORS.menu }}
       />
 
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <List className="h-4 w-4" style={{ color: "#a78bfa" }} />
+        <List className="h-4 w-4" style={{ color: NODE_ACCENT_COLORS.menu }} />
         <span
           className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}
         >
@@ -115,7 +116,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
               style={{
                 top: HEADER_HEIGHT + CONTENT_PADDING + 10,
                 right: -6,
-                backgroundColor: "#a78bfa",
+                backgroundColor: NODE_ACCENT_COLORS.menu,
               }}
             />
           </>
@@ -164,7 +165,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
           style={{
             top: getChoiceHandleTop(index),
             right: -6,
-            backgroundColor: "#a78bfa",
+            backgroundColor: NODE_ACCENT_COLORS.menu,
           }}
           title={choice.text || `Choice ${index + 1}`}
         />

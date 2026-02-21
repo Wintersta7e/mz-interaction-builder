@@ -44,6 +44,7 @@ import {
   useHistoryStore,
   generateId,
 } from "../stores";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
 import type {
@@ -84,17 +85,6 @@ function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
   }
 }
 
-// Node accent color mapping (matches CSS variables and node components)
-const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
-  start: "#34d399",
-  menu: "#a78bfa",
-  action: "#38bdf8",
-  condition: "#fbbf24",
-  end: "#fb7185",
-  group: "#60a5fa",
-  comment: "#f59e0b",
-};
-
 // Quick-add hotkeys: press 1-6 to create a node at viewport center
 const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
   "1": "start",
@@ -123,7 +113,7 @@ function getEdgeTypeAndData(
       type: "interaction",
       data: {
         edgeStyle: "condition-true",
-        sourceColor: "#34d399",
+        sourceColor: NODE_ACCENT_COLORS.start,
         targetColor,
         conditionBranch: "true",
       },
@@ -134,7 +124,7 @@ function getEdgeTypeAndData(
       type: "interaction",
       data: {
         edgeStyle: "condition-false",
-        sourceColor: "#fb7185",
+        sourceColor: NODE_ACCENT_COLORS.end,
         targetColor,
         conditionBranch: "false",
       },
@@ -147,7 +137,7 @@ function getEdgeTypeAndData(
       type: "interaction",
       data: {
         edgeStyle: "choice",
-        sourceColor: "#a78bfa",
+        sourceColor: NODE_ACCENT_COLORS.menu,
         targetColor,
         choiceIndex,
       },

@@ -11,6 +11,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import type { InteractionNodeType } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface MenuPosition {
   x: number;
@@ -31,49 +32,41 @@ const menuItems: {
   type: InteractionNodeType;
   label: string;
   icon: React.ReactNode;
-  color: string;
 }[] = [
   {
     type: "start",
     label: "Start",
     icon: <Play className="h-4 w-4" />,
-    color: "#34d399",
   },
   {
     type: "menu",
     label: "Choice Menu",
     icon: <List className="h-4 w-4" />,
-    color: "#a78bfa",
   },
   {
     type: "action",
     label: "Action",
     icon: <Zap className="h-4 w-4" />,
-    color: "#38bdf8",
   },
   {
     type: "condition",
     label: "Condition",
     icon: <GitBranch className="h-4 w-4" />,
-    color: "#fbbf24",
   },
   {
     type: "end",
     label: "End",
     icon: <Square className="h-4 w-4" />,
-    color: "#fb7185",
   },
   {
     type: "group",
     label: "Group",
     icon: <Group className="h-4 w-4" />,
-    color: "#60a5fa",
   },
   {
     type: "comment",
     label: "Comment",
     icon: <MessageSquare className="h-4 w-4" />,
-    color: "#f59e0b",
   },
 ];
 
@@ -150,7 +143,9 @@ export function CanvasContextMenu({
             onClose();
           }}
         >
-          <span style={{ color: item.color }}>{item.icon}</span>
+          <span style={{ color: NODE_ACCENT_COLORS[item.type] }}>
+            {item.icon}
+          </span>
           <span>{item.label}</span>
         </button>
       ))}

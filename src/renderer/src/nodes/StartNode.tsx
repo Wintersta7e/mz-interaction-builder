@@ -3,6 +3,7 @@ import { Play } from "lucide-react";
 import { BaseNode } from "./BaseNode";
 import { useDocumentStore } from "../stores";
 import type { StartNodeData } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface StartNodeProps {
   id: string;
@@ -17,7 +18,7 @@ function StartNodeComponent({ id, data, selected }: StartNodeProps) {
 
   return (
     <BaseNode
-      accentColor="#34d399"
+      accentColor={NODE_ACCENT_COLORS.start}
       icon={<Play className="h-4 w-4" />}
       label={data.label || "Start"}
       selected={selected}
