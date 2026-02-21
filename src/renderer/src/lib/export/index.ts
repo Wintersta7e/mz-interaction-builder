@@ -38,6 +38,10 @@ const EVENT_CODES = {
   PLUGIN_COMMAND: 357,
 };
 
+// Variable used as temporary storage for dynamic menu choice routing.
+// If your project already uses this variable, change the value here.
+const TEMP_CHOICE_VAR = 99;
+
 // Helper to generate condition evaluation script
 function generateConditionScript(condition: Condition): string {
   switch (condition.type) {
@@ -54,6 +58,23 @@ function generateConditionScript(condition: Condition): string {
       return condition.script || "true";
     default:
       return "true";
+  }
+}
+
+// Map menu cancel-type setting to the numeric value RPG Maker expects.
+function mapCancelType(
+  cancelType: MenuNodeData["cancelType"],
+  choiceCount: number,
+): number {
+  switch (cancelType) {
+    case "disallow":
+      return -1;
+    case "branch":
+      return -2;
+    case "last_choice":
+      return choiceCount - 1;
+    default:
+      return -1;
   }
 }
 
@@ -164,14 +185,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
         break;
 
       case "menu":
-        generateMenuCommands(
-          node,
-          indent,
-          edgesBySource,
-          processNode,
-          convergenceNodes,
-          needsLabel,
-        );
+        generateMenuCommands(node, indent);
         return; // Menu handles its own continuation
 
       case "action":
@@ -179,14 +193,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
         break;
 
       case "condition":
-        generateConditionCommands(
-          node,
-          indent,
-          edgesBySource,
-          processNode,
-          convergenceNodes,
-          needsLabel,
-        );
+        generateConditionCommands(node, indent);
         return; // Condition handles its own continuation
 
       case "end":
@@ -207,15 +214,23 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
     }
   }
 
+  // Emit inline processing or a jump-to-label depending on whether the
+  // target is a convergence node that has already been visited.
+  function emitNodeOrJump(targetId: string, indent: number): void {
+    if (convergenceNodes.has(targetId) && visited.has(targetId)) {
+      needsLabel.add(targetId);
+      commands.push({
+        code: EVENT_CODES.JUMP_TO_LABEL,
+        indent,
+        parameters: [`node_${targetId}`],
+      });
+    } else {
+      processNode(targetId, indent);
+    }
+  }
+
   // Helper to generate menu commands
-  function generateMenuCommands(
-    node: InteractionNode,
-    indent: number,
-    edgesBySource: Map<string, InteractionEdge[]>,
-    processNode: (nodeId: string, indent: number) => void,
-    convergenceNodes: Set<string>,
-    needsLabel: Set<string>,
-  ): void {
+  function generateMenuCommands(node: InteractionNode, indent: number): void {
     const data = node.data as MenuNodeData;
     const choices = data.choices || [];
     const outEdges = edgesBySource.get(node.id) || [];
@@ -238,55 +253,21 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
 
     if (hasConditions) {
       // Use script-based dynamic choice menu
-      generateDynamicMenuCommands(
-        node,
-        indent,
-        choices,
-        choiceTargets,
-        data,
-        processNode,
-        convergenceNodes,
-        needsLabel,
-      );
+      generateDynamicMenuCommands(indent, choices, choiceTargets, data);
     } else {
       // Use standard Show Choices command
-      generateStaticMenuCommands(
-        node,
-        indent,
-        choices,
-        choiceTargets,
-        data,
-        processNode,
-        convergenceNodes,
-        needsLabel,
-      );
+      generateStaticMenuCommands(indent, choices, choiceTargets, data);
     }
   }
 
   // Static menu (no conditions) - uses standard Show Choices
   function generateStaticMenuCommands(
-    _node: InteractionNode,
     indent: number,
     choices: MenuChoice[],
     choiceTargets: (string | null)[],
     data: MenuNodeData,
-    processNode: (nodeId: string, indent: number) => void,
-    convergenceNodes: Set<string>,
-    _needsLabel: Set<string>,
   ): void {
-    // Determine cancel behavior
-    let cancelType = -1; // Disallow by default
-    switch (data.cancelType) {
-      case "disallow":
-        cancelType = -1;
-        break;
-      case "branch":
-        cancelType = -2;
-        break;
-      case "last_choice":
-        cancelType = choices.length - 1;
-        break;
-    }
+    const cancelType = mapCancelType(data.cancelType, choices.length);
 
     // Show Choices command
     commands.push({
@@ -313,19 +294,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       // Process target node for this choice
       const targetId = choiceTargets[index];
       if (targetId) {
-        if (convergenceNodes.has(targetId) && !visited.has(targetId)) {
-          // This is a convergence point - process inline first time
-          processNode(targetId, indent + 1);
-        } else if (convergenceNodes.has(targetId)) {
-          // Already visited convergence node - just jump
-          commands.push({
-            code: EVENT_CODES.JUMP_TO_LABEL,
-            indent: indent + 1,
-            parameters: [`node_${targetId}`],
-          });
-        } else {
-          processNode(targetId, indent + 1);
-        }
+        emitNodeOrJump(targetId, indent + 1);
       }
 
       // End of choice content
@@ -342,14 +311,10 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
 
   // Dynamic menu (with conditions) - uses script to build choice array
   function generateDynamicMenuCommands(
-    _node: InteractionNode,
     indent: number,
     choices: MenuChoice[],
     choiceTargets: (string | null)[],
     data: MenuNodeData,
-    processNode: (nodeId: string, indent: number) => void,
-    convergenceNodes: Set<string>,
-    _needsLabel: Set<string>,
   ): void {
     // Generate script to build dynamic choices array
     // Format: _mzib_choices = []; _mzib_map = [];
@@ -422,7 +387,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       `$gameMessage.setChoicePositionType(${data.windowPosition ?? 2});`,
     );
     initLines.push(
-      `$gameMessage.setChoiceCallback(n => { $gameVariables.setValue(99, _mzib_m[n] ?? -1); });`,
+      `$gameMessage.setChoiceCallback(n => { $gameVariables.setValue(${TEMP_CHOICE_VAR}, _mzib_m[n] ?? -1); });`,
     );
 
     // Push the script command
@@ -453,27 +418,19 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       ],
     });
 
-    // Generate conditional branches based on the mapped choice index (stored in variable 99)
+    // Generate conditional branches based on the mapped choice index (TEMP_CHOICE_VAR)
     choices.forEach((_choice, index) => {
-      // Conditional: if $gameVariables.value(99) == index
+      // Conditional: if $gameVariables.value(TEMP_CHOICE_VAR) == index
       commands.push({
         code: EVENT_CODES.CONDITIONAL_BRANCH,
         indent,
-        parameters: [1, 99, 0, index, 0], // Type 1=Variable, Var 99, Op 0==, Value index
+        parameters: [1, TEMP_CHOICE_VAR, 0, index, 0], // Type 1=Variable, TEMP_CHOICE_VAR, Op 0==, Value index
       });
 
       // Process target node for this choice
       const targetId = choiceTargets[index];
       if (targetId) {
-        if (convergenceNodes.has(targetId) && visited.has(targetId)) {
-          commands.push({
-            code: EVENT_CODES.JUMP_TO_LABEL,
-            indent: indent + 1,
-            parameters: [`node_${targetId}`],
-          });
-        } else {
-          processNode(targetId, indent + 1);
-        }
+        emitNodeOrJump(targetId, indent + 1);
       }
 
       commands.push({
@@ -621,10 +578,6 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
   function generateConditionCommands(
     node: InteractionNode,
     indent: number,
-    edgesBySource: Map<string, InteractionEdge[]>,
-    processNode: (nodeId: string, indent: number) => void,
-    convergenceNodes: Set<string>,
-    _needsLabel: Set<string>,
   ): void {
     const data = node.data as ConditionNodeData;
     const condition = data.condition;
@@ -689,16 +642,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
 
     // True branch
     if (trueTarget) {
-      if (convergenceNodes.has(trueTarget) && visited.has(trueTarget)) {
-        // Already visited convergence node - just jump
-        commands.push({
-          code: EVENT_CODES.JUMP_TO_LABEL,
-          indent: indent + 1,
-          parameters: [`node_${trueTarget}`],
-        });
-      } else {
-        processNode(trueTarget, indent + 1);
-      }
+      emitNodeOrJump(trueTarget, indent + 1);
     }
     commands.push({
       code: EVENT_CODES.END,
@@ -715,16 +659,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
 
     // False branch
     if (falseTarget) {
-      if (convergenceNodes.has(falseTarget) && visited.has(falseTarget)) {
-        // Already visited convergence node - just jump
-        commands.push({
-          code: EVENT_CODES.JUMP_TO_LABEL,
-          indent: indent + 1,
-          parameters: [`node_${falseTarget}`],
-        });
-      } else {
-        processNode(falseTarget, indent + 1);
-      }
+      emitNodeOrJump(falseTarget, indent + 1);
     }
     commands.push({
       code: EVENT_CODES.END,

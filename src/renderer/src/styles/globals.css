@@ -24,20 +24,6 @@
     --input: 230 15% 18%;
     --ring: 217 91% 60%;
     --radius: 0.75rem;
-
-    /* Node accent colors (HSL for Tailwind) */
-    --node-start: 160 59% 52%;
-    --node-menu: 263 75% 76%;
-    --node-action: 199 89% 60%;
-    --node-condition: 43 96% 56%;
-    --node-end: 351 89% 68%;
-
-    /* Node accent hex values (for use in JS/inline styles) */
-    --node-start-hex: #34d399;
-    --node-menu-hex: #a78bfa;
-    --node-action-hex: #38bdf8;
-    --node-condition-hex: #fbbf24;
-    --node-end-hex: #fb7185;
   }
 }
 

@@ -30,10 +30,8 @@ import { BookmarkPanel } from "./BookmarkPanel";
 import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
-import { autoLayout } from "../lib/autoLayout";
-import type { AutoLayoutOptions } from "../lib/autoLayout";
-import { alignNodes, distributeNodes } from "../lib/alignNodes";
-import type { AlignMode, DistributeMode } from "../lib/alignNodes";
+import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
+import { useCanvasLayout } from "../hooks/useCanvasLayout";
 import { AlignmentToolbar } from "./AlignmentToolbar";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
@@ -44,121 +42,16 @@ import {
   useHistoryStore,
   generateId,
 } from "../stores";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
+import { getEdgeTypeAndData } from "../lib/edgeUtils";
+import { createNode } from "../lib/nodeFactory";
 import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
 import type {
   InteractionNodeType,
   InteractionNode,
   InteractionEdge,
-  InteractionNodeData,
-  InteractionEdgeData,
 } from "../types";
-
-function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
-  switch (type) {
-    case "start":
-      return { type: "start", label: "Start" };
-    case "menu":
-      return {
-        type: "menu",
-        label: "Choice Menu",
-        choices: [],
-        cancelType: "disallow",
-        windowBackground: 0,
-        windowPosition: 2,
-      };
-    case "action":
-      return { type: "action", label: "Action", actions: [] };
-    case "condition":
-      return {
-        type: "condition",
-        label: "Condition",
-        condition: { id: generateId("cond"), type: "switch" },
-      };
-    case "end":
-      return { type: "end", label: "End" };
-    case "group":
-      return { type: "group", label: "Group", color: "blue", collapsed: false };
-    case "comment":
-      return { type: "comment", label: "Note", text: "" };
-  }
-}
-
-// Node accent color mapping (matches CSS variables and node components)
-const NODE_ACCENT_COLORS: Record<InteractionNodeType, string> = {
-  start: "#34d399",
-  menu: "#a78bfa",
-  action: "#38bdf8",
-  condition: "#fbbf24",
-  end: "#fb7185",
-  group: "#60a5fa",
-  comment: "#f59e0b",
-};
-
-// Quick-add hotkeys: press 1-6 to create a node at viewport center
-const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
-  "1": "start",
-  "2": "menu",
-  "3": "action",
-  "4": "condition",
-  "5": "end",
-  "6": "group",
-  "7": "comment",
-};
-
-function getEdgeTypeAndData(
-  connection: Connection,
-  nodes: InteractionNode[],
-): { type: string; data: InteractionEdgeData } {
-  const sourceNode = nodes.find((n) => n.id === connection.source);
-  const targetNode = nodes.find((n) => n.id === connection.target);
-  const sourceType = sourceNode?.type as InteractionNodeType | undefined;
-  const targetType = targetNode?.type as InteractionNodeType | undefined;
-
-  const sourceColor = sourceType ? NODE_ACCENT_COLORS[sourceType] : "#9ca3af";
-  const targetColor = targetType ? NODE_ACCENT_COLORS[targetType] : "#9ca3af";
-
-  if (sourceType === "condition" && connection.sourceHandle === "true") {
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "condition-true",
-        sourceColor: "#34d399",
-        targetColor,
-        conditionBranch: "true",
-      },
-    };
-  }
-  if (sourceType === "condition" && connection.sourceHandle === "false") {
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "condition-false",
-        sourceColor: "#fb7185",
-        targetColor,
-        conditionBranch: "false",
-      },
-    };
-  }
-  if (sourceType === "menu" && connection.sourceHandle?.startsWith("choice-")) {
-    const parsed = parseInt(connection.sourceHandle.replace("choice-", ""), 10);
-    const choiceIndex = Number.isNaN(parsed) ? 0 : parsed;
-    return {
-      type: "interaction",
-      data: {
-        edgeStyle: "choice",
-        sourceColor: "#a78bfa",
-        targetColor,
-        choiceIndex,
-      },
-    };
-  }
-
-  return {
-    type: "interaction",
-    data: { edgeStyle: "default", sourceColor, targetColor },
-  };
-}
 
 function CanvasInner() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -176,11 +69,10 @@ function CanvasInner() {
     zoom,
     setZoom,
     snapToGrid,
-    toggleSnapToGrid,
   } = useUIStore();
   const { push } = useHistoryStore();
   const templates = useTemplateStore((s) => s.templates);
-  const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow();
+  const { screenToFlowPosition, setCenter, getNodes } = useReactFlow();
 
   const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useUIStore((s) => s.clearHighlightedPaths);
@@ -408,31 +300,6 @@ function CanvasInner() {
     flowPosition: { x: number; y: number };
   } | null>(null);
 
-  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [templateNodes, setTemplateNodes] = useState<InteractionNode[]>([]);
-  const [templateEdges, setTemplateEdges] = useState<InteractionEdge[]>([]);
-
-  const getSelectedNodesAndEdges = useCallback(() => {
-    const selectedNodes = nodesRef.current.filter((n) => n.selected);
-    if (selectedNodes.length === 0 && selectedNodeId) {
-      const node = nodesRef.current.find((n) => n.id === selectedNodeId);
-      if (node) return { nodes: [node], edges: [] as InteractionEdge[] };
-    }
-    const selectedIds = new Set(selectedNodes.map((n) => n.id));
-    const internalEdges = edgesRef.current.filter(
-      (e) => selectedIds.has(e.source) && selectedIds.has(e.target),
-    );
-    return { nodes: selectedNodes, edges: internalEdges };
-  }, [selectedNodeId]);
-
-  const handleSaveAsTemplate = useCallback(() => {
-    const { nodes: selNodes, edges: selEdges } = getSelectedNodesAndEdges();
-    if (selNodes.length === 0) return;
-    setTemplateNodes(selNodes);
-    setTemplateEdges(selEdges);
-    setSaveTemplateOpen(true);
-  }, [getSelectedNodesAndEdges]);
-
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setContextMenu(null);
@@ -504,17 +371,7 @@ function CanvasInner() {
         y: event.clientY,
       });
 
-      const newNode: InteractionNode = {
-        id: generateId(type),
-        type,
-        position,
-        data: getDefaultNodeData(type),
-        ...(type === "group"
-          ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : type === "comment"
-            ? { style: { width: 200, height: 100 } }
-            : {}),
-      };
+      const newNode = createNode(type, position);
 
       // Push current document to history before making changes
       push(useDocumentStore.getState().document);
@@ -574,95 +431,17 @@ function CanvasInner() {
     [getNodes, setCenter, setSelectedNodeId],
   );
 
-  // Auto-layout (Phase 4A)
-  const applyAutoLayout = useCallback(
-    (options: AutoLayoutOptions = {}) => {
-      const currentNodes = nodesRef.current;
-      const currentEdges = edgesRef.current;
-      if (currentNodes.length === 0) return;
-
-      push(useDocumentStore.getState().document);
-
-      const positions = autoLayout(currentNodes, currentEdges, options);
-      const updatedNodes = currentNodes.map((node) => {
-        const pos = positions.get(node.id);
-        return pos ? { ...node, position: pos } : node;
-      });
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-      fitView({ padding: 0.1, duration: 300 });
-    },
-    [push, setNodesState, setNodes, fitView],
-  );
-
-  // Align selected nodes (Phase 4B)
-  const applyAlign = useCallback(
-    (mode: AlignMode) => {
-      const selected = nodesRef.current.filter((n) => n.selected);
-      if (selected.length < 2) return;
-
-      push(useDocumentStore.getState().document);
-
-      const aligned = alignNodes(selected, mode);
-      const alignedMap = new Map(aligned.map((n) => [n.id, n]));
-      const updatedNodes = nodesRef.current.map((n) =>
-        alignedMap.has(n.id)
-          ? { ...n, position: alignedMap.get(n.id)!.position }
-          : n,
-      );
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-    },
-    [push, setNodesState, setNodes],
-  );
-
-  // Distribute selected nodes (Phase 4B)
-  const applyDistribute = useCallback(
-    (mode: DistributeMode) => {
-      const selected = nodesRef.current.filter((n) => n.selected);
-      if (selected.length < 3) return; // need 3+ to distribute
-
-      push(useDocumentStore.getState().document);
-
-      const distributed = distributeNodes(selected, mode);
-      const distMap = new Map(distributed.map((n) => [n.id, n]));
-      const updatedNodes = nodesRef.current.map((n) =>
-        distMap.has(n.id) ? { ...n, position: distMap.get(n.id)!.position } : n,
-      );
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-    },
-    [push, setNodesState, setNodes],
-  );
-
-  // Watch for layout trigger from Toolbar (Phase 4A)
-  const layoutTrigger = useUIStore((s) => s.layoutTrigger);
-  const clearLayoutTrigger = useUIStore((s) => s.clearLayoutTrigger);
-
-  useEffect(() => {
-    if (layoutTrigger) {
-      applyAutoLayout(layoutTrigger);
-      clearLayoutTrigger();
-    }
-  }, [layoutTrigger, applyAutoLayout, clearLayoutTrigger]);
+  // Layout operations extracted to hook (auto-layout, align, distribute + trigger watcher)
+  const { applyAutoLayout, applyAlign, applyDistribute } = useCanvasLayout({
+    nodesRef,
+    edgesRef,
+    setNodesState,
+  });
 
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
       if (!contextMenu) return;
-      const newNode: InteractionNode = {
-        id: generateId(type),
-        type,
-        position: contextMenu.flowPosition,
-        data: getDefaultNodeData(type),
-        ...(type === "group"
-          ? { style: { width: 400, height: 300 }, zIndex: -1 }
-          : type === "comment"
-            ? { style: { width: 200, height: 100 } }
-            : {}),
-      };
+      const newNode = createNode(type, contextMenu.flowPosition);
       push(useDocumentStore.getState().document);
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
@@ -672,355 +451,25 @@ function CanvasInner() {
     [contextMenu, push, addNode, setNodesState, setSelectedNodeId],
   );
 
-  // Clipboard for copy/paste
-  const clipboardRef = useRef<{
-    nodes: InteractionNode[];
-    edges: InteractionEdge[];
-  } | null>(null);
-
-  // Toggle mute on selected nodes (Phase 5E)
-  const handleToggleMute = useCallback(() => {
-    const currentNodes = nodesRef.current;
-    let targetNodes = currentNodes.filter(
-      (n) =>
-        n.selected &&
-        n.type !== "start" &&
-        n.type !== "group" &&
-        n.type !== "comment",
-    );
-
-    // Fallback to single selected node
-    if (targetNodes.length === 0 && selectedNodeIdRef.current) {
-      const node = currentNodes.find((n) => n.id === selectedNodeIdRef.current);
-      if (
-        node &&
-        node.type !== "start" &&
-        node.type !== "group" &&
-        node.type !== "comment"
-      ) {
-        targetNodes = [node];
-      }
-    }
-
-    if (targetNodes.length === 0) return;
-
-    push(useDocumentStore.getState().document);
-
-    // I-1: Uniform action — if any selected node is unmuted, mute all; else unmute all
-    const shouldMute = targetNodes.some((n) => !n.data.muted);
-    // S-4: Use Set for O(1) lookup instead of O(n*m) scan
-    const targetIds = new Set(targetNodes.map((n) => n.id));
-
-    const updatedNodes = currentNodes.map((n) => {
-      if (targetIds.has(n.id)) {
-        return { ...n, data: { ...n.data, muted: shouldMute } };
-      }
-      return n;
-    });
-
-    setNodesState(updatedNodes);
-    setNodes(updatedNodes);
-  }, [push, setNodesState, setNodes]);
-
-  // Handle Delete key to remove selected node and Copy/Paste
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+F: Open search (Phase 3A) — works even when input is focused
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        useUIStore.getState().setSearchOpen(true);
-        return;
-      }
-
-      // Ctrl+Shift+L: Auto-layout (Phase 4A)
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        e.shiftKey &&
-        e.key.toLowerCase() === "l"
-      ) {
-        e.preventDefault();
-        applyAutoLayout();
-        return;
-      }
-
-      // Ctrl+G: Toggle snap-to-grid (Phase 4C)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
-        e.preventDefault();
-        toggleSnapToGrid();
-        return;
-      }
-
-      // Escape: clear path highlights (Phase 3B)
-      if (e.key === "Escape") {
-        clearHighlightedPaths();
-      }
-
-      // Don't handle if user is typing in an input field
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Alt+L/C/R/T/M/B: Alignment shortcuts (Phase 4B)
-      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        const alignMap: Record<string, AlignMode> = {
-          l: "left",
-          c: "center",
-          r: "right",
-          t: "top",
-          m: "middle",
-          b: "bottom",
-        };
-        const mode = alignMap[e.key.toLowerCase()];
-        if (mode) {
-          e.preventDefault();
-          applyAlign(mode);
-          return;
-        }
-      }
-
-      // Delete/Backspace - remove selected nodes and/or edges
-      if (e.key === "Delete" || e.key === "Backspace") {
-        const currentNodes = nodesRef.current;
-        const currentEdges = edgesRef.current;
-        const selectedNodes = currentNodes.filter((n) => n.selected);
-        const selectedEdgesArr = currentEdges.filter((edge) => edge.selected);
-
-        if (selectedNodes.length === 0 && selectedEdgesArr.length === 0) return;
-
-        e.preventDefault();
-        push(useDocumentStore.getState().document);
-
-        const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
-        const selectedEdgeIds = new Set(
-          selectedEdgesArr.map((edge) => edge.id),
-        );
-
-        // Remove selected nodes and any edges connected to them, plus selected edges
-        const newNodes = currentNodes.filter((n) => !selectedNodeIds.has(n.id));
-        const newEdges = currentEdges.filter(
-          (edge) =>
-            !selectedEdgeIds.has(edge.id) &&
-            !selectedNodeIds.has(edge.source) &&
-            !selectedNodeIds.has(edge.target),
-        );
-
-        // Updates to both ReactFlow state and Zustand are synchronous within this handler.
-        // React 18 batches them into a single render, so they cannot diverge mid-update.
-        setNodesState(newNodes);
-        setEdgesState(newEdges);
-        setNodes(newNodes);
-        setEdges(newEdges);
-        setSelectedNodeId(null);
-      }
-
-      // Ctrl+C - copy selected nodes and internal edges
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
-        const currentNodes = nodesRef.current;
-        const currentEdges = edgesRef.current;
-        let nodesToCopy = currentNodes.filter((n) => n.selected);
-
-        // Fall back to single selected node from ReactFlow state (same source)
-        if (nodesToCopy.length === 0 && selectedNodeIdRef.current) {
-          const node = currentNodes.find(
-            (n) => n.id === selectedNodeIdRef.current,
-          );
-          if (node) nodesToCopy = [node];
-        }
-
-        if (nodesToCopy.length === 0) return;
-
-        e.preventDefault();
-        const selectedIds = new Set(nodesToCopy.map((n) => n.id));
-        const internalEdges = currentEdges.filter(
-          (edge) =>
-            selectedIds.has(edge.source) && selectedIds.has(edge.target),
-        );
-
-        clipboardRef.current = {
-          nodes: structuredClone(nodesToCopy),
-          edges: structuredClone(internalEdges),
-        };
-      }
-
-      // Ctrl+V - paste nodes and remap edges
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v") {
-        if (!clipboardRef.current || clipboardRef.current.nodes.length === 0)
-          return;
-
-        e.preventDefault();
-        push(useDocumentStore.getState().document);
-
-        const offset = { x: 20, y: 20 };
-        const idMap = new Map<string, string>();
-
-        // Create new nodes with new IDs and offset positions
-        const newNodes: InteractionNode[] = clipboardRef.current.nodes.map(
-          (node) => {
-            const newId = generateId(node.type || "node");
-            idMap.set(node.id, newId);
-            return {
-              ...structuredClone(node),
-              id: newId,
-              position: {
-                x: node.position.x + offset.x,
-                y: node.position.y + offset.y,
-              },
-              selected: true,
-            };
-          },
-        );
-
-        // Remap edges — only keep edges where BOTH endpoints were copied (B7)
-        const newEdges: InteractionEdge[] = clipboardRef.current.edges
-          .filter((edge) => idMap.has(edge.source) && idMap.has(edge.target))
-          .map((edge) => ({
-            ...structuredClone(edge),
-            id: generateId("edge"),
-            source: idMap.get(edge.source)!,
-            target: idMap.get(edge.target)!,
-          }));
-
-        // Update clipboard for next paste — fresh clone, don't mutate original (B4)
-        clipboardRef.current = {
-          nodes: clipboardRef.current.nodes.map((n) => ({
-            ...structuredClone(n),
-            position: {
-              x: n.position.x + offset.x,
-              y: n.position.y + offset.y,
-            },
-          })),
-          edges: clipboardRef.current.edges,
-        };
-
-        // Single-source update: compute new state from refs, set both local and store (B1)
-        const allNodes = [
-          ...nodesRef.current.map((n) => ({ ...n, selected: false })),
-          ...newNodes,
-        ];
-        const allEdges = [...edgesRef.current, ...newEdges];
-        setNodesState(allNodes);
-        setEdgesState(allEdges);
-        setNodes(allNodes);
-        setEdges(allEdges);
-      }
-
-      // Ctrl+0: Fit All (Phase 3D)
-      if ((e.ctrlKey || e.metaKey) && e.key === "0") {
-        e.preventDefault();
-        fitView({ padding: 0.1, duration: 300 });
-      }
-
-      // Ctrl+1: Fit Selection (Phase 3D)
-      if ((e.ctrlKey || e.metaKey) && e.key === "1") {
-        e.preventDefault();
-        const selected = getNodes().filter((n) => n.selected);
-        if (selected.length > 0) {
-          fitView({ nodes: selected, padding: 0.1, duration: 300 });
-        } else if (selectedNodeIdRef.current) {
-          const node = getNodes().find(
-            (n) => n.id === selectedNodeIdRef.current,
-          );
-          if (node) fitView({ nodes: [node], padding: 0.1, duration: 300 });
-        }
-      }
-
-      // Home: Fit to Start (Phase 3D) — L2: use measured dimensions
-      if (e.key === "Home") {
-        e.preventDefault();
-        const startNode = getNodes().find((n) => n.type === "start");
-        if (startNode) {
-          const w = startNode.measured?.width ?? 180;
-          const h = startNode.measured?.height ?? 80;
-          setCenter(
-            startNode.position.x + w / 2,
-            startNode.position.y + h / 2,
-            { zoom: 1, duration: 300 },
-          );
-        }
-      }
-
-      // B: toggle bookmark (Phase 3C)
-      if (
-        e.key.toLowerCase() === "b" &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey
-      ) {
-        const nodeId = selectedNodeIdRef.current;
-        if (nodeId) {
-          e.preventDefault();
-          useDocumentStore.getState().toggleBookmark(nodeId);
-        }
-      }
-
-      // M: toggle mute (Phase 5E)
-      if (
-        e.key.toLowerCase() === "m" &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey
-      ) {
-        e.preventDefault();
-        handleToggleMute();
-        return;
-      }
-
-      // Number keys 1-6: quick-add node at viewport center
-      const nodeType = HOTKEY_NODE_MAP[e.key];
-      if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        e.preventDefault();
-        const wrapper = reactFlowWrapper.current;
-        if (!wrapper) return;
-        const bounds = wrapper.getBoundingClientRect();
-        const centerPosition = screenToFlowPosition({
-          x: bounds.left + bounds.width / 2,
-          y: bounds.top + bounds.height / 2,
-        });
-
-        const newNode: InteractionNode = {
-          id: generateId(nodeType),
-          type: nodeType,
-          position: centerPosition,
-          data: getDefaultNodeData(nodeType),
-          ...(nodeType === "group"
-            ? { style: { width: 400, height: 300 }, zIndex: -1 }
-            : nodeType === "comment"
-              ? { style: { width: 200, height: 100 } }
-              : {}),
-        };
-
-        push(useDocumentStore.getState().document);
-        addNode(newNode);
-        setNodesState((nds) => [...nds, newNode]);
-        setSelectedNodeId(newNode.id);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    push,
-    setNodes,
-    setEdges,
+  // Extracted hook: keyboard shortcuts, clipboard, mute toggle, template save
+  const {
+    handleSaveAsTemplate,
+    handleToggleMute,
+    saveTemplateOpen,
+    setSaveTemplateOpen,
+    templateNodes,
+    templateEdges,
+  } = useCanvasKeyboard({
+    nodesRef,
+    edgesRef,
+    selectedNodeIdRef,
+    reactFlowWrapper,
     setNodesState,
     setEdgesState,
-    setSelectedNodeId,
-    screenToFlowPosition,
-    fitView,
-    setCenter,
-    getNodes,
-    clearHighlightedPaths,
     applyAutoLayout,
     applyAlign,
     applyDistribute,
-    toggleSnapToGrid,
-    handleToggleMute,
-  ]);
+  });
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(

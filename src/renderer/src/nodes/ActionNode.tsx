@@ -3,6 +3,7 @@ import { Zap } from "lucide-react";
 import { BaseNode } from "./BaseNode";
 import { useDocumentStore } from "../stores";
 import type { Action, ActionNodeData } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 interface ActionNodeProps {
   id: string;
@@ -59,7 +60,7 @@ function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
 
   return (
     <BaseNode
-      accentColor="#38bdf8"
+      accentColor={NODE_ACCENT_COLORS.action}
       icon={<Zap className="h-4 w-4" />}
       label={data.label || "Action"}
       selected={selected}

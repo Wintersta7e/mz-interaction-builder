@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useDocumentStore, useUIStore } from "../stores";
 import type { InteractionNodeType } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 const nodeIcons: Record<InteractionNodeType, React.ReactNode> = {
   start: <Play className="h-3 w-3" />,
@@ -19,16 +20,6 @@ const nodeIcons: Record<InteractionNodeType, React.ReactNode> = {
   end: <Square className="h-3 w-3" />,
   group: <Group className="h-3 w-3" />,
   comment: <MessageSquare className="h-3 w-3" />,
-};
-
-const nodeColors: Record<InteractionNodeType, string> = {
-  start: "#34d399",
-  menu: "#a78bfa",
-  action: "#38bdf8",
-  condition: "#fbbf24",
-  end: "#fb7185",
-  group: "#60a5fa",
-  comment: "#f59e0b",
 };
 
 interface BookmarkPanelProps {
@@ -73,7 +64,7 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
                 className="group flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer text-left"
                 onClick={() => onNavigateToNode(nodeId)}
               >
-                <span style={{ color: nodeColors[nodeType] }}>
+                <span style={{ color: NODE_ACCENT_COLORS[nodeType] }}>
                   {nodeIcons[nodeType]}
                 </span>
                 <span className="flex-1 truncate text-foreground">

@@ -1,13 +1,18 @@
 import { create } from "zustand";
 import type { NodeTemplate } from "../types";
 
+export interface TemplateResult {
+  success: boolean;
+  error?: string;
+}
+
 interface TemplateState {
   templates: NodeTemplate[];
   isLoaded: boolean;
 
   loadTemplates: () => Promise<void>;
-  saveTemplate: (template: NodeTemplate) => Promise<boolean>;
-  deleteTemplate: (id: string) => Promise<boolean>;
+  saveTemplate: (template: NodeTemplate) => Promise<TemplateResult>;
+  deleteTemplate: (id: string) => Promise<TemplateResult>;
 }
 
 export const useTemplateStore = create<TemplateState>()((set) => ({
@@ -33,15 +38,10 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
           ? state.templates.map((t) => (t.id === template.id ? template : t))
           : [...state.templates, template],
       }));
-      return true;
+      return { success: true };
     }
     console.error("Failed to save template:", result.error);
-    await window.api.dialog.message({
-      type: "error",
-      title: "Template Error",
-      message: `Failed to save template: ${result.error}`,
-    });
-    return false;
+    return { success: false, error: result.error };
   },
 
   deleteTemplate: async (id) => {
@@ -50,14 +50,9 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
       set((state) => ({
         templates: state.templates.filter((t) => t.id !== id),
       }));
-      return true;
+      return { success: true };
     }
     console.error("Failed to delete template:", result.error);
-    await window.api.dialog.message({
-      type: "error",
-      title: "Template Error",
-      message: `Failed to delete template: ${result.error}`,
-    });
-    return false;
+    return { success: false, error: result.error };
   },
 }));

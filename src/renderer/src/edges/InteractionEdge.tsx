@@ -5,6 +5,7 @@ import {
   EdgeLabelRenderer,
 } from "@xyflow/react";
 import type { InteractionEdge as InteractionEdgeType } from "../types";
+import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
 function InteractionEdgeComponent({
   id,
@@ -38,10 +39,10 @@ function InteractionEdgeComponent({
 
   switch (edgeStyle) {
     case "condition-true":
-      strokeColor = "#34d399";
+      strokeColor = NODE_ACCENT_COLORS.start;
       break;
     case "condition-false":
-      strokeColor = "#fb7185";
+      strokeColor = NODE_ACCENT_COLORS.end;
       break;
     case "choice":
       useGradient = true; // gradient from violet to target
@@ -90,10 +91,10 @@ function InteractionEdgeComponent({
               transform: `translate(-50%, -50%) translate(${(sourceX + targetX) / 2}px, ${(sourceY + targetY) / 2}px)`,
               backgroundColor:
                 edgeStyle === "condition-true"
-                  ? "#34d399"
+                  ? NODE_ACCENT_COLORS.start
                   : edgeStyle === "condition-false"
-                    ? "#fb7185"
-                    : "#a78bfa",
+                    ? NODE_ACCENT_COLORS.end
+                    : NODE_ACCENT_COLORS.menu,
               color: edgeStyle === "condition-false" ? "#fff" : "#000",
               opacity: selected ? 1 : 0.7,
             }}

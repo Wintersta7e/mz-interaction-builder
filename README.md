@@ -109,6 +109,8 @@ The toolbar includes a validation button that checks your graph for common issue
 
 <img src="screenshots/validation.png" alt="Validation panel showing warnings" width="260" />
 
+<img src="screenshots/export-modal.png" alt="Export modal — Copy as JSON or Export to Map" width="380" />
+
 ### Copy as JSON
 
 Click "Copy to Clipboard" in the Export modal to copy the generated RPG Maker commands. Paste into your event's command list.
@@ -222,14 +224,20 @@ src/
 ├── preload/        # IPC bridge
 └── renderer/
     └── src/
-        ├── components/   # Canvas, SearchPanel, BookmarkPanel, BreadcrumbTrail, PropertiesPanel, etc.
+        ├── components/
+        │   ├── properties/   # Per-node-type property editors
+        │   └── ...           # Canvas, SearchPanel, BookmarkPanel, PropertiesPanel, etc.
         ├── edges/        # InteractionEdge (custom color-coded edge component)
         ├── nodes/        # BaseNode + 7 node types
-        ├── hooks/        # useDebouncedSync
-        ├── stores/       # Zustand: Document, History, UI, Project
+        ├── hooks/        # useCanvasKeyboard, useCanvasLayout, useDebouncedSync, etc.
+        ├── stores/       # Zustand: Document, History, UI, Project, Template
         ├── lib/
         │   ├── export/          # RPG Maker command generation
         │   ├── presets/         # Variable presets
+        │   ├── nodeColors.ts    # Centralized node accent colors
+        │   ├── nodeFactory.ts   # Node creation helpers
+        │   ├── edgeUtils.ts     # Edge type/color logic
+        │   ├── validateDocument.ts # Pure validation function
         │   ├── graphTraversal.ts # BFS upstream/downstream/shortest path
         │   ├── searchNodes.ts   # Node text extraction and search
         │   └── __tests__/       # Unit tests
