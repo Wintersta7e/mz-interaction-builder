@@ -31,10 +31,7 @@ import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
-import { autoLayout } from "../lib/autoLayout";
-import type { AutoLayoutOptions } from "../lib/autoLayout";
-import { alignNodes, distributeNodes } from "../lib/alignNodes";
-import type { AlignMode, DistributeMode } from "../lib/alignNodes";
+import { useCanvasLayout } from "../hooks/useCanvasLayout";
 import { AlignmentToolbar } from "./AlignmentToolbar";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
@@ -75,7 +72,7 @@ function CanvasInner() {
   } = useUIStore();
   const { push } = useHistoryStore();
   const templates = useTemplateStore((s) => s.templates);
-  const { screenToFlowPosition, fitView, setCenter, getNodes } = useReactFlow();
+  const { screenToFlowPosition, setCenter, getNodes } = useReactFlow();
 
   const setHighlightedPaths = useUIStore((s) => s.setHighlightedPaths);
   const clearHighlightedPaths = useUIStore((s) => s.clearHighlightedPaths);
@@ -434,80 +431,12 @@ function CanvasInner() {
     [getNodes, setCenter, setSelectedNodeId],
   );
 
-  // Auto-layout (Phase 4A)
-  const applyAutoLayout = useCallback(
-    (options: AutoLayoutOptions = {}) => {
-      const currentNodes = nodesRef.current;
-      const currentEdges = edgesRef.current;
-      if (currentNodes.length === 0) return;
-
-      push(useDocumentStore.getState().document);
-
-      const positions = autoLayout(currentNodes, currentEdges, options);
-      const updatedNodes = currentNodes.map((node) => {
-        const pos = positions.get(node.id);
-        return pos ? { ...node, position: pos } : node;
-      });
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-      fitView({ padding: 0.1, duration: 300 });
-    },
-    [push, setNodesState, setNodes, fitView],
-  );
-
-  // Align selected nodes (Phase 4B)
-  const applyAlign = useCallback(
-    (mode: AlignMode) => {
-      const selected = nodesRef.current.filter((n) => n.selected);
-      if (selected.length < 2) return;
-
-      push(useDocumentStore.getState().document);
-
-      const aligned = alignNodes(selected, mode);
-      const alignedMap = new Map(aligned.map((n) => [n.id, n]));
-      const updatedNodes = nodesRef.current.map((n) =>
-        alignedMap.has(n.id)
-          ? { ...n, position: alignedMap.get(n.id)!.position }
-          : n,
-      );
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-    },
-    [push, setNodesState, setNodes],
-  );
-
-  // Distribute selected nodes (Phase 4B)
-  const applyDistribute = useCallback(
-    (mode: DistributeMode) => {
-      const selected = nodesRef.current.filter((n) => n.selected);
-      if (selected.length < 3) return; // need 3+ to distribute
-
-      push(useDocumentStore.getState().document);
-
-      const distributed = distributeNodes(selected, mode);
-      const distMap = new Map(distributed.map((n) => [n.id, n]));
-      const updatedNodes = nodesRef.current.map((n) =>
-        distMap.has(n.id) ? { ...n, position: distMap.get(n.id)!.position } : n,
-      );
-
-      setNodesState(updatedNodes);
-      setNodes(updatedNodes);
-    },
-    [push, setNodesState, setNodes],
-  );
-
-  // Watch for layout trigger from Toolbar (Phase 4A)
-  const layoutTrigger = useUIStore((s) => s.layoutTrigger);
-  const clearLayoutTrigger = useUIStore((s) => s.clearLayoutTrigger);
-
-  useEffect(() => {
-    if (layoutTrigger) {
-      applyAutoLayout(layoutTrigger);
-      clearLayoutTrigger();
-    }
-  }, [layoutTrigger, applyAutoLayout, clearLayoutTrigger]);
+  // Layout operations extracted to hook (auto-layout, align, distribute + trigger watcher)
+  const { applyAutoLayout, applyAlign, applyDistribute } = useCanvasLayout({
+    nodesRef,
+    edgesRef,
+    setNodesState,
+  });
 
   const handleContextMenuAddNode = useCallback(
     (type: InteractionNodeType) => {
