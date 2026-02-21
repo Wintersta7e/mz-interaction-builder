@@ -24,6 +24,7 @@ import {
 import { useState, useCallback } from "react";
 import { useDebouncedSync } from "../hooks/useDebouncedSync";
 import { parseIntSafe } from "../lib/parseIntSafe";
+import { cn } from "../lib/utils";
 import { SearchableSelect } from "./SearchableSelect";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 
@@ -152,6 +153,28 @@ export function PropertiesPanel() {
           className="w-full rounded border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none"
         />
       </div>
+
+      {/* Mute toggle (Phase 5E) — only for mutable node types */}
+      {selectedNode.type !== "start" && selectedNode.type !== "group" && selectedNode.type !== "comment" && (
+        <div className="mb-4 flex items-center justify-between">
+          <label className="text-xs text-muted-foreground">Muted (skip in export)</label>
+          <button
+            onClick={() =>
+              updateNode(selectedNode.id, {
+                data: { ...selectedNode.data, muted: !selectedNode.data.muted },
+              })
+            }
+            className={cn(
+              "rounded px-3 py-1 text-xs font-medium transition-colors",
+              selectedNode.data.muted
+                ? "bg-amber-500/20 text-amber-400"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            )}
+          >
+            {selectedNode.data.muted ? "Muted" : "Active"}
+          </button>
+        </div>
+      )}
 
       {/* Type-specific properties */}
       {selectedNode.type === "menu" && (
