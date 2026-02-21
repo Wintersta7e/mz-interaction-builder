@@ -133,6 +133,30 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       });
     }
 
+    // Muted node bypass: skip command generation, follow default outgoing edge
+    if (node.data.muted && node.type !== "start") {
+      const outEdges = edgesBySource.get(nodeId) || [];
+      let bypassTarget: string | null = null;
+
+      if (node.type === "condition") {
+        // Follow true branch
+        const trueEdge = outEdges.find((e) => e.sourceHandle === "true");
+        bypassTarget = (trueEdge || outEdges[0])?.target ?? null;
+      } else if (node.type === "menu") {
+        // Follow first choice
+        const choiceEdge = outEdges.find((e) => e.sourceHandle === "choice-0");
+        bypassTarget = (choiceEdge || outEdges[0])?.target ?? null;
+      } else {
+        // Action, End: follow first outgoing edge
+        bypassTarget = outEdges[0]?.target ?? null;
+      }
+
+      if (bypassTarget) {
+        processNode(bypassTarget, indent);
+      }
+      return;
+    }
+
     // Generate commands based on node type
     switch (node.type) {
       case "start":
