@@ -155,26 +155,33 @@ export function PropertiesPanel() {
       </div>
 
       {/* Mute toggle (Phase 5E) — only for mutable node types */}
-      {selectedNode.type !== "start" && selectedNode.type !== "group" && selectedNode.type !== "comment" && (
-        <div className="mb-4 flex items-center justify-between">
-          <label className="text-xs text-muted-foreground">Muted (skip in export)</label>
-          <button
-            onClick={() =>
-              updateNode(selectedNode.id, {
-                data: { ...selectedNode.data, muted: !selectedNode.data.muted },
-              })
-            }
-            className={cn(
-              "rounded px-3 py-1 text-xs font-medium transition-colors",
-              selectedNode.data.muted
-                ? "bg-amber-500/20 text-amber-400"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            )}
-          >
-            {selectedNode.data.muted ? "Muted" : "Active"}
-          </button>
-        </div>
-      )}
+      {selectedNode.type !== "start" &&
+        selectedNode.type !== "group" &&
+        selectedNode.type !== "comment" && (
+          <div className="mb-4 flex items-center justify-between">
+            <label className="text-xs text-muted-foreground">
+              Muted (skip in export)
+            </label>
+            <button
+              onClick={() =>
+                updateNode(selectedNode.id, {
+                  data: {
+                    ...selectedNode.data,
+                    muted: !selectedNode.data.muted,
+                  },
+                })
+              }
+              className={cn(
+                "rounded px-3 py-1 text-xs font-medium transition-colors",
+                selectedNode.data.muted
+                  ? "bg-amber-500/20 text-amber-400"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+            >
+              {selectedNode.data.muted ? "Muted" : "Active"}
+            </button>
+          </div>
+        )}
 
       {/* Type-specific properties */}
       {selectedNode.type === "menu" && (

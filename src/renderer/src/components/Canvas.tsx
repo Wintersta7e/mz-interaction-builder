@@ -323,6 +323,21 @@ function CanvasInner() {
     [setEdgesState, addDocEdge, push],
   );
 
+  // Validate connections: reject self-loops and duplicate edges (I-3)
+  const isValidConnection = useCallback(
+    (connection: Connection | InteractionEdge) => {
+      if (connection.source === connection.target) return false;
+      return !edgesRef.current.some(
+        (e) =>
+          e.source === connection.source &&
+          e.target === connection.target &&
+          (e.sourceHandle ?? null) === (connection.sourceHandle ?? null) &&
+          (e.targetHandle ?? null) === (connection.targetHandle ?? null),
+      );
+    },
+    [],
+  );
+
   // Edge reconnection handlers (Phase 5F)
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessfulRef.current = false;
@@ -333,10 +348,15 @@ function CanvasInner() {
       edgeReconnectSuccessfulRef.current = true;
       push(useDocumentStore.getState().document);
 
-      const { type, data } = getEdgeTypeAndData(newConnection, nodesRef.current);
-      const updatedEdges = reconnectEdge(oldEdge, newConnection, edgesRef.current).map(
-        (e) => (e.id === oldEdge.id ? { ...e, type, data } : e),
+      const { type, data } = getEdgeTypeAndData(
+        newConnection,
+        nodesRef.current,
       );
+      const updatedEdges = reconnectEdge(
+        oldEdge,
+        newConnection,
+        edgesRef.current,
+      ).map((e) => (e.id === oldEdge.id ? { ...e, type, data } : e));
 
       setEdgesState(updatedEdges);
       setEdges(updatedEdges);
@@ -671,9 +691,7 @@ function CanvasInner() {
 
     // Fallback to single selected node
     if (targetNodes.length === 0 && selectedNodeIdRef.current) {
-      const node = currentNodes.find(
-        (n) => n.id === selectedNodeIdRef.current,
-      );
+      const node = currentNodes.find((n) => n.id === selectedNodeIdRef.current);
       if (
         node &&
         node.type !== "start" &&
@@ -688,9 +706,14 @@ function CanvasInner() {
 
     push(useDocumentStore.getState().document);
 
+    // I-1: Uniform action — if any selected node is unmuted, mute all; else unmute all
+    const shouldMute = targetNodes.some((n) => !n.data.muted);
+    // S-4: Use Set for O(1) lookup instead of O(n*m) scan
+    const targetIds = new Set(targetNodes.map((n) => n.id));
+
     const updatedNodes = currentNodes.map((n) => {
-      if (targetNodes.some((t) => t.id === n.id)) {
-        return { ...n, data: { ...n.data, muted: !n.data.muted } };
+      if (targetIds.has(n.id)) {
+        return { ...n, data: { ...n.data, muted: shouldMute } };
       }
       return n;
     });
@@ -1017,6 +1040,7 @@ function CanvasInner() {
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
+          isValidConnection={isValidConnection}
           onNodeClick={onNodeClick}
           onEdgeClick={onEdgeClick}
           onPaneClick={onPaneClick}
@@ -1077,8 +1101,26 @@ function CanvasInner() {
               nodes.some((n) => n.selected) || selectedNodeId !== null
             }
             isMuted={(() => {
-              const sel = nodes.find((n) => n.id === selectedNodeId);
-              return sel ? !!sel.data.muted : false;
+              // I-2: Compute from full selection, not just selectedNodeId
+              const mutableTypes = new Set([
+                "action",
+                "menu",
+                "condition",
+                "end",
+              ]);
+              const selected = nodes.filter(
+                (n) => n.selected && mutableTypes.has(n.type ?? ""),
+              );
+              if (selected.length > 0) {
+                return selected.every((n) => !!n.data.muted);
+              }
+              // Fallback to single selected node
+              const sel = selectedNodeId
+                ? nodes.find((n) => n.id === selectedNodeId)
+                : null;
+              return sel && mutableTypes.has(sel.type ?? "")
+                ? !!sel.data.muted
+                : false;
             })()}
           />
         )}
