@@ -2,6 +2,11 @@ import { ReactNode } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { Star } from "lucide-react";
 import { cn } from "../lib/utils";
+import {
+  MutedBadge,
+  MUTED_NODE_CLASSES,
+  MUTED_LABEL_CLASS,
+} from "./MutedBadge";
 
 interface BaseNodeProps {
   children: ReactNode;
@@ -32,7 +37,7 @@ export function BaseNode({
     <div
       className={cn(
         "interaction-node min-w-[180px] rounded-xl border shadow-lg",
-        muted && "border-dashed opacity-30",
+        muted && MUTED_NODE_CLASSES,
       )}
       style={{
         borderColor: selected
@@ -52,15 +57,20 @@ export function BaseNode({
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <span style={{ color: accentColor }}>{icon}</span>
-        <span className={cn("text-sm font-medium text-foreground", muted && "line-through")}>{label}</span>
-        {bookmarked && (
-          <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
-        )}
-        {muted && (
-          <span className="ml-auto rounded bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-            Muted
-          </span>
-        )}
+        <span
+          className={cn(
+            "text-sm font-medium text-foreground",
+            muted && MUTED_LABEL_CLASS,
+          )}
+        >
+          {label}
+        </span>
+        <span className="ml-auto flex items-center gap-1.5">
+          {bookmarked && (
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+          )}
+          {muted && <MutedBadge />}
+        </span>
       </div>
 
       {/* Content */}

@@ -22,6 +22,7 @@ function StartNodeComponent({ id, data, selected }: StartNodeProps) {
       label={data.label || "Start"}
       selected={selected}
       bookmarked={bookmarked}
+      muted={!!data.muted}
       hasInput={false}
       hasOutput={true}
     >

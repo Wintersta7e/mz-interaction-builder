@@ -3,6 +3,11 @@ import { Handle, Position } from "@xyflow/react";
 import { List, Star } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useDocumentStore } from "../stores";
+import {
+  MutedBadge,
+  MUTED_NODE_CLASSES,
+  MUTED_LABEL_CLASS,
+} from "./MutedBadge";
 import type { MenuNodeData } from "../types";
 
 interface MenuNodeProps {
@@ -51,7 +56,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
     <div
       className={cn(
         "interaction-node min-w-[200px] rounded-xl border shadow-lg",
-        data.muted && "border-dashed opacity-30",
+        data.muted && MUTED_NODE_CLASSES,
       )}
       style={{
         borderColor: selected
@@ -83,17 +88,17 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <List className="h-4 w-4" style={{ color: "#a78bfa" }} />
-        <span className={cn("text-sm font-medium", data.muted && "line-through")}>
+        <span
+          className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}
+        >
           {data.label || "Choice Menu"}
         </span>
-        {bookmarked && (
-          <Star className="ml-auto h-3 w-3 fill-yellow-400 text-yellow-400" />
-        )}
-        {data.muted && (
-          <span className="ml-auto rounded bg-muted-foreground/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
-            Muted
-          </span>
-        )}
+        <span className="ml-auto flex items-center gap-1.5">
+          {bookmarked && (
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+          )}
+          {data.muted && <MutedBadge />}
+        </span>
       </div>
 
       {/* Content - Choices */}
