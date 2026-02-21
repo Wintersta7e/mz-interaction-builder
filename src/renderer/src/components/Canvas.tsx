@@ -620,6 +620,47 @@ function CanvasInner() {
     edges: InteractionEdge[];
   } | null>(null);
 
+  // Toggle mute on selected nodes (Phase 5E)
+  const handleToggleMute = useCallback(() => {
+    const currentNodes = nodesRef.current;
+    let targetNodes = currentNodes.filter(
+      (n) =>
+        n.selected &&
+        n.type !== "start" &&
+        n.type !== "group" &&
+        n.type !== "comment",
+    );
+
+    // Fallback to single selected node
+    if (targetNodes.length === 0 && selectedNodeIdRef.current) {
+      const node = currentNodes.find(
+        (n) => n.id === selectedNodeIdRef.current,
+      );
+      if (
+        node &&
+        node.type !== "start" &&
+        node.type !== "group" &&
+        node.type !== "comment"
+      ) {
+        targetNodes = [node];
+      }
+    }
+
+    if (targetNodes.length === 0) return;
+
+    push(useDocumentStore.getState().document);
+
+    const updatedNodes = currentNodes.map((n) => {
+      if (targetNodes.some((t) => t.id === n.id)) {
+        return { ...n, data: { ...n.data, muted: !n.data.muted } };
+      }
+      return n;
+    });
+
+    setNodesState(updatedNodes);
+    setNodes(updatedNodes);
+  }, [push, setNodesState, setNodes]);
+
   // Handle Delete key to remove selected node and Copy/Paste
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -856,6 +897,18 @@ function CanvasInner() {
         }
       }
 
+      // M: toggle mute (Phase 5E)
+      if (
+        e.key.toLowerCase() === "m" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        handleToggleMute();
+        return;
+      }
+
       // Number keys 1-6: quick-add node at viewport center
       const nodeType = HOTKEY_NODE_MAP[e.key];
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -905,6 +958,7 @@ function CanvasInner() {
     applyAlign,
     applyDistribute,
     toggleSnapToGrid,
+    handleToggleMute,
   ]);
 
   // P6: Memoize MiniMap nodeColor to avoid re-renders
@@ -973,9 +1027,17 @@ function CanvasInner() {
             onAddNode={handleContextMenuAddNode}
             onClose={() => setContextMenu(null)}
             onSaveAsTemplate={handleSaveAsTemplate}
+            onToggleMute={() => {
+              handleToggleMute();
+              setContextMenu(null);
+            }}
             hasSelectedNodes={
               nodes.some((n) => n.selected) || selectedNodeId !== null
             }
+            isMuted={(() => {
+              const sel = nodes.find((n) => n.id === selectedNodeId);
+              return sel ? !!sel.data.muted : false;
+            })()}
           />
         )}
         {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}

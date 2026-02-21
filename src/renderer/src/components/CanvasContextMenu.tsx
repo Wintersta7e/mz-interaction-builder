@@ -8,6 +8,7 @@ import {
   Group,
   MessageSquare,
   BookmarkPlus,
+  VolumeX,
 } from "lucide-react";
 import type { InteractionNodeType } from "../types";
 
@@ -21,7 +22,9 @@ interface CanvasContextMenuProps {
   onAddNode: (type: InteractionNodeType) => void;
   onClose: () => void;
   onSaveAsTemplate?: () => void;
+  onToggleMute?: () => void;
   hasSelectedNodes?: boolean;
+  isMuted?: boolean;
 }
 
 const menuItems: {
@@ -79,7 +82,9 @@ export function CanvasContextMenu({
   onAddNode,
   onClose,
   onSaveAsTemplate,
+  onToggleMute,
   hasSelectedNodes,
+  isMuted,
 }: CanvasContextMenuProps): React.JSX.Element {
   const menuRef = useRef<HTMLDivElement>(null);
   const [clampedPosition, setClampedPosition] = useState(position);
@@ -163,6 +168,20 @@ export function CanvasContextMenu({
               <BookmarkPlus className="h-4 w-4" />
             </span>
             <span>Save as Template</span>
+          </button>
+        </>
+      )}
+      {hasSelectedNodes && onToggleMute && (
+        <>
+          {!onSaveAsTemplate && <div className="my-1 border-t border-border" />}
+          <button
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+            onClick={onToggleMute}
+          >
+            <span className="text-muted-foreground">
+              <VolumeX className="h-4 w-4" />
+            </span>
+            <span>{isMuted ? "Unmute Node" : "Mute Node"}</span>
           </button>
         </>
       )}
