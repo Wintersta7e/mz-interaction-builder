@@ -1,11 +1,61 @@
-import { useEffect, useMemo } from "react";
-import { Play, X } from "lucide-react";
+import { Component, useEffect, useMemo, type ReactNode } from "react";
+import { Play, X, AlertTriangle, RotateCcw } from "lucide-react";
 import { usePreviewStore } from "../../stores";
 import { useDocumentStore } from "../../stores";
 import { PreviewControls } from "./PreviewControls";
 import { DialogueWindow } from "./DialogueWindow";
 import { VariableInspector } from "./VariableInspector";
 import { ExecutionLog } from "./ExecutionLog";
+
+// ─── Error Boundary ──────────────────────────────────────────────
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  error: Error | null;
+}
+
+class PreviewErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  state: ErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-2 text-amber-400">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-sm font-medium">Preview Error</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {this.state.error.message}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ error: null });
+              usePreviewStore.getState().restart();
+            }}
+            className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Restart Preview
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ─── Preview Panel ───────────────────────────────────────────────
 
 export function PreviewPanel(): React.JSX.Element | null {
   const isOpen = usePreviewStore((s) => s.isOpen);
@@ -70,12 +120,14 @@ export function PreviewPanel(): React.JSX.Element | null {
       {/* Controls */}
       <PreviewControls />
 
-      {/* Content area (placeholder sections for now) */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <DialogueWindow />
-        <VariableInspector />
-        <ExecutionLog />
-      </div>
+      {/* Content area wrapped in error boundary */}
+      <PreviewErrorBoundary>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <DialogueWindow />
+          <VariableInspector />
+          <ExecutionLog />
+        </div>
+      </PreviewErrorBoundary>
     </div>
   );
 }

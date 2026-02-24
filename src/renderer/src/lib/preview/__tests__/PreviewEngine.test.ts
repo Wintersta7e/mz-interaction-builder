@@ -299,7 +299,67 @@ describe("PreviewEngine", () => {
         (t) => t.nodeType === "action",
       );
       expect(actionEntry).toBeDefined();
+      expect(actionEntry!.content).toContain("Show Text");
       expect(actionEntry!.content).toContain("Hello world!");
+      expect(actionEntry!.detail).toBe("Hello world!");
+    });
+
+    it("script action populates detail with script source", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "script",
+            script: "$gameVariables.setValue(1, 10)",
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "a1"), makeEdge("edge-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start
+      engine.step(); // action
+
+      const actionEntry = engine.state.transcript.find(
+        (t) => t.nodeType === "action",
+      );
+      expect(actionEntry).toBeDefined();
+      expect(actionEntry!.detail).toBe("$gameVariables.setValue(1, 10)");
+    });
+
+    it("condition script populates detail with script source", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "script",
+          script: "$gameSwitches.value(5)",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), condNode, makeNode("e1", "end")],
+        [
+          makeEdge("edge-1", "s1", "c1"),
+          makeEdge("edge-t", "c1", "e1", "true"),
+          makeEdge("edge-f", "c1", "e1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start
+      engine.step(); // condition
+
+      const condEntry = engine.state.transcript.find(
+        (t) => t.nodeType === "condition",
+      );
+      expect(condEntry).toBeDefined();
+      expect(condEntry!.detail).toBe("$gameSwitches.value(5)");
     });
 
     it("visited nodes and edges tracked after traversal", () => {

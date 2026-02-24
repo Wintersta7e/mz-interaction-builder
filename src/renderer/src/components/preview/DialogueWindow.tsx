@@ -46,13 +46,12 @@ function useTypewriter(
 /**
  * Extracts displayable dialogue text from a transcript entry.
  * Returns the text if the entry represents a "Show Text" action, otherwise null.
+ *
+ * The engine stores raw dialogue text in `detail` and prefixes content with
+ * "Show Text:" so we check both for robustness.
  */
 function extractShowText(entry: TranscriptEntry): string | null {
-  if (
-    entry.nodeType === "action" &&
-    entry.content.includes("Show Text") &&
-    entry.detail
-  ) {
+  if (entry.nodeType === "action" && entry.detail && entry.content.includes("Show Text")) {
     return entry.detail;
   }
   return null;

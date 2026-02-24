@@ -238,11 +238,19 @@ export class PreviewEngine {
   private processActionNode(node: InteractionNode): void {
     const data = node.data as ActionNodeData;
     const summaryParts: string[] = [];
+    const detailParts: string[] = [];
+    let dialogueText: string | null = null;
 
     for (const action of data.actions) {
       const result = this.simulateAction(action);
       if (result) {
         summaryParts.push(result);
+      }
+      // Collect raw detail for secondary display
+      if (action.type === "show_text" && action.text) {
+        dialogueText = action.text;
+      } else if (action.type === "script" && action.script) {
+        detailParts.push(action.script);
       }
     }
 
@@ -251,10 +259,14 @@ export class PreviewEngine {
         ? summaryParts.join("; ")
         : `Action "${node.data.label}"`;
 
+    // detail: raw dialogue text for typewriter display, or script sources
+    const detail = dialogueText ?? (detailParts.length > 0 ? detailParts.join("; ") : undefined);
+
     this.addTranscript({
       nodeId: node.id,
       nodeType: "action",
       content,
+      detail,
     });
 
     this.followEdge(node.id);
@@ -328,7 +340,7 @@ export class PreviewEngine {
 
       case "show_text": {
         const text = action.text ?? "";
-        return text;
+        return `Show Text: "${text}"`;
       }
 
       case "common_event": {
@@ -382,6 +394,7 @@ export class PreviewEngine {
 
     // Build human-readable content description
     let content: string;
+    let detail: string | undefined;
     let result: "true" | "false" | "error" = branch;
 
     switch (condition.type) {
@@ -392,15 +405,19 @@ export class PreviewEngine {
         content = `Condition: Variable ${condition.variableId ?? 0} ${condition.variableOperator ?? "=="} ${condition.variableCompareValue ?? 0}`;
         break;
       case "script": {
+        const scriptSrc = condition.script ?? "";
         const scriptResult = evaluateScript(
-          condition.script ?? "",
+          scriptSrc,
           this._state.variables,
           this._state.switches,
         );
         if (scriptResult instanceof Error) {
           result = "error";
+          detail = scriptResult.message;
+        } else {
+          detail = scriptSrc;
         }
-        content = `Condition: Script "${condition.script ?? ""}"`;
+        content = `Condition: Script "${scriptSrc}"`;
         break;
       }
       default:
@@ -412,6 +429,7 @@ export class PreviewEngine {
       nodeId: node.id,
       nodeType: "condition",
       content,
+      detail,
       result,
     });
 
@@ -574,13 +592,23 @@ export class PreviewEngine {
 
   /**
    * Add a transcript entry with auto-incremented stepCount as stepIndex.
+   * Logs to console.debug in development for DevTools inspection.
    */
   private addTranscript(partial: Omit<TranscriptEntry, "stepIndex">): void {
     this._state.stepCount += 1;
-    this._state.transcript.push({
+    const entry: TranscriptEntry = {
       ...partial,
       stepIndex: this._state.stepCount,
-    });
+    };
+    this._state.transcript.push(entry);
+
+    if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
+      console.debug(
+        `[Preview] [${entry.stepIndex}] ${entry.content}`,
+        entry.detail ? `| ${entry.detail}` : "",
+        entry.result ? `→ ${entry.result}` : "",
+      );
+    }
   }
 
   /**
