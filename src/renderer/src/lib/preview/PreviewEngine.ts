@@ -4,6 +4,7 @@ import type {
   InteractionEdge,
   ActionNodeData,
   ConditionNodeData,
+  MenuNodeData,
   Condition,
   Action,
 } from "../../types";
@@ -68,8 +69,13 @@ export class PreviewEngine {
       return this._state;
     }
 
+    // Handle choice selection when waiting
+    if (this._state.status === "waiting_choice" && choiceIndex !== undefined) {
+      return this.selectChoice(choiceIndex);
+    }
+
     // Guard: waiting_choice requires a choiceIndex
-    if (this._state.status === "waiting_choice" && choiceIndex === undefined) {
+    if (this._state.status === "waiting_choice") {
       return this._state;
     }
 
@@ -88,6 +94,29 @@ export class PreviewEngine {
     // Mark current node as visited before processing
     this._state.visitedNodes.add(nodeId);
 
+    // Muted node bypass — skip processing and follow bypass edge
+    if (node.data.muted && node.type !== "start") {
+      this.addTranscript({
+        nodeId: node.id,
+        nodeType: node.type as "action" | "condition" | "menu" | "end",
+        content: `[Muted] Skipped ${node.data.label}`,
+      });
+
+      switch (node.type) {
+        case "condition":
+          this.followEdge(node.id, "true");
+          break;
+        case "menu":
+          this.followEdge(node.id, "choice-0");
+          break;
+        default:
+          this.followEdge(node.id);
+          break;
+      }
+
+      return this._state;
+    }
+
     // Dispatch by node type
     switch (node.type) {
       case "start":
@@ -102,8 +131,10 @@ export class PreviewEngine {
       case "condition":
         this.processConditionNode(node);
         break;
+      case "menu":
+        this.processMenuNode(node);
+        break;
       default:
-        // Menu handled in later task
         break;
     }
 
@@ -324,6 +355,79 @@ export class PreviewEngine {
     });
 
     this.followEdge(node.id, branch);
+  }
+
+  /** Process a Menu node: evaluate choice conditions, build available choices, wait for selection */
+  private processMenuNode(node: InteractionNode): void {
+    const data = node.data as MenuNodeData;
+    const choices = data.choices;
+
+    const availableChoices: PreviewState["availableChoices"] = choices.map(
+      (choice, index) => {
+        let hidden = false;
+        let disabled = false;
+
+        if (choice.hideCondition) {
+          hidden = this.evaluateConditionValue(choice.hideCondition);
+        }
+        if (choice.disableCondition) {
+          disabled = this.evaluateConditionValue(choice.disableCondition);
+        }
+
+        return { index, text: choice.text, hidden, disabled };
+      },
+    );
+
+    this._state.availableChoices = availableChoices;
+
+    const visibleCount = availableChoices.filter((c) => !c.hidden).length;
+    const hiddenCount = availableChoices.filter((c) => c.hidden).length;
+    const hiddenNote = hiddenCount > 0 ? ` (${hiddenCount} hidden)` : "";
+
+    this.addTranscript({
+      nodeId: node.id,
+      nodeType: "menu",
+      content: `Menu: ${visibleCount} choices${hiddenNote}`,
+    });
+
+    this._state.status = "waiting_choice";
+  }
+
+  /**
+   * Handle a choice selection when status is "waiting_choice".
+   * choiceIndex is the original index matching the "choice-N" handle.
+   */
+  private selectChoice(choiceIndex: number): PreviewState {
+    const nodeId = this._state.currentNodeId;
+    if (!nodeId) {
+      this._state.status = "ended";
+      return this._state;
+    }
+
+    const node = this.nodeMap.get(nodeId);
+    if (!node) {
+      this._state.status = "ended";
+      return this._state;
+    }
+
+    // Find the choice text for the transcript
+    const data = node.data as MenuNodeData;
+    const choiceText = data.choices[choiceIndex]?.text ?? `Choice ${choiceIndex}`;
+
+    this._state.choiceHistory.push(choiceIndex);
+
+    this.addTranscript({
+      nodeId: node.id,
+      nodeType: "menu",
+      content: `Choice: '${choiceText}'`,
+    });
+
+    this._state.availableChoices = [];
+    this._state.status = "running";
+
+    this.followEdge(nodeId, `choice-${choiceIndex}`);
+
+    return this._state;
   }
 
   /** Evaluate a condition and return true/false */

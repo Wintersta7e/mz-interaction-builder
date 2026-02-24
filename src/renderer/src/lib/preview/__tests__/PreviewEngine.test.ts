@@ -7,6 +7,7 @@ import type {
   InteractionNodeType,
   ActionNodeData,
   ConditionNodeData,
+  MenuNodeData,
 } from "../../../types";
 
 /** Helper to create a minimal InteractionDocument */
@@ -502,6 +503,271 @@ describe("PreviewEngine", () => {
       );
       expect(condEntry).toBeDefined();
       expect(condEntry!.result).toBe("error");
+    });
+  });
+
+  describe("step — menu nodes", () => {
+    it("presents choices and waits", () => {
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [
+          { id: "ch-0", text: "Option A" },
+          { id: "ch-1", text: "Option B" },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          menuNode,
+          makeNode("ea", "end"),
+          makeNode("eb", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "m1"),
+          makeEdge("e-c0", "m1", "ea", "choice-0"),
+          makeEdge("e-c1", "m1", "eb", "choice-1"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → m1
+      engine.step(); // process menu → waiting_choice
+
+      expect(engine.state.status).toBe("waiting_choice");
+      expect(engine.state.availableChoices).toHaveLength(2);
+      expect(engine.state.availableChoices[0].text).toBe("Option A");
+    });
+
+    it("advances on choice selection", () => {
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [
+          { id: "ch-0", text: "Option A" },
+          { id: "ch-1", text: "Option B" },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          menuNode,
+          makeNode("ea", "end"),
+          makeNode("eb", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "m1"),
+          makeEdge("e-c0", "m1", "ea", "choice-0"),
+          makeEdge("e-c1", "m1", "eb", "choice-1"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → m1
+      engine.step(); // process menu → waiting_choice
+      engine.step(1); // select choice 1 → eb
+
+      expect(engine.state.currentNodeId).toBe("eb");
+      expect(engine.state.choiceHistory).toEqual([1]);
+    });
+
+    it("hides choices with met hideCondition", () => {
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [
+          { id: "ch-0", text: "Visible" },
+          {
+            id: "ch-1",
+            text: "Hidden",
+            hideCondition: {
+              id: "hc-1",
+              type: "switch",
+              switchId: 1,
+              switchValue: "on",
+            },
+          },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          menuNode,
+          makeNode("ea", "end"),
+          makeNode("eb", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "m1"),
+          makeEdge("e-c0", "m1", "ea", "choice-0"),
+          makeEdge("e-c1", "m1", "eb", "choice-1"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Set switch 1 ON to trigger hideCondition
+      engine.setSwitch(1, true);
+
+      engine.step(); // start → m1
+      engine.step(); // process menu → waiting_choice
+
+      const nonHidden = engine.state.availableChoices.filter((c) => !c.hidden);
+      expect(nonHidden).toHaveLength(1);
+      expect(nonHidden[0].text).toBe("Visible");
+    });
+
+    it("marks disabled choices", () => {
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [
+          { id: "ch-0", text: "Normal" },
+          {
+            id: "ch-1",
+            text: "Disabled",
+            disableCondition: {
+              id: "dc-1",
+              type: "switch",
+              switchId: 2,
+              switchValue: "on",
+            },
+          },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          menuNode,
+          makeNode("ea", "end"),
+          makeNode("eb", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "m1"),
+          makeEdge("e-c0", "m1", "ea", "choice-0"),
+          makeEdge("e-c1", "m1", "eb", "choice-1"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Set switch 2 ON to trigger disableCondition
+      engine.setSwitch(2, true);
+
+      engine.step(); // start → m1
+      engine.step(); // process menu → waiting_choice
+
+      expect(engine.state.availableChoices[1].disabled).toBe(true);
+    });
+  });
+
+  describe("step — muted nodes", () => {
+    it("skips muted action", () => {
+      const mutedAction = makeNode("a1", "action", {
+        type: "action",
+        muted: true,
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "set",
+            variableValue: 99,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), mutedAction, makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "a1"), makeEdge("e-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // muted action → skipped → e1
+
+      expect(engine.state.variables.get(1)).toBeUndefined();
+      expect(engine.state.currentNodeId).toBe("e1");
+    });
+
+    it("skips muted condition (follows true)", () => {
+      const mutedCond = makeNode("c1", "condition", {
+        type: "condition",
+        muted: true,
+        condition: {
+          id: "cond-1",
+          type: "switch",
+          switchId: 5,
+          switchValue: "on",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          mutedCond,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Switch 5 is OFF — normally would go to false branch
+      // But muted condition should always follow true
+
+      engine.step(); // start → c1
+      engine.step(); // muted condition → true branch → t1
+
+      expect(engine.state.currentNodeId).toBe("t1");
+    });
+
+    it("skips muted menu (follows choice-0)", () => {
+      const mutedMenu = makeNode("m1", "menu", {
+        type: "menu",
+        muted: true,
+        choices: [
+          { id: "ch-0", text: "Option A" },
+          { id: "ch-1", text: "Option B" },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          mutedMenu,
+          makeNode("ea", "end"),
+          makeNode("eb", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "m1"),
+          makeEdge("e-c0", "m1", "ea", "choice-0"),
+          makeEdge("e-c1", "m1", "eb", "choice-1"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → m1
+      engine.step(); // muted menu → choice-0 → ea
+
+      expect(engine.state.currentNodeId).toBe("ea");
+      expect(engine.state.status).not.toBe("waiting_choice");
     });
   });
 });
