@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+#### Dialogue Preview & Testing (Phase 6)
+- **Preview engine** — graph-walking engine that simulates dialogue traversal with sandboxed script evaluation
+- **Dialogue window** — RPG-style message display with typewriter text effect and clickable choice buttons
+- **Variable inspector** — editable variable/switch values with auto-detected referenced IDs and project name lookup
+- **Execution log** — color-coded transcript with clickable entries that navigate to nodes on canvas
+- **Coverage overlay** — visited/unvisited badges on nodes, coverage percentage stat, accumulated across runs
+- **Canvas highlighting** — pulsing blue ring on current node, dimmed non-active nodes, visited edge highlighting
+- **Quick test from any node** — right-click "Preview from here" context menu option
+- **Preview toolbar button** and keyboard shortcuts (F5, Space, 1-9, R, Esc)
+- 44 new tests (176 total across 13 test files)
+
 ## [2.1.0] - 2026-02-21
 
 ### Added
