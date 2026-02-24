@@ -15,6 +15,7 @@ interface PreviewStoreState {
   autoPlay: boolean;
   autoPlaySpeed: number;
   coverageData: CoverageData;
+  focusNodeId: string | null;
 
   open: (startNodeId?: string) => void;
   close: () => void;
@@ -25,6 +26,7 @@ interface PreviewStoreState {
   toggleAutoPlay: () => void;
   setAutoPlaySpeed: (ms: number) => void;
   clearCoverage: () => void;
+  setFocusNodeId: (id: string | null) => void;
 }
 
 export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
@@ -34,6 +36,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
   autoPlay: false,
   autoPlaySpeed: 1000,
   coverageData: { visitedNodes: new Set(), visitedEdges: new Set() },
+  focusNodeId: null,
 
   open: (startNodeId?: string) => {
     const doc = useDocumentStore.getState().document;
@@ -120,4 +123,6 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
       coverageData: { visitedNodes: new Set(), visitedEdges: new Set() },
     });
   },
+
+  setFocusNodeId: (id) => set({ focusNodeId: id }),
 }));

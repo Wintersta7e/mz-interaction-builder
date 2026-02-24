@@ -5,6 +5,7 @@ import { useDocumentStore } from "../../stores";
 import { PreviewControls } from "./PreviewControls";
 import { DialogueWindow } from "./DialogueWindow";
 import { VariableInspector } from "./VariableInspector";
+import { ExecutionLog } from "./ExecutionLog";
 
 export function PreviewPanel(): React.JSX.Element | null {
   const isOpen = usePreviewStore((s) => s.isOpen);
@@ -73,9 +74,7 @@ export function PreviewPanel(): React.JSX.Element | null {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <DialogueWindow />
         <VariableInspector />
-        <div className="text-sm text-muted-foreground">
-          Execution log placeholder
-        </div>
+        <ExecutionLog />
       </div>
     </div>
   );
