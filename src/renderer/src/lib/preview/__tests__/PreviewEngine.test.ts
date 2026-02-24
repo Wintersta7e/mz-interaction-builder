@@ -770,4 +770,153 @@ describe("PreviewEngine", () => {
       expect(engine.state.status).not.toBe("waiting_choice");
     });
   });
+
+  describe("getReferencedIds", () => {
+    it("collects variable and switch IDs from all node types", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 5,
+            variableOperation: "set",
+            variableValue: 10,
+          },
+          {
+            id: "act-2",
+            type: "set_switch",
+            switchId: 3,
+            switchValue: "on",
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "variable",
+          variableId: 10,
+          variableOperator: ">=",
+          variableCompareValue: 50,
+        },
+      } as Partial<ConditionNodeData>);
+
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [
+          {
+            id: "ch-0",
+            text: "Option A",
+            hideCondition: {
+              id: "hc-1",
+              type: "switch",
+              switchId: 7,
+              switchValue: "on",
+            },
+          },
+        ],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, condNode, menuNode, makeNode("e1", "end")],
+        [],
+      );
+      const engine = new PreviewEngine(doc);
+      const refs = engine.getReferencedIds();
+
+      expect(refs.variableIds).toContain(5);
+      expect(refs.variableIds).toContain(10);
+      expect(refs.switchIds).toContain(3);
+      expect(refs.switchIds).toContain(7);
+    });
+
+    it("returns empty arrays when no variables or switches are referenced", () => {
+      const doc = makeDoc(
+        [makeNode("s1", "start"), makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+      const refs = engine.getReferencedIds();
+
+      expect(refs.variableIds).toEqual([]);
+      expect(refs.switchIds).toEqual([]);
+    });
+  });
+
+  describe("complex graph traversal", () => {
+    it("linear chain: action sets variable, condition branches on it", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "set",
+            variableValue: 50,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "variable",
+          variableId: 1,
+          variableOperator: ">=",
+          variableCompareValue: 25,
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          actionNode,
+          condNode,
+          makeNode("trueEnd", "end"),
+          makeNode("falseEnd", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "a1"),
+          makeEdge("e-2", "a1", "c1"),
+          makeEdge("e-true", "c1", "trueEnd", "true"),
+          makeEdge("e-false", "c1", "falseEnd", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // action (set var 1 = 50) → c1
+      engine.step(); // condition (var 1 >= 25 → true) → trueEnd
+
+      expect(engine.state.currentNodeId).toBe("trueEnd");
+      expect(engine.state.transcript).toHaveLength(3);
+    });
+
+    it("does not advance once ended — extra steps are no-ops", () => {
+      const doc = makeDoc(
+        [makeNode("s1", "start"), makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → e1
+      engine.step(); // end → status ended
+
+      expect(engine.state.status).toBe("ended");
+      const transcriptLength = engine.state.transcript.length;
+
+      // Extra step should be a no-op
+      engine.step();
+
+      expect(engine.state.status).toBe("ended");
+      expect(engine.state.transcript).toHaveLength(transcriptLength);
+    });
+  });
 });

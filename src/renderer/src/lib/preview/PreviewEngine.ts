@@ -151,6 +151,67 @@ export class PreviewEngine {
     this._state.switches.set(id, value);
   }
 
+  /**
+   * Scan ALL nodes in the document and collect referenced variable/switch IDs.
+   * Returns sorted, deduplicated arrays.
+   */
+  getReferencedIds(): { variableIds: number[]; switchIds: number[] } {
+    const varSet = new Set<number>();
+    const switchSet = new Set<number>();
+
+    const collectFromCondition = (condition: Condition): void => {
+      if (condition.type === "variable" && condition.variableId !== undefined) {
+        varSet.add(condition.variableId);
+      }
+      if (condition.type === "switch" && condition.switchId !== undefined) {
+        switchSet.add(condition.switchId);
+      }
+    };
+
+    for (const node of this.document.nodes) {
+      switch (node.type) {
+        case "action": {
+          const data = node.data as ActionNodeData;
+          for (const action of data.actions) {
+            if (action.type === "set_variable" && action.variableId !== undefined) {
+              varSet.add(action.variableId);
+            }
+            if (action.type === "set_switch" && action.switchId !== undefined) {
+              switchSet.add(action.switchId);
+            }
+          }
+          break;
+        }
+        case "condition": {
+          const data = node.data as ConditionNodeData;
+          if (data.condition) {
+            collectFromCondition(data.condition);
+          }
+          break;
+        }
+        case "menu": {
+          const data = node.data as MenuNodeData;
+          for (const choice of data.choices) {
+            if (choice.hideCondition) {
+              collectFromCondition(choice.hideCondition);
+            }
+            if (choice.disableCondition) {
+              collectFromCondition(choice.disableCondition);
+            }
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
+    return {
+      variableIds: Array.from(varSet).sort((a, b) => a - b),
+      switchIds: Array.from(switchSet).sort((a, b) => a - b),
+    };
+  }
+
   /** Process a Start node: log to transcript and follow the default edge */
   private processStartNode(node: InteractionNode): void {
     const label = node.data.label || "Start";
