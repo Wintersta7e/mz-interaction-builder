@@ -5,6 +5,7 @@ import type {
   InteractionNode,
   InteractionEdge,
   InteractionNodeType,
+  ActionNodeData,
 } from "../../../types";
 
 /** Helper to create a minimal InteractionDocument */
@@ -151,6 +152,176 @@ describe("PreviewEngine", () => {
       // Overwrite
       engine.setVariable(10, 999);
       expect(engine.state.variables.get(10)).toBe(999);
+    });
+  });
+
+  describe("step — basic traversal", () => {
+    it("start node advances to connected node and marks start as visited", () => {
+      const doc = makeDoc(
+        [makeNode("s1", "start"), makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step();
+
+      expect(engine.state.currentNodeId).toBe("e1");
+      expect(engine.state.visitedNodes.has("s1")).toBe(true);
+      expect(engine.state.status).toBe("running");
+      expect(engine.state.transcript.length).toBeGreaterThan(0);
+      expect(engine.state.transcript[0].nodeType).toBe("start");
+    });
+
+    it("end node sets status to ended and adds transcript entry containing End", () => {
+      const doc = makeDoc(
+        [makeNode("s1", "start"), makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // process start → move to e1
+      engine.step(); // process end
+
+      expect(engine.state.status).toBe("ended");
+      const endEntry = engine.state.transcript.find(
+        (t) => t.nodeType === "end",
+      );
+      expect(endEntry).toBeDefined();
+      expect(endEntry!.content).toContain("End");
+    });
+
+    it("action node with set_variable executes and auto-advances", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 5,
+            variableOperation: "set",
+            variableValue: 42,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "a1"), makeEdge("edge-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // process start → move to a1
+      engine.step(); // process action → move to e1
+
+      expect(engine.state.variables.get(5)).toBe(42);
+      expect(engine.state.currentNodeId).toBe("e1");
+    });
+
+    it("action node with set_switch executes correctly", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_switch",
+            switchId: 3,
+            switchValue: "on",
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "a1"), makeEdge("edge-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // action → e1
+
+      expect(engine.state.switches.get(3)).toBe(true);
+      expect(engine.state.currentNodeId).toBe("e1");
+    });
+
+    it("action node with variable add operation accumulates correctly", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 10,
+            variableOperation: "add",
+            variableValue: 5,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "a1"), makeEdge("edge-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Pre-set variable 10 to 100
+      engine.setVariable(10, 100);
+
+      engine.step(); // start → a1
+      engine.step(); // action (add 5 to var 10) → e1
+
+      expect(engine.state.variables.get(10)).toBe(105);
+    });
+
+    it("action node with show_text logs to transcript", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "show_text",
+            text: "Hello world!",
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "a1"), makeEdge("edge-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // action → e1
+
+      const actionEntry = engine.state.transcript.find(
+        (t) => t.nodeType === "action",
+      );
+      expect(actionEntry).toBeDefined();
+      expect(actionEntry!.content).toContain("Hello world!");
+    });
+
+    it("visited nodes and edges tracked after traversal", () => {
+      const doc = makeDoc(
+        [makeNode("s1", "start"), makeNode("e1", "end")],
+        [makeEdge("edge-1", "s1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → e1
+      engine.step(); // end
+
+      expect(engine.state.visitedNodes.has("s1")).toBe(true);
+      expect(engine.state.visitedNodes.has("e1")).toBe(true);
+      expect(engine.state.visitedEdges.has("edge-1")).toBe(true);
+    });
+
+    it("start with no outgoing edge sets status to ended", () => {
+      const doc = makeDoc([makeNode("s1", "start")], []);
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start with no edge
+
+      expect(engine.state.status).toBe("ended");
     });
   });
 });
