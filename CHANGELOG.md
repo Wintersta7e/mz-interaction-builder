@@ -13,7 +13,7 @@
 - **Canvas highlighting** — pulsing blue ring on current node, dimmed non-active nodes, visited edge highlighting
 - **Quick test from any node** — right-click "Preview from here" context menu option
 - **Preview toolbar button** and keyboard shortcuts (F5, Space, 1-9, R, Esc)
-- 44 new tests (176 total across 13 test files)
+- 46 new tests (178 total across 13 test files)
 
 ## [2.1.0] - 2026-02-21
 
