@@ -24,7 +24,10 @@ interface CanvasContextMenuProps {
   onClose: () => void;
   onSaveAsTemplate?: () => void;
   onToggleMute?: () => void;
+  onPreviewFromHere?: (nodeId: string) => void;
   hasSelectedNodes?: boolean;
+  selectedNodeType?: string | null;
+  selectedNodeId?: string | null;
   isMuted?: boolean;
 }
 
@@ -76,7 +79,10 @@ export function CanvasContextMenu({
   onClose,
   onSaveAsTemplate,
   onToggleMute,
+  onPreviewFromHere,
   hasSelectedNodes,
+  selectedNodeType,
+  selectedNodeId,
   isMuted,
 }: CanvasContextMenuProps): React.JSX.Element {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -181,6 +187,28 @@ export function CanvasContextMenu({
           </button>
         </>
       )}
+      {hasSelectedNodes &&
+        onPreviewFromHere &&
+        selectedNodeId &&
+        selectedNodeType !== "group" &&
+        selectedNodeType !== "comment" && (
+          <>
+            <div className="my-1 border-t border-border" />
+            <button
+              className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+              onClick={() => {
+                onPreviewFromHere(selectedNodeId);
+                onClose();
+              }}
+            >
+              <span className="text-muted-foreground">
+                <Play className="h-4 w-4" />
+              </span>
+              <span>Preview from here</span>
+              <span className="ml-auto text-xs text-muted-foreground">F5</span>
+            </button>
+          </>
+        )}
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { List, Star } from "lucide-react";
+import { List, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useDocumentStore } from "../stores";
+import { useDocumentStore, usePreviewStore } from "../stores";
 import {
   MutedBadge,
   MUTED_NODE_CLASSES,
@@ -28,6 +28,13 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
   const bookmarked = useDocumentStore((s) =>
     (s.document.bookmarks ?? []).includes(id),
   );
+  const isPreviewOpen = usePreviewStore((s) => s.isOpen);
+  const coverageVisited = usePreviewStore((s) => s.coverageData.visitedNodes);
+  const coverageStatus = isPreviewOpen
+    ? coverageVisited.has(id)
+      ? "visited"
+      : "unvisited"
+    : null;
   const choices = data.choices || [];
 
   // Calculate the vertical position of each choice handle relative to the node top
@@ -99,6 +106,12 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
           )}
           {data.muted && <MutedBadge />}
+          {coverageStatus === "visited" && (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+          )}
+          {coverageStatus === "unvisited" && (
+            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
+          )}
         </span>
       </div>
 

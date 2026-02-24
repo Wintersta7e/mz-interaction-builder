@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { GitBranch, Star } from "lucide-react";
+import { GitBranch, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useDocumentStore } from "../stores";
+import { useDocumentStore, usePreviewStore } from "../stores";
 import {
   MutedBadge,
   MUTED_NODE_CLASSES,
@@ -21,6 +21,13 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
   const bookmarked = useDocumentStore((s) =>
     (s.document.bookmarks ?? []).includes(id),
   );
+  const isPreviewOpen = usePreviewStore((s) => s.isOpen);
+  const coverageVisited = usePreviewStore((s) => s.coverageData.visitedNodes);
+  const coverageStatus = isPreviewOpen
+    ? coverageVisited.has(id)
+      ? "visited"
+      : "unvisited"
+    : null;
   const condition = data.condition;
 
   const getConditionSummary = (): string => {
@@ -83,6 +90,12 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
           )}
           {data.muted && <MutedBadge />}
+          {coverageStatus === "visited" && (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+          )}
+          {coverageStatus === "unvisited" && (
+            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
+          )}
         </span>
       </div>
 

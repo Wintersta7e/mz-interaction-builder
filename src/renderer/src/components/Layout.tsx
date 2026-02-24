@@ -6,6 +6,7 @@ interface LayoutProps {
   canvas: ReactNode;
   properties: ReactNode;
   statusbar: ReactNode;
+  preview?: ReactNode;
 }
 
 export function Layout({
@@ -14,6 +15,7 @@ export function Layout({
   canvas,
   properties,
   statusbar,
+  preview,
 }: LayoutProps) {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -29,6 +31,9 @@ export function Layout({
 
         {/* Canvas */}
         <div className="flex-1 overflow-hidden">{canvas}</div>
+
+        {/* Preview Panel (optional) */}
+        {preview}
 
         {/* Properties Panel */}
         <div className="w-[320px] flex-shrink-0 border-l border-border overflow-y-auto">

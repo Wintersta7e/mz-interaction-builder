@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { Handle, Position } from "@xyflow/react";
-import { Star } from "lucide-react";
+import { Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
+import { usePreviewStore } from "../stores";
 import {
   MutedBadge,
   MUTED_NODE_CLASSES,
@@ -9,6 +10,7 @@ import {
 } from "./MutedBadge";
 
 interface BaseNodeProps {
+  nodeId?: string; // For coverage badge lookup
   children: ReactNode;
   accentColor: string; // hex color e.g. '#34d399'
   icon: ReactNode;
@@ -22,6 +24,7 @@ interface BaseNodeProps {
 }
 
 export function BaseNode({
+  nodeId,
   children,
   accentColor,
   icon,
@@ -33,6 +36,15 @@ export function BaseNode({
   hasOutput = true,
   outputCount = 1,
 }: BaseNodeProps) {
+  const isPreviewOpen = usePreviewStore((s) => s.isOpen);
+  const coverageVisited = usePreviewStore((s) => s.coverageData.visitedNodes);
+  const coverageStatus =
+    nodeId && isPreviewOpen
+      ? coverageVisited.has(nodeId)
+        ? "visited"
+        : "unvisited"
+      : null;
+
   return (
     <div
       className={cn(
@@ -70,6 +82,12 @@ export function BaseNode({
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
           )}
           {muted && <MutedBadge />}
+          {coverageStatus === "visited" && (
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+          )}
+          {coverageStatus === "unvisited" && (
+            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
+          )}
         </span>
       </div>
 

@@ -5,6 +5,7 @@ import {
   useDocumentStore,
   useUIStore,
   useHistoryStore,
+  usePreviewStore,
   generateId,
 } from "../stores";
 import { createNode } from "../lib/nodeFactory";
@@ -176,6 +177,18 @@ export function useCanvasKeyboard(
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
         e.preventDefault();
         toggleSnapToGrid();
+        return;
+      }
+
+      // F5: toggle preview
+      if (e.key === "F5") {
+        e.preventDefault();
+        const preview = usePreviewStore.getState();
+        if (preview.isOpen) {
+          preview.close();
+        } else {
+          preview.open();
+        }
         return;
       }
 
@@ -397,6 +410,41 @@ export function useCanvasKeyboard(
         e.preventDefault();
         handleToggleMute();
         return;
+      }
+
+      // Preview-specific shortcuts (when preview is open)
+      const previewState = usePreviewStore.getState();
+      if (previewState.isOpen && previewState.previewState) {
+        // Space: advance (step)
+        if (e.key === " " || e.code === "Space") {
+          e.preventDefault();
+          previewState.step();
+          return;
+        }
+
+        // 1-9: pick choice by number (when waiting_choice)
+        if (previewState.previewState.status === "waiting_choice") {
+          const digit = parseInt(e.key);
+          if (digit >= 1 && digit <= 9) {
+            e.preventDefault();
+            previewState.step(digit - 1);
+            return;
+          }
+        }
+
+        // R: restart
+        if (e.key.toLowerCase() === "r" && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          previewState.restart();
+          return;
+        }
+
+        // Escape: close preview
+        if (e.key === "Escape") {
+          e.preventDefault();
+          previewState.close();
+          return;
+        }
       }
 
       // Number keys 1-7: quick-add node at viewport center

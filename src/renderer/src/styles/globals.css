@@ -212,3 +212,38 @@ textarea:disabled {
 .react-flow[data-highlighting] .react-flow__edge.highlighted {
   opacity: 1;
 }
+
+/* Preview highlighting (Phase 6) */
+@keyframes preview-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px hsl(217 91% 60% / 0.6), 0 0 15px hsl(217 91% 60% / 0.3); }
+  50% { box-shadow: 0 0 0 6px hsl(217 91% 60% / 0), 0 0 15px hsl(217 91% 60% / 0); }
+}
+
+.preview-current .interaction-node {
+  animation: preview-pulse 2s ease-in-out infinite;
+}
+
+.react-flow[data-previewing] .react-flow__node:not(.preview-current):not(.preview-visited) {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.react-flow[data-previewing] .react-flow__node.preview-visited {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.react-flow[data-previewing] .react-flow__node.preview-current {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.react-flow[data-previewing] .react-flow__edge {
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+}
+
+.react-flow[data-previewing] .react-flow__edge.preview-visited {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}

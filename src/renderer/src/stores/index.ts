@@ -437,3 +437,4 @@ export function generateId(prefix: string = "node"): string {
 }
 
 export { useTemplateStore } from "./templateStore";
+export { usePreviewStore } from "./previewStore";

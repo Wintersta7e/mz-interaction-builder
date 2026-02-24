@@ -30,6 +30,7 @@ import { BookmarkPanel } from "./BookmarkPanel";
 import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
+import { usePreviewHighlighting } from "../hooks/usePreviewHighlighting";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
 import { useCanvasLayout } from "../hooks/useCanvasLayout";
 import { AlignmentToolbar } from "./AlignmentToolbar";
@@ -40,6 +41,7 @@ import {
   useDocumentStore,
   useUIStore,
   useHistoryStore,
+  usePreviewStore,
   generateId,
 } from "../stores";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
@@ -80,6 +82,7 @@ function CanvasInner() {
   // Extracted hooks for search and path highlighting (M3)
   const { searchOpen } = useCanvasSearch(reactFlowWrapper, document.nodes);
   usePathHighlighting(reactFlowWrapper);
+  usePreviewHighlighting(reactFlowWrapper);
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes);
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges);
@@ -546,8 +549,18 @@ function CanvasInner() {
               handleToggleMute();
               setContextMenu(null);
             }}
+            onPreviewFromHere={(nodeId) => {
+              usePreviewStore.getState().open(nodeId);
+              setContextMenu(null);
+            }}
             hasSelectedNodes={
               nodes.some((n) => n.selected) || selectedNodeId !== null
+            }
+            selectedNodeId={selectedNodeId}
+            selectedNodeType={
+              selectedNodeId
+                ? nodes.find((n) => n.id === selectedNodeId)?.type ?? null
+                : null
             }
             isMuted={(() => {
               // I-2: Compute from full selection, not just selectedNodeId
