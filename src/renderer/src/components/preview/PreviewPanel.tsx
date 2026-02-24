@@ -3,6 +3,7 @@ import { Play, X } from "lucide-react";
 import { usePreviewStore } from "../../stores";
 import { useDocumentStore } from "../../stores";
 import { PreviewControls } from "./PreviewControls";
+import { DialogueWindow } from "./DialogueWindow";
 
 export function PreviewPanel(): React.JSX.Element | null {
   const isOpen = usePreviewStore((s) => s.isOpen);
@@ -69,9 +70,7 @@ export function PreviewPanel(): React.JSX.Element | null {
 
       {/* Content area (placeholder sections for now) */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="text-sm text-muted-foreground">
-          Dialogue window placeholder
-        </div>
+        <DialogueWindow />
         <div className="text-sm text-muted-foreground">
           Variable inspector placeholder
         </div>
