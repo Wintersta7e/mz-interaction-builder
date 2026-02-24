@@ -16,12 +16,14 @@ import {
   LayoutGrid,
   ChevronDown,
   Grid3x3,
+  Play,
 } from "lucide-react";
 import {
   useDocumentStore,
   useHistoryStore,
   useUIStore,
   useProjectStore,
+  usePreviewStore,
 } from "../stores";
 import { TitleBar } from "./TitleBar";
 
@@ -297,6 +299,18 @@ export function Toolbar({
         </button>
 
         <div className="flex-1" />
+
+        {/* Preview */}
+        <button
+          onClick={() => usePreviewStore.getState().open()}
+          className="flex h-8 items-center gap-2 rounded px-3 text-sm hover:bg-muted text-muted-foreground"
+          title="Preview (F5)"
+        >
+          <Play className="h-4 w-4" />
+          Preview
+        </button>
+
+        <div className="mx-2 h-6 w-px bg-border" />
 
         {/* Help & Validation */}
         <div className="flex items-center gap-1">
