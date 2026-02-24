@@ -3,9 +3,12 @@ import type {
   InteractionNode,
   InteractionEdge,
   ActionNodeData,
+  ConditionNodeData,
+  Condition,
   Action,
 } from "../../types";
 import type { PreviewState, TranscriptEntry } from "./types";
+import { evaluateScript, executeScript } from "./scriptSandbox";
 
 /**
  * PreviewEngine — pure TypeScript class that walks an interaction graph
@@ -66,10 +69,7 @@ export class PreviewEngine {
     }
 
     // Guard: waiting_choice requires a choiceIndex
-    if (
-      this._state.status === "waiting_choice" &&
-      choiceIndex === undefined
-    ) {
+    if (this._state.status === "waiting_choice" && choiceIndex === undefined) {
       return this._state;
     }
 
@@ -99,8 +99,11 @@ export class PreviewEngine {
       case "action":
         this.processActionNode(node);
         break;
+      case "condition":
+        this.processConditionNode(node);
+        break;
       default:
-        // Menu and Condition handled in later tasks
+        // Menu handled in later task
         break;
     }
 
@@ -248,11 +251,127 @@ export class PreviewEngine {
       }
 
       case "script": {
-        return "[Script]";
+        const scriptSrc = action.script ?? "";
+        const err = executeScript(
+          scriptSrc,
+          this._state.variables,
+          this._state.switches,
+        );
+        if (err) {
+          return `[Script Error: ${err.message}]`;
+        }
+        return `[Script] ${scriptSrc}`;
       }
 
       default:
         return "";
+    }
+  }
+
+  /** Process a Condition node: evaluate condition, follow true/false branch */
+  private processConditionNode(node: InteractionNode): void {
+    const data = node.data as ConditionNodeData;
+    const condition = data.condition;
+
+    // Default to false if no condition defined
+    if (!condition) {
+      this.addTranscript({
+        nodeId: node.id,
+        nodeType: "condition",
+        content: "Condition: (none)",
+        result: "false",
+      });
+      this.followEdge(node.id, "false");
+      return;
+    }
+
+    const evalResult = this.evaluateConditionValue(condition);
+    const branch = evalResult ? "true" : "false";
+
+    // Build human-readable content description
+    let content: string;
+    let result: "true" | "false" | "error" = branch;
+
+    switch (condition.type) {
+      case "switch":
+        content = `Condition: Switch ${condition.switchId ?? 0} is ${condition.switchValue ?? "on"}`;
+        break;
+      case "variable":
+        content = `Condition: Variable ${condition.variableId ?? 0} ${condition.variableOperator ?? "=="} ${condition.variableCompareValue ?? 0}`;
+        break;
+      case "script": {
+        const scriptResult = evaluateScript(
+          condition.script ?? "",
+          this._state.variables,
+          this._state.switches,
+        );
+        if (scriptResult instanceof Error) {
+          result = "error";
+        }
+        content = `Condition: Script "${condition.script ?? ""}"`;
+        break;
+      }
+      default:
+        content = "Condition: (unknown type)";
+        break;
+    }
+
+    this.addTranscript({
+      nodeId: node.id,
+      nodeType: "condition",
+      content,
+      result,
+    });
+
+    this.followEdge(node.id, branch);
+  }
+
+  /** Evaluate a condition and return true/false */
+  private evaluateConditionValue(condition: Condition): boolean {
+    switch (condition.type) {
+      case "switch": {
+        const switchVal =
+          this._state.switches.get(condition.switchId ?? 0) ?? false;
+        return switchVal === (condition.switchValue === "on");
+      }
+
+      case "variable": {
+        const value = this._state.variables.get(condition.variableId ?? 0) ?? 0;
+        const compareValue = condition.variableCompareValue ?? 0;
+        const operator = condition.variableOperator ?? "==";
+
+        switch (operator) {
+          case "==":
+            return value === compareValue;
+          case "!=":
+            return value !== compareValue;
+          case ">":
+            return value > compareValue;
+          case "<":
+            return value < compareValue;
+          case ">=":
+            return value >= compareValue;
+          case "<=":
+            return value <= compareValue;
+          default:
+            return false;
+        }
+      }
+
+      case "script": {
+        const result = evaluateScript(
+          condition.script ?? "",
+          this._state.variables,
+          this._state.switches,
+        );
+        if (result instanceof Error) {
+          return false;
+        }
+        return Boolean(result);
+      }
+
+      default:
+        return false;
     }
   }
 
@@ -291,9 +410,7 @@ export class PreviewEngine {
   /**
    * Add a transcript entry with auto-incremented stepCount as stepIndex.
    */
-  private addTranscript(
-    partial: Omit<TranscriptEntry, "stepIndex">,
-  ): void {
+  private addTranscript(partial: Omit<TranscriptEntry, "stepIndex">): void {
     this._state.stepCount += 1;
     this._state.transcript.push({
       ...partial,

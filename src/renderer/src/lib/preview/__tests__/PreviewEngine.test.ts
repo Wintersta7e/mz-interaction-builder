@@ -6,6 +6,7 @@ import type {
   InteractionEdge,
   InteractionNodeType,
   ActionNodeData,
+  ConditionNodeData,
 } from "../../../types";
 
 /** Helper to create a minimal InteractionDocument */
@@ -322,6 +323,185 @@ describe("PreviewEngine", () => {
       engine.step(); // start with no edge
 
       expect(engine.state.status).toBe("ended");
+    });
+  });
+
+  describe("step — condition nodes", () => {
+    it("switch condition follows true branch when switch is on", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "switch",
+          switchId: 5,
+          switchValue: "on",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          condNode,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Set switch 5 to ON
+      engine.setSwitch(5, true);
+
+      engine.step(); // start → c1
+      engine.step(); // condition → should follow true branch
+
+      expect(engine.state.currentNodeId).toBe("t1");
+    });
+
+    it("switch condition follows false branch when switch is off", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "switch",
+          switchId: 5,
+          switchValue: "on",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          condNode,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Switch 5 defaults to false (not set)
+
+      engine.step(); // start → c1
+      engine.step(); // condition → should follow false branch
+
+      expect(engine.state.currentNodeId).toBe("f1");
+    });
+
+    it("variable condition with >= operator evaluates correctly", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "variable",
+          variableId: 10,
+          variableOperator: ">=",
+          variableCompareValue: 50,
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          condNode,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Set variable 10 to 75 (>= 50 → true)
+      engine.setVariable(10, 75);
+
+      engine.step(); // start → c1
+      engine.step(); // condition → true branch
+
+      expect(engine.state.currentNodeId).toBe("t1");
+    });
+
+    it("script condition evaluates via sandbox", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "script",
+          script: "$gameVariables.value(1) > 10",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          condNode,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      // Set variable 1 to 20 (> 10 → true)
+      engine.setVariable(1, 20);
+
+      engine.step(); // start → c1
+      engine.step(); // condition → true branch
+
+      expect(engine.state.currentNodeId).toBe("t1");
+    });
+
+    it("script error defaults to false branch and logs error in transcript", () => {
+      const condNode = makeNode("c1", "condition", {
+        type: "condition",
+        condition: {
+          id: "cond-1",
+          type: "script",
+          script: "undefinedThing.foo.bar",
+        },
+      } as Partial<ConditionNodeData>);
+
+      const doc = makeDoc(
+        [
+          makeNode("s1", "start"),
+          condNode,
+          makeNode("t1", "end"),
+          makeNode("f1", "end"),
+        ],
+        [
+          makeEdge("e-1", "s1", "c1"),
+          makeEdge("e-true", "c1", "t1", "true"),
+          makeEdge("e-false", "c1", "f1", "false"),
+        ],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → c1
+      engine.step(); // condition → false branch (error)
+
+      expect(engine.state.currentNodeId).toBe("f1");
+
+      // Verify transcript has error result
+      const condEntry = engine.state.transcript.find(
+        (t) => t.nodeType === "condition",
+      );
+      expect(condEntry).toBeDefined();
+      expect(condEntry!.result).toBe("error");
     });
   });
 });
