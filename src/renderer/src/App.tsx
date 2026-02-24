@@ -12,6 +12,7 @@ import { StatusBar } from "./components/StatusBar";
 import { ExportModal } from "./components/ExportModal";
 import { HelpModal } from "./components/HelpModal";
 import { ValidationPanel } from "./components/ValidationPanel";
+import { PreviewPanel } from "./components/preview/PreviewPanel";
 import {
   useDocumentStore,
   useHistoryStore,
@@ -403,6 +404,7 @@ export default function App() {
         }
         palette={<NodePalette onDragStart={setDraggingNodeType} />}
         canvas={<Canvas />}
+        preview={<PreviewPanel />}
         properties={<PropertiesPanel />}
         statusbar={<StatusBar />}
       />
