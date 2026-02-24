@@ -18,6 +18,7 @@ function EndNodeComponent({ id, data, selected }: EndNodeProps) {
 
   return (
     <BaseNode
+      nodeId={id}
       accentColor={NODE_ACCENT_COLORS.end}
       icon={<Square className="h-4 w-4" />}
       label={data.label || "End"}

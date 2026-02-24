@@ -30,6 +30,7 @@ import { BookmarkPanel } from "./BookmarkPanel";
 import { BreadcrumbTrail } from "./BreadcrumbTrail";
 import { useCanvasSearch } from "../hooks/useCanvasSearch";
 import { usePathHighlighting } from "../hooks/usePathHighlighting";
+import { usePreviewHighlighting } from "../hooks/usePreviewHighlighting";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
 import { useCanvasLayout } from "../hooks/useCanvasLayout";
 import { AlignmentToolbar } from "./AlignmentToolbar";
@@ -80,6 +81,7 @@ function CanvasInner() {
   // Extracted hooks for search and path highlighting (M3)
   const { searchOpen } = useCanvasSearch(reactFlowWrapper, document.nodes);
   usePathHighlighting(reactFlowWrapper);
+  usePreviewHighlighting(reactFlowWrapper);
 
   const [nodes, setNodesState, onNodesChange] = useNodesState(document.nodes);
   const [edges, setEdgesState, onEdgesChange] = useEdgesState(document.edges);

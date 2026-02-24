@@ -18,6 +18,7 @@ function StartNodeComponent({ id, data, selected }: StartNodeProps) {
 
   return (
     <BaseNode
+      nodeId={id}
       accentColor={NODE_ACCENT_COLORS.start}
       icon={<Play className="h-4 w-4" />}
       label={data.label || "Start"}
