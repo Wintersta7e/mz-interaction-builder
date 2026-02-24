@@ -41,6 +41,7 @@ import {
   useDocumentStore,
   useUIStore,
   useHistoryStore,
+  usePreviewStore,
   generateId,
 } from "../stores";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
@@ -548,8 +549,18 @@ function CanvasInner() {
               handleToggleMute();
               setContextMenu(null);
             }}
+            onPreviewFromHere={(nodeId) => {
+              usePreviewStore.getState().open(nodeId);
+              setContextMenu(null);
+            }}
             hasSelectedNodes={
               nodes.some((n) => n.selected) || selectedNodeId !== null
+            }
+            selectedNodeId={selectedNodeId}
+            selectedNodeType={
+              selectedNodeId
+                ? nodes.find((n) => n.id === selectedNodeId)?.type ?? null
+                : null
             }
             isMuted={(() => {
               // I-2: Compute from full selection, not just selectedNodeId
