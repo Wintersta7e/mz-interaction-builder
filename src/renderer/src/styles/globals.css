@@ -193,6 +193,20 @@ textarea:disabled {
   animation: node-enter 0.2s cubic-bezier(0.25, 0.1, 0.25, 1.0) forwards;
 }
 
+/* Paste highlight flash */
+@keyframes paste-flash {
+  0% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0px transparent;
+  }
+}
+
+.interaction-node[data-pasted="true"] {
+  animation: paste-flash 0.5s ease-out forwards;
+}
+
 /* Selected node breathing glow */
 @keyframes selection-breathe {
   0%, 100% {
