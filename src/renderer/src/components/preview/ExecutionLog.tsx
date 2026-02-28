@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, ChevronRight, Copy, Check } from "lucide-react";
-import { usePreviewStore } from "../../stores";
+import { usePreviewStore, useUIStore } from "../../stores";
 import { NODE_ACCENT_COLORS } from "../../lib/nodeColors";
 import type { TranscriptEntry } from "../../lib/preview/types";
 
@@ -90,7 +90,9 @@ export function ExecutionLog(): React.JSX.Element {
       setCopied(true);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
     } catch {
-      console.error("Failed to copy execution log");
+      useUIStore
+        .getState()
+        .addToast({ message: "Failed to copy to clipboard", type: "error" });
     }
   }, [transcript]);
 

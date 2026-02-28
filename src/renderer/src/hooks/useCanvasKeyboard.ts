@@ -351,7 +351,7 @@ export function useCanvasKeyboard(
         setEdges(allEdges);
 
         // Brief paste highlight flash
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           for (const [, newId] of idMap) {
             const el = window.document.querySelector(
               `[data-id="${newId}"] .interaction-node`,
@@ -363,7 +363,7 @@ export function useCanvasKeyboard(
               }, 500);
             }
           }
-        }, 0);
+        });
       }
 
       // Ctrl+0: Fit All (Phase 3D)

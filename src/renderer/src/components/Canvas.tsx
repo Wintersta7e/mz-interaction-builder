@@ -353,7 +353,7 @@ function CanvasInner() {
         setEdges(allEdges);
 
         // Brief entrance animation for template nodes
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           for (const node of newNodes) {
             const el = window.document.querySelector(
               `[data-id="${node.id}"] .interaction-node`,
@@ -365,7 +365,7 @@ function CanvasInner() {
               }, 200);
             }
           }
-        }, 0);
+        });
         return;
       }
 
@@ -398,7 +398,7 @@ function CanvasInner() {
       setNodesState((nds) => [...nds, newNode]);
 
       // Brief entrance animation
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const el = window.document.querySelector(
           `[data-id="${newNode.id}"] .interaction-node`,
         );
@@ -408,7 +408,7 @@ function CanvasInner() {
             if (el.isConnected) el.removeAttribute("data-entering");
           }, 200);
         }
-      }, 0);
+      });
     },
     [
       screenToFlowPosition,

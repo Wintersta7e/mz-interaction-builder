@@ -154,26 +154,26 @@ export function PropertiesPanel() {
               <CommentProperties node={selectedNode} updateNode={updateNode} />
             )}
           {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
-            <>
-              <div className="mt-6 border-t border-border pt-4">
-                <button
-                  onClick={() => setSaveTemplateOpen(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  Save as Template
-                </button>
-              </div>
-              <SaveTemplateModal
-                isOpen={saveTemplateOpen}
-                onClose={() => setSaveTemplateOpen(false)}
-                nodes={[selectedNode]}
-                edges={[]}
-              />
-            </>
+            <div className="mt-6 border-t border-border pt-4">
+              <button
+                onClick={() => setSaveTemplateOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save as Template
+              </button>
+            </div>
           )}
         </motion.div>
       </AnimatePresence>
+      {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
+        <SaveTemplateModal
+          isOpen={saveTemplateOpen}
+          onClose={() => setSaveTemplateOpen(false)}
+          nodes={[selectedNode]}
+          edges={[]}
+        />
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/jetbrains-mono/400.css";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Layout } from "./components/Layout";
 import { Toolbar } from "./components/Toolbar";
 import { NodePalette } from "./components/NodePalette";
@@ -394,39 +394,41 @@ export default function App() {
   }, []);
 
   return (
-    <div className="dark">
-      <Layout
-        toolbar={
-          <Toolbar
-            onNew={handleNew}
-            onOpen={handleOpen}
-            onSave={handleSave}
-            onExport={handleExport}
-            onOpenProject={handleOpenProject}
-            onHelp={() => setIsHelpModalOpen(true)}
-            onValidate={() => setShowValidation(!showValidation)}
-          />
-        }
-        palette={<NodePalette onDragStart={setDraggingNodeType} />}
-        canvas={<Canvas />}
-        preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
-        properties={<PropertiesPanel />}
-        statusbar={<StatusBar />}
-      />
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-      />
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
-      <AnimatePresence>
-        {showValidation && (
-          <ValidationPanel onClose={() => setShowValidation(false)} />
-        )}
-      </AnimatePresence>
-      <ToastContainer />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="dark">
+        <Layout
+          toolbar={
+            <Toolbar
+              onNew={handleNew}
+              onOpen={handleOpen}
+              onSave={handleSave}
+              onExport={handleExport}
+              onOpenProject={handleOpenProject}
+              onHelp={() => setIsHelpModalOpen(true)}
+              onValidate={() => setShowValidation(!showValidation)}
+            />
+          }
+          palette={<NodePalette onDragStart={setDraggingNodeType} />}
+          canvas={<Canvas />}
+          preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
+          properties={<PropertiesPanel />}
+          statusbar={<StatusBar />}
+        />
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+        />
+        <HelpModal
+          isOpen={isHelpModalOpen}
+          onClose={() => setIsHelpModalOpen(false)}
+        />
+        <AnimatePresence>
+          {showValidation && (
+            <ValidationPanel onClose={() => setShowValidation(false)} />
+          )}
+        </AnimatePresence>
+        <ToastContainer />
+      </div>
+    </MotionConfig>
   );
 }
