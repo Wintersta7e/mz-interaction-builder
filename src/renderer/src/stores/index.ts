@@ -253,6 +253,12 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
 // ============================================
 // UI Store - Selection and view state
 // ============================================
+export interface Toast {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info";
+}
+
 interface UIState {
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
@@ -301,6 +307,11 @@ interface UIState {
     rankSpacing: number;
   }) => void;
   clearLayoutTrigger: () => void;
+
+  // Toast notifications
+  toasts: Toast[];
+  addToast: (toast: Omit<Toast, "id">) => void;
+  removeToast: (id: string) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -353,6 +364,19 @@ export const useUIStore = create<UIState>()(
         set((state) => ({ snapToGrid: !state.snapToGrid })),
       triggerAutoLayout: (layoutTrigger) => set({ layoutTrigger }),
       clearLayoutTrigger: () => set({ layoutTrigger: null }),
+
+      // Toast notifications
+      toasts: [],
+      addToast: (toast) =>
+        set((state) => {
+          const newToast = { ...toast, id: crypto.randomUUID() };
+          const updated = [...state.toasts, newToast];
+          return { toasts: updated.length > 3 ? updated.slice(-3) : updated };
+        }),
+      removeToast: (id) =>
+        set((state) => ({
+          toasts: state.toasts.filter((t) => t.id !== id),
+        })),
     }),
     {
       name: "mz-interaction-builder-ui",
