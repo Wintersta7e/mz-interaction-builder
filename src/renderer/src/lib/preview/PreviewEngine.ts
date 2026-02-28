@@ -173,7 +173,10 @@ export class PreviewEngine {
         case "action": {
           const data = node.data as ActionNodeData;
           for (const action of data.actions) {
-            if (action.type === "set_variable" && action.variableId !== undefined) {
+            if (
+              action.type === "set_variable" &&
+              action.variableId !== undefined
+            ) {
               varSet.add(action.variableId);
             }
             if (action.type === "set_switch" && action.switchId !== undefined) {
@@ -260,7 +263,9 @@ export class PreviewEngine {
         : `Action "${node.data.label}"`;
 
     // detail: raw dialogue text for typewriter display, or script sources
-    const detail = dialogueText ?? (detailParts.length > 0 ? detailParts.join("; ") : undefined);
+    const detail =
+      dialogueText ??
+      (detailParts.length > 0 ? detailParts.join("; ") : undefined);
 
     this.addTranscript({
       nodeId: node.id,
@@ -491,7 +496,8 @@ export class PreviewEngine {
 
     // Find the choice text for the transcript
     const data = node.data as MenuNodeData;
-    const choiceText = data.choices[choiceIndex]?.text ?? `Choice ${choiceIndex}`;
+    const choiceText =
+      data.choices[choiceIndex]?.text ?? `Choice ${choiceIndex}`;
 
     this._state.choiceHistory.push(choiceIndex);
 

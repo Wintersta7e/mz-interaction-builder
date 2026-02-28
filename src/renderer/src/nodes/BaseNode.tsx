@@ -63,7 +63,9 @@ export function BaseNode({
       {/* Accent strip */}
       <div
         className="h-1 rounded-t-xl"
-        style={{ backgroundColor: accentColor }}
+        style={{
+          background: `linear-gradient(to right, ${accentColor}, color-mix(in srgb, ${accentColor} 85%, white))`,
+        }}
       />
 
       {/* Header */}

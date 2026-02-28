@@ -1,6 +1,6 @@
 {
   "name": "mz-interaction-builder",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Visual node-graph editor for creating RPG Maker MZ interactions",
   "main": "./out/main/index.js",
   "author": "MZ Interaction Builder",
@@ -63,6 +63,7 @@
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
     "electron-updater": "^6.1.7",
+    "framer-motion": "^12.34.3",
     "lucide-react": "^0.574.0",
     "tailwind-merge": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",

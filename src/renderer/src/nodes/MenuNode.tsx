@@ -90,7 +90,9 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       {/* Accent strip */}
       <div
         className="h-1 rounded-t-xl"
-        style={{ backgroundColor: NODE_ACCENT_COLORS.menu }}
+        style={{
+          background: `linear-gradient(to right, ${NODE_ACCENT_COLORS.menu}, color-mix(in srgb, ${NODE_ACCENT_COLORS.menu} 85%, white))`,
+        }}
       />
 
       {/* Header */}

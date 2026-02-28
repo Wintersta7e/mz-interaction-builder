@@ -3,6 +3,7 @@ import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/jetbrains-mono/400.css";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Layout } from "./components/Layout";
 import { Toolbar } from "./components/Toolbar";
 import { NodePalette } from "./components/NodePalette";
@@ -12,12 +13,15 @@ import { StatusBar } from "./components/StatusBar";
 import { ExportModal } from "./components/ExportModal";
 import { HelpModal } from "./components/HelpModal";
 import { ValidationPanel } from "./components/ValidationPanel";
+import { ToastContainer } from "./components/ToastContainer";
 import { PreviewPanel } from "./components/preview/PreviewPanel";
 import {
   useDocumentStore,
   useHistoryStore,
   useProjectStore,
   useTemplateStore,
+  usePreviewStore,
+  useUIStore,
 } from "./stores";
 import type { InteractionNodeType } from "./types";
 import "./types/api.d";
@@ -46,6 +50,7 @@ export default function App() {
     setError,
   } = useProjectStore();
   const { loadTemplates } = useTemplateStore();
+  const previewIsOpen = usePreviewStore((s) => s.isOpen);
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -187,6 +192,7 @@ export default function App() {
 
     setSavedPath(filePath);
     useDocumentStore.getState().setDirty(false);
+    useUIStore.getState().addToast({ message: "File saved", type: "success" });
   }, [savedPath, document, setSavedPath]);
 
   // Handle Export
@@ -353,7 +359,6 @@ export default function App() {
         const result = await window.api.file.save(currentPath, content);
         if (result.success) {
           useDocumentStore.getState().setDirty(false);
-          console.log("Auto-saved at", new Date().toLocaleTimeString());
         } else {
           console.error("Auto-save failed:", result.error);
           await window.api.dialog.message({
@@ -389,36 +394,41 @@ export default function App() {
   }, []);
 
   return (
-    <div className="dark">
-      <Layout
-        toolbar={
-          <Toolbar
-            onNew={handleNew}
-            onOpen={handleOpen}
-            onSave={handleSave}
-            onExport={handleExport}
-            onOpenProject={handleOpenProject}
-            onHelp={() => setIsHelpModalOpen(true)}
-            onValidate={() => setShowValidation(!showValidation)}
-          />
-        }
-        palette={<NodePalette onDragStart={setDraggingNodeType} />}
-        canvas={<Canvas />}
-        preview={<PreviewPanel />}
-        properties={<PropertiesPanel />}
-        statusbar={<StatusBar />}
-      />
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-      />
-      <HelpModal
-        isOpen={isHelpModalOpen}
-        onClose={() => setIsHelpModalOpen(false)}
-      />
-      {showValidation && (
-        <ValidationPanel onClose={() => setShowValidation(false)} />
-      )}
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="dark">
+        <Layout
+          toolbar={
+            <Toolbar
+              onNew={handleNew}
+              onOpen={handleOpen}
+              onSave={handleSave}
+              onExport={handleExport}
+              onOpenProject={handleOpenProject}
+              onHelp={() => setIsHelpModalOpen(true)}
+              onValidate={() => setShowValidation(!showValidation)}
+            />
+          }
+          palette={<NodePalette onDragStart={setDraggingNodeType} />}
+          canvas={<Canvas />}
+          preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
+          properties={<PropertiesPanel />}
+          statusbar={<StatusBar />}
+        />
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+        />
+        <HelpModal
+          isOpen={isHelpModalOpen}
+          onClose={() => setIsHelpModalOpen(false)}
+        />
+        <AnimatePresence>
+          {showValidation && (
+            <ValidationPanel onClose={() => setShowValidation(false)} />
+          )}
+        </AnimatePresence>
+        <ToastContainer />
+      </div>
+    </MotionConfig>
   );
 }

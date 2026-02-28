@@ -65,6 +65,14 @@ module.exports = {
           end: "hsl(var(--node-end))",
         },
       },
+      boxShadow: {
+        card: "0 2px 8px hsl(0 0% 0% / 0.2), 0 1px 2px hsl(0 0% 0% / 0.1)",
+        "card-hover":
+          "0 8px 24px hsl(0 0% 0% / 0.35), 0 2px 6px hsl(0 0% 0% / 0.15)",
+        overlay:
+          "0 16px 48px hsl(0 0% 0% / 0.4), 0 4px 12px hsl(0 0% 0% / 0.2)",
+        inset: "inset 0 1px 4px hsl(0 0% 0% / 0.3)",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

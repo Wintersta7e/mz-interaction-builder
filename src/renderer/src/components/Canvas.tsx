@@ -19,6 +19,7 @@ import {
   type EdgeChange,
   type OnMoveEnd,
 } from "@xyflow/react";
+import { AnimatePresence } from "framer-motion";
 import "@xyflow/react/dist/style.css";
 
 import { nodeTypes } from "../nodes";
@@ -350,6 +351,21 @@ function CanvasInner() {
         setEdgesState(allEdges);
         setNodes(allNodes);
         setEdges(allEdges);
+
+        // Brief entrance animation for template nodes
+        requestAnimationFrame(() => {
+          for (const node of newNodes) {
+            const el = window.document.querySelector(
+              `[data-id="${node.id}"] .interaction-node`,
+            );
+            if (el instanceof HTMLElement) {
+              el.setAttribute("data-entering", "true");
+              setTimeout(() => {
+                if (el.isConnected) el.removeAttribute("data-entering");
+              }, 200);
+            }
+          }
+        });
         return;
       }
 
@@ -380,6 +396,19 @@ function CanvasInner() {
       push(useDocumentStore.getState().document);
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
+
+      // Brief entrance animation
+      requestAnimationFrame(() => {
+        const el = window.document.querySelector(
+          `[data-id="${newNode.id}"] .interaction-node`,
+        );
+        if (el instanceof HTMLElement) {
+          el.setAttribute("data-entering", "true");
+          setTimeout(() => {
+            if (el.isConnected) el.removeAttribute("data-entering");
+          }, 200);
+        }
+      });
     },
     [
       screenToFlowPosition,
@@ -539,54 +568,58 @@ function CanvasInner() {
           )}
         </ReactFlow>
         <AlignmentGuides guides={guideLines} />
-        {contextMenu && (
-          <CanvasContextMenu
-            position={{ x: contextMenu.x, y: contextMenu.y }}
-            onAddNode={handleContextMenuAddNode}
-            onClose={() => setContextMenu(null)}
-            onSaveAsTemplate={handleSaveAsTemplate}
-            onToggleMute={() => {
-              handleToggleMute();
-              setContextMenu(null);
-            }}
-            onPreviewFromHere={(nodeId) => {
-              usePreviewStore.getState().open(nodeId);
-              setContextMenu(null);
-            }}
-            hasSelectedNodes={
-              nodes.some((n) => n.selected) || selectedNodeId !== null
-            }
-            selectedNodeId={selectedNodeId}
-            selectedNodeType={
-              selectedNodeId
-                ? nodes.find((n) => n.id === selectedNodeId)?.type ?? null
-                : null
-            }
-            isMuted={(() => {
-              // I-2: Compute from full selection, not just selectedNodeId
-              const mutableTypes = new Set([
-                "action",
-                "menu",
-                "condition",
-                "end",
-              ]);
-              const selected = nodes.filter(
-                (n) => n.selected && mutableTypes.has(n.type ?? ""),
-              );
-              if (selected.length > 0) {
-                return selected.every((n) => !!n.data.muted);
+        <AnimatePresence>
+          {contextMenu && (
+            <CanvasContextMenu
+              position={{ x: contextMenu.x, y: contextMenu.y }}
+              onAddNode={handleContextMenuAddNode}
+              onClose={() => setContextMenu(null)}
+              onSaveAsTemplate={handleSaveAsTemplate}
+              onToggleMute={() => {
+                handleToggleMute();
+                setContextMenu(null);
+              }}
+              onPreviewFromHere={(nodeId) => {
+                usePreviewStore.getState().open(nodeId);
+                setContextMenu(null);
+              }}
+              hasSelectedNodes={
+                nodes.some((n) => n.selected) || selectedNodeId !== null
               }
-              // Fallback to single selected node
-              const sel = selectedNodeId
-                ? nodes.find((n) => n.id === selectedNodeId)
-                : null;
-              return sel && mutableTypes.has(sel.type ?? "")
-                ? !!sel.data.muted
-                : false;
-            })()}
-          />
-        )}
-        {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+              selectedNodeId={selectedNodeId}
+              selectedNodeType={
+                selectedNodeId
+                  ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null)
+                  : null
+              }
+              isMuted={(() => {
+                // I-2: Compute from full selection, not just selectedNodeId
+                const mutableTypes = new Set([
+                  "action",
+                  "menu",
+                  "condition",
+                  "end",
+                ]);
+                const selected = nodes.filter(
+                  (n) => n.selected && mutableTypes.has(n.type ?? ""),
+                );
+                if (selected.length > 0) {
+                  return selected.every((n) => !!n.data.muted);
+                }
+                // Fallback to single selected node
+                const sel = selectedNodeId
+                  ? nodes.find((n) => n.id === selectedNodeId)
+                  : null;
+                return sel && mutableTypes.has(sel.type ?? "")
+                  ? !!sel.data.muted
+                  : false;
+              })()}
+            />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+        </AnimatePresence>
         <BookmarkPanel onNavigateToNode={navigateToNode} />
         <AlignmentToolbar
           selectedNodes={nodes.filter((n) => n.selected)}

@@ -349,6 +349,21 @@ export function useCanvasKeyboard(
         setEdgesState(allEdges);
         setNodes(allNodes);
         setEdges(allEdges);
+
+        // Brief paste highlight flash
+        requestAnimationFrame(() => {
+          for (const [, newId] of idMap) {
+            const el = window.document.querySelector(
+              `[data-id="${newId}"] .interaction-node`,
+            );
+            if (el instanceof HTMLElement) {
+              el.setAttribute("data-pasted", "true");
+              setTimeout(() => {
+                if (el.isConnected) el.removeAttribute("data-pasted");
+              }, 500);
+            }
+          }
+        });
       }
 
       // Ctrl+0: Fit All (Phase 3D)

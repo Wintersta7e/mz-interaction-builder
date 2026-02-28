@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronDown, ChevronRight, Copy, Check } from "lucide-react";
-import { usePreviewStore } from "../../stores";
+import { usePreviewStore, useUIStore } from "../../stores";
 import { NODE_ACCENT_COLORS } from "../../lib/nodeColors";
 import type { TranscriptEntry } from "../../lib/preview/types";
 
@@ -37,9 +37,7 @@ function LogEntry({ entry }: { entry: TranscriptEntry }): React.JSX.Element {
       type="button"
       className="w-full text-left px-2 py-1.5 hover:bg-muted/50 cursor-pointer transition-colors"
       style={{ borderLeft: `3px solid ${borderColor}` }}
-      onClick={() =>
-        usePreviewStore.getState().setFocusNodeId(entry.nodeId)
-      }
+      onClick={() => usePreviewStore.getState().setFocusNodeId(entry.nodeId)}
     >
       <div className="flex items-center text-xs text-foreground">
         <span className="text-muted-foreground mr-1.5 font-mono">
@@ -61,10 +59,16 @@ export function ExecutionLog(): React.JSX.Element {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const transcript = usePreviewStore(
-    (s) => s.previewState?.transcript ?? [],
-  );
+  const transcript = usePreviewStore((s) => s.previewState?.transcript ?? []);
+
+  // Clean up copied timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Auto-scroll to bottom when transcript grows
   useEffect(() => {
@@ -73,17 +77,23 @@ export function ExecutionLog(): React.JSX.Element {
     }
   }, [transcript.length, expanded]);
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     if (transcript.length === 0) return;
 
     const text = transcript
       .map((e) => `[${e.stepIndex}] ${e.content}`)
       .join("\n");
 
-    navigator.clipboard.writeText(text).then(() => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch {
+      useUIStore
+        .getState()
+        .addToast({ message: "Failed to copy to clipboard", type: "error" });
+    }
   }, [transcript]);
 
   return (
@@ -115,10 +125,7 @@ export function ExecutionLog(): React.JSX.Element {
           ) : (
             <>
               {/* Scrollable log entries */}
-              <div
-                ref={scrollRef}
-                className="max-h-[300px] overflow-y-auto"
-              >
+              <div ref={scrollRef} className="max-h-[300px] overflow-y-auto">
                 {transcript.map((entry, i) => (
                   <LogEntry key={i} entry={entry} />
                 ))}

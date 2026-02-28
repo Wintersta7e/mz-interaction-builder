@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Play,
   List,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import type { InteractionNodeType } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 
 interface MenuPosition {
   x: number;
@@ -132,10 +134,19 @@ export function CanvasContextMenu({
   }, [onClose]);
 
   return (
-    <div
+    <motion.div
       ref={menuRef}
-      className="absolute z-50 min-w-[180px] rounded-xl border border-border bg-card/95 py-1 shadow-xl backdrop-blur-md"
-      style={{ left: clampedPosition.x, top: clampedPosition.y }}
+      className="absolute z-50 min-w-[180px] rounded-xl border border-border bg-card/90 py-1 shadow-overlay backdrop-blur-md"
+      variants={VARIANTS.contextMenu}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={TRANSITION.fast}
+      style={{
+        left: clampedPosition.x,
+        top: clampedPosition.y,
+        transformOrigin: "top left",
+      }}
     >
       <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Add Node
@@ -209,6 +220,6 @@ export function CanvasContextMenu({
             </button>
           </>
         )}
-    </div>
+    </motion.div>
   );
 }

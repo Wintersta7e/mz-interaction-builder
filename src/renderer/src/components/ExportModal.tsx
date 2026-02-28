@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { X, Copy, Check, Download } from "lucide-react";
-import { useDocumentStore, useProjectStore } from "../stores";
+import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
 import { exportToMZCommands, exportAsJSON } from "../lib/export";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 import "../types/api.d";
 
 interface ExportModalProps {
@@ -22,6 +24,14 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Clean up copied timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Load maps when project path changes
   useEffect(() => {
@@ -85,10 +95,20 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   };
 
   const handleCopyJSON = async () => {
-    const json = exportAsJSON(document);
-    await navigator.clipboard.writeText(json);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      const json = exportAsJSON(document);
+      await navigator.clipboard.writeText(json);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      setCopied(true);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      useUIStore
+        .getState()
+        .addToast({ message: "Copied to clipboard", type: "success" });
+    } catch {
+      useUIStore
+        .getState()
+        .addToast({ message: "Failed to copy to clipboard", type: "error" });
+    }
   };
 
   const handleExportToMap = async () => {
@@ -126,161 +146,176 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     setIsLoading(false);
   };
 
-  if (!isOpen) return null;
-
   const selectedEvent = events.find((e) => e.id === selectedEventId);
   const pageCount = selectedEvent?.pages || 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-[500px] rounded-lg border border-border bg-card shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-lg font-semibold">Export Interaction</h2>
-          <button onClick={onClose} className="rounded p-1 hover:bg-muted">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          variants={VARIANTS.fadeIn}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={TRANSITION.fast}
+        >
+          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <motion.div
+            className="relative w-[500px] rounded-lg border border-border bg-card shadow-overlay"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={TRANSITION.normal}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-lg font-semibold">Export Interaction</h2>
+              <button onClick={onClose} className="rounded p-1 hover:bg-muted">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-        {/* Content */}
-        <div className="space-y-4 p-4">
-          {/* Copy JSON Section */}
-          <div className="rounded border border-border p-4">
-            <h3 className="mb-2 font-medium">Copy as JSON</h3>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Copy the generated RPG Maker commands to clipboard for manual
-              pasting.
-            </p>
-            <button
-              onClick={handleCopyJSON}
-              className="flex items-center gap-2 rounded bg-secondary px-4 py-2 text-sm hover:bg-secondary/80"
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              {copied ? "Copied!" : "Copy to Clipboard"}
-            </button>
-          </div>
-
-          {/* Export to Map Section */}
-          <div className="rounded border border-border p-4">
-            <h3 className="mb-2 font-medium">Export to Map</h3>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Export directly into an RPG Maker MZ map event.
-            </p>
-
-            {/* Project Selection */}
-            <div className="mb-3">
-              <label className="mb-1 block text-sm text-muted-foreground">
-                Project
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={projectPath || ""}
-                  readOnly
-                  className="flex-1 rounded border border-border bg-background px-3 py-2 text-sm"
-                  placeholder="No project selected"
-                />
+            {/* Content */}
+            <div className="space-y-4 p-4">
+              {/* Copy JSON Section */}
+              <div className="rounded border border-border p-4">
+                <h3 className="mb-2 font-medium">Copy as JSON</h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Copy the generated RPG Maker commands to clipboard for manual
+                  pasting.
+                </p>
                 <button
-                  onClick={handleSelectProject}
-                  className="rounded bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
+                  onClick={handleCopyJSON}
+                  className="flex items-center gap-2 rounded bg-secondary px-4 py-2 text-sm hover:bg-secondary/80"
                 >
-                  Browse
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                  {copied ? "Copied!" : "Copy to Clipboard"}
+                </button>
+              </div>
+
+              {/* Export to Map Section */}
+              <div className="rounded border border-border p-4">
+                <h3 className="mb-2 font-medium">Export to Map</h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Export directly into an RPG Maker MZ map event.
+                </p>
+
+                {/* Project Selection */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm text-muted-foreground">
+                    Project
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={projectPath || ""}
+                      readOnly
+                      className="flex-1 rounded border border-border bg-background px-3 py-2 text-sm"
+                      placeholder="No project selected"
+                    />
+                    <button
+                      onClick={handleSelectProject}
+                      className="rounded bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
+                    >
+                      Browse
+                    </button>
+                  </div>
+                </div>
+
+                {/* Map Selection */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm text-muted-foreground">
+                    Map
+                  </label>
+                  <select
+                    value={selectedMapId || ""}
+                    onChange={(e) =>
+                      setSelectedMapId(
+                        e.target.value ? parseInt(e.target.value, 10) : null,
+                      )
+                    }
+                    disabled={!projectPath || isLoading}
+                    className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    <option value="">-- Select Map --</option>
+                    {maps.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.id}: {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Event Selection */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm text-muted-foreground">
+                    Event
+                  </label>
+                  <select
+                    value={selectedEventId || ""}
+                    onChange={(e) =>
+                      setSelectedEventId(
+                        e.target.value ? parseInt(e.target.value, 10) : null,
+                      )
+                    }
+                    disabled={!selectedMapId || isLoading}
+                    className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    <option value="">-- Select Event --</option>
+                    {events.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.id}: {e.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Page Selection */}
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm text-muted-foreground">
+                    Page
+                  </label>
+                  <select
+                    value={selectedPageIndex}
+                    onChange={(e) =>
+                      setSelectedPageIndex(parseInt(e.target.value, 10))
+                    }
+                    disabled={!selectedEventId || isLoading}
+                    className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    {Array.from({ length: pageCount }, (_, i) => (
+                      <option key={i} value={i}>
+                        Page {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Error display */}
+                {error && (
+                  <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+
+                {/* Export Button */}
+                <button
+                  onClick={handleExportToMap}
+                  disabled={!selectedMapId || !selectedEventId || isLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {isLoading ? "Exporting..." : "Export to Map"}
                 </button>
               </div>
             </div>
-
-            {/* Map Selection */}
-            <div className="mb-3">
-              <label className="mb-1 block text-sm text-muted-foreground">
-                Map
-              </label>
-              <select
-                value={selectedMapId || ""}
-                onChange={(e) =>
-                  setSelectedMapId(
-                    e.target.value ? parseInt(e.target.value, 10) : null,
-                  )
-                }
-                disabled={!projectPath || isLoading}
-                className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
-              >
-                <option value="">-- Select Map --</option>
-                {maps.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.id}: {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Event Selection */}
-            <div className="mb-3">
-              <label className="mb-1 block text-sm text-muted-foreground">
-                Event
-              </label>
-              <select
-                value={selectedEventId || ""}
-                onChange={(e) =>
-                  setSelectedEventId(
-                    e.target.value ? parseInt(e.target.value, 10) : null,
-                  )
-                }
-                disabled={!selectedMapId || isLoading}
-                className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
-              >
-                <option value="">-- Select Event --</option>
-                {events.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.id}: {e.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Page Selection */}
-            <div className="mb-3">
-              <label className="mb-1 block text-sm text-muted-foreground">
-                Page
-              </label>
-              <select
-                value={selectedPageIndex}
-                onChange={(e) =>
-                  setSelectedPageIndex(parseInt(e.target.value, 10))
-                }
-                disabled={!selectedEventId || isLoading}
-                className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
-              >
-                {Array.from({ length: pageCount }, (_, i) => (
-                  <option key={i} value={i}>
-                    Page {i + 1}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Error display */}
-            {error && (
-              <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
-            {/* Export Button */}
-            <button
-              onClick={handleExportToMap}
-              disabled={!selectedMapId || !selectedEventId || isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              <Download className="h-4 w-4" />
-              {isLoading ? "Exporting..." : "Export to Map"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

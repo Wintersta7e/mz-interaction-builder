@@ -2,7 +2,9 @@ import { useDocumentStore, useUIStore } from "../stores";
 import type { GroupColor } from "../types";
 import { Save } from "lucide-react";
 import { useState, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "../lib/utils";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 import { DebouncedInput } from "./DebouncedInputs";
 import { GROUP_COLORS } from "../nodes/GroupNode";
@@ -38,7 +40,7 @@ export function PropertiesPanel() {
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
+      <h2 className="mb-4 text-sm font-semibold tracking-wider text-muted-foreground">
         PROPERTIES
       </h2>
 
@@ -88,67 +90,89 @@ export function PropertiesPanel() {
         )}
 
       {/* Type-specific properties */}
-      {selectedNode.type === "menu" && (
-        <MenuProperties node={selectedNode} updateNode={updateNode} />
-      )}
-      {selectedNode.type === "action" && (
-        <ActionProperties node={selectedNode} updateNode={updateNode} />
-      )}
-      {selectedNode.type === "condition" && (
-        <ConditionProperties node={selectedNode} updateNode={updateNode} />
-      )}
-      {selectedNode.type === "group" && selectedNode.data.type === "group" && (
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Color
-            </label>
-            <div className="flex gap-1.5">
-              {(
-                ["blue", "green", "purple", "amber", "rose", "gray"] as const
-              ).map((c) => (
-                <button
-                  key={c}
-                  onClick={() =>
-                    updateNode(selectedNode.id, {
-                      data: { ...selectedNode.data, color: c as GroupColor },
-                    })
-                  }
-                  className={`h-6 w-6 rounded-full border-2 ${
-                    selectedNode.data.color === c
-                      ? "border-white"
-                      : "border-transparent"
-                  }`}
-                  style={{ backgroundColor: GROUP_COLORS[c] }}
-                  title={c}
-                />
-              ))}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={selectedNode.id}
+          variants={VARIANTS.fadeIn}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={TRANSITION.fast}
+        >
+          {selectedNode.type === "menu" && (
+            <MenuProperties node={selectedNode} updateNode={updateNode} />
+          )}
+          {selectedNode.type === "action" && (
+            <ActionProperties node={selectedNode} updateNode={updateNode} />
+          )}
+          {selectedNode.type === "condition" && (
+            <ConditionProperties node={selectedNode} updateNode={updateNode} />
+          )}
+          {selectedNode.type === "group" &&
+            selectedNode.data.type === "group" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Color
+                  </label>
+                  <div className="flex gap-1.5">
+                    {(
+                      [
+                        "blue",
+                        "green",
+                        "purple",
+                        "amber",
+                        "rose",
+                        "gray",
+                      ] as const
+                    ).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() =>
+                          updateNode(selectedNode.id, {
+                            data: {
+                              ...selectedNode.data,
+                              color: c as GroupColor,
+                            },
+                          })
+                        }
+                        className={`h-6 w-6 rounded-full border-2 ${
+                          selectedNode.data.color === c
+                            ? "border-white"
+                            : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: GROUP_COLORS[c] }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          {selectedNode.type === "comment" &&
+            selectedNode.data.type === "comment" && (
+              <CommentProperties node={selectedNode} updateNode={updateNode} />
+            )}
+          {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
+            <div className="mt-6 border-t border-border pt-4">
+              <button
+                onClick={() => setSaveTemplateOpen(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save as Template
+              </button>
             </div>
-          </div>
-        </div>
-      )}
-      {selectedNode.type === "comment" &&
-        selectedNode.data.type === "comment" && (
-          <CommentProperties node={selectedNode} updateNode={updateNode} />
-        )}
+          )}
+        </motion.div>
+      </AnimatePresence>
       {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
-        <>
-          <div className="mt-6 border-t border-border pt-4">
-            <button
-              onClick={() => setSaveTemplateOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Save className="h-3.5 w-3.5" />
-              Save as Template
-            </button>
-          </div>
-          <SaveTemplateModal
-            isOpen={saveTemplateOpen}
-            onClose={() => setSaveTemplateOpen(false)}
-            nodes={[selectedNode]}
-            edges={[]}
-          />
-        </>
+        <SaveTemplateModal
+          isOpen={saveTemplateOpen}
+          onClose={() => setSaveTemplateOpen(false)}
+          nodes={[selectedNode]}
+          edges={[]}
+        />
       )}
     </div>
   );

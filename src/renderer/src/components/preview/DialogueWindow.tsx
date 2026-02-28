@@ -51,7 +51,11 @@ function useTypewriter(
  * "Show Text:" so we check both for robustness.
  */
 function extractShowText(entry: TranscriptEntry): string | null {
-  if (entry.nodeType === "action" && entry.detail && entry.content.includes("Show Text")) {
+  if (
+    entry.nodeType === "action" &&
+    entry.detail &&
+    entry.content.includes("Show Text")
+  ) {
     return entry.detail;
   }
   return null;
@@ -79,11 +83,7 @@ function GuidanceMessage(): React.JSX.Element {
   );
 }
 
-function DialogueText({
-  text,
-}: {
-  text: string;
-}): React.JSX.Element {
+function DialogueText({ text }: { text: string }): React.JSX.Element {
   const [displayed, isComplete, skipToEnd] = useTypewriter(text, 16);
 
   return (
@@ -235,9 +235,7 @@ export function DialogueWindow(): React.JSX.Element {
 
   // Waiting for choice
   if (status === "waiting_choice") {
-    return (
-      <ChoiceDisplay choices={availableChoices} transcript={transcript} />
-    );
+    return <ChoiceDisplay choices={availableChoices} transcript={transcript} />;
   }
 
   // Running — show last transcript entry
