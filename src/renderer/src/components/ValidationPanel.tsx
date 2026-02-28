@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { AlertTriangle, CheckCircle, X, AlertCircle } from "lucide-react";
 import { useDocumentStore, useUIStore } from "../stores";
 import { validateDocument } from "../lib/validateDocument";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 
 interface ValidationPanelProps {
   onClose: () => void;
@@ -26,7 +28,14 @@ export function ValidationPanel({ onClose }: ValidationPanelProps) {
   };
 
   return (
-    <div className="fixed bottom-16 right-4 z-40 w-80 rounded-lg border border-border bg-card shadow-xl">
+    <motion.div
+      variants={VARIANTS.slideUp}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={TRANSITION.normal}
+      className="fixed bottom-16 right-4 z-40 w-80 rounded-lg border border-border bg-card shadow-xl"
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -87,6 +96,6 @@ export function ValidationPanel({ onClose }: ValidationPanelProps) {
           </ul>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
