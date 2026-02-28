@@ -52,10 +52,9 @@ export function VariableInspector(): React.JSX.Element | null {
         <div className="px-3 pb-3 space-y-2">
           {/* Variable rows */}
           {variableIds.map((id) => {
-            const name =
-              projectPath
-                ? projectVariables.find((v) => v.id === id)?.name
-                : undefined;
+            const name = projectPath
+              ? projectVariables.find((v) => v.id === id)?.name
+              : undefined;
             const value = previewState?.variables.get(id) ?? 0;
 
             return (
@@ -82,10 +81,9 @@ export function VariableInspector(): React.JSX.Element | null {
 
           {/* Switch rows */}
           {switchIds.map((id) => {
-            const name =
-              projectPath
-                ? projectSwitches.find((s) => s.id === id)?.name
-                : undefined;
+            const name = projectPath
+              ? projectSwitches.find((s) => s.id === id)?.name
+              : undefined;
             const value = previewState?.switches.get(id) ?? false;
 
             return (
@@ -100,9 +98,7 @@ export function VariableInspector(): React.JSX.Element | null {
                   type="checkbox"
                   checked={value}
                   onChange={(e) =>
-                    usePreviewStore
-                      .getState()
-                      .setSwitch(id, e.target.checked)
+                    usePreviewStore.getState().setSwitch(id, e.target.checked)
                   }
                   className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
                 />

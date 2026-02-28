@@ -883,7 +883,13 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [makeNode("s1", "start"), actionNode, condNode, menuNode, makeNode("e1", "end")],
+        [
+          makeNode("s1", "start"),
+          actionNode,
+          condNode,
+          menuNode,
+          makeNode("e1", "end"),
+        ],
         [],
       );
       const engine = new PreviewEngine(doc);

@@ -37,9 +37,7 @@ function LogEntry({ entry }: { entry: TranscriptEntry }): React.JSX.Element {
       type="button"
       className="w-full text-left px-2 py-1.5 hover:bg-muted/50 cursor-pointer transition-colors"
       style={{ borderLeft: `3px solid ${borderColor}` }}
-      onClick={() =>
-        usePreviewStore.getState().setFocusNodeId(entry.nodeId)
-      }
+      onClick={() => usePreviewStore.getState().setFocusNodeId(entry.nodeId)}
     >
       <div className="flex items-center text-xs text-foreground">
         <span className="text-muted-foreground mr-1.5 font-mono">
@@ -62,9 +60,7 @@ export function ExecutionLog(): React.JSX.Element {
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const transcript = usePreviewStore(
-    (s) => s.previewState?.transcript ?? [],
-  );
+  const transcript = usePreviewStore((s) => s.previewState?.transcript ?? []);
 
   // Auto-scroll to bottom when transcript grows
   useEffect(() => {
@@ -115,10 +111,7 @@ export function ExecutionLog(): React.JSX.Element {
           ) : (
             <>
               {/* Scrollable log entries */}
-              <div
-                ref={scrollRef}
-                className="max-h-[300px] overflow-y-auto"
-              >
+              <div ref={scrollRef} className="max-h-[300px] overflow-y-auto">
                 {transcript.map((entry, i) => (
                   <LogEntry key={i} entry={entry} />
                 ))}

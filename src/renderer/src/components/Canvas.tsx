@@ -559,7 +559,7 @@ function CanvasInner() {
             selectedNodeId={selectedNodeId}
             selectedNodeType={
               selectedNodeId
-                ? nodes.find((n) => n.id === selectedNodeId)?.type ?? null
+                ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null)
                 : null
             }
             isMuted={(() => {
