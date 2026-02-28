@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { Search, ChevronUp, ChevronDown, X } from "lucide-react";
 import { useUIStore } from "../stores";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 
 interface SearchPanelProps {
   onNavigateToNode: (nodeId: string) => void;
@@ -54,7 +56,14 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
   );
 
   return (
-    <div className="absolute left-1/2 top-3 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 shadow-xl backdrop-blur-md">
+    <motion.div
+      className="absolute left-1/2 top-3 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 shadow-xl backdrop-blur-md"
+      variants={VARIANTS.slideDown}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={TRANSITION.fast}
+    >
       <Search className="h-4 w-4 text-muted-foreground" />
       <input
         ref={inputRef}
@@ -92,6 +101,6 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
       >
         <X className="h-4 w-4" />
       </button>
-    </div>
+    </motion.div>
   );
 }

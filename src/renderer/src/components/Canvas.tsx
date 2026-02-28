@@ -589,7 +589,9 @@ function CanvasInner() {
             />
           )}
         </AnimatePresence>
-        {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+        <AnimatePresence>
+          {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
+        </AnimatePresence>
         <BookmarkPanel onNavigateToNode={navigateToNode} />
         <AlignmentToolbar
           selectedNodes={nodes.filter((n) => n.selected)}
