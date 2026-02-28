@@ -96,7 +96,7 @@ export function SaveTemplateModal({
             onClick={onClose}
           />
           <motion.div
-            className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
+            className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-overlay"
             variants={VARIANTS.scaleIn}
             initial="initial"
             animate="animate"

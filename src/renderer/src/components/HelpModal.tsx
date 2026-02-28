@@ -21,7 +21,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         >
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <motion.div
-            className="relative max-h-[80vh] w-[600px] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+            className="relative max-h-[80vh] w-[600px] overflow-hidden rounded-lg border border-border bg-card shadow-overlay"
             variants={VARIANTS.scaleIn}
             initial="initial"
             animate="animate"

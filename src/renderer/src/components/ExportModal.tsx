@@ -144,7 +144,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
         >
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <motion.div
-            className="relative w-[500px] rounded-lg border border-border bg-card shadow-xl"
+            className="relative w-[500px] rounded-lg border border-border bg-card shadow-overlay"
             variants={VARIANTS.scaleIn}
             initial="initial"
             animate="animate"
