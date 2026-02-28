@@ -169,7 +169,7 @@ textarea:disabled {
 /* Node styles */
 .interaction-node {
   background: hsl(230 20% 11%);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease;
 }
 
 .interaction-node:hover {
