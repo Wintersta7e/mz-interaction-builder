@@ -358,7 +358,9 @@ export function useCanvasKeyboard(
             );
             if (el instanceof HTMLElement) {
               el.setAttribute("data-pasted", "true");
-              setTimeout(() => el.removeAttribute("data-pasted"), 500);
+              setTimeout(() => {
+                if (el.isConnected) el.removeAttribute("data-pasted");
+              }, 500);
             }
           }
         }, 0);

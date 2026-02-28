@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Copy, Check, Download } from "lucide-react";
 import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
@@ -24,6 +24,14 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Clean up copied timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Load maps when project path changes
   useEffect(() => {
@@ -87,11 +95,16 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   };
 
   const handleCopyJSON = async () => {
-    const json = exportAsJSON(document);
-    await navigator.clipboard.writeText(json);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    useUIStore.getState().addToast({ message: "Copied to clipboard", type: "success" });
+    try {
+      const json = exportAsJSON(document);
+      await navigator.clipboard.writeText(json);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      setCopied(true);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      useUIStore.getState().addToast({ message: "Copied to clipboard", type: "success" });
+    } catch {
+      useUIStore.getState().addToast({ message: "Failed to copy to clipboard", type: "error" });
+    }
   };
 
   const handleExportToMap = async () => {
@@ -146,10 +159,8 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <motion.div
             className="relative w-[500px] rounded-lg border border-border bg-card shadow-overlay"
-            variants={VARIANTS.scaleIn}
-            initial="initial"
-            animate="animate"
-            exit="exit"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={TRANSITION.normal}
           >
             {/* Header */}

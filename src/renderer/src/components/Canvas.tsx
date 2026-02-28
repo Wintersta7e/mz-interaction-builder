@@ -360,7 +360,9 @@ function CanvasInner() {
             );
             if (el instanceof HTMLElement) {
               el.setAttribute("data-entering", "true");
-              setTimeout(() => el.removeAttribute("data-entering"), 200);
+              setTimeout(() => {
+                if (el.isConnected) el.removeAttribute("data-entering");
+              }, 200);
             }
           }
         }, 0);
@@ -402,7 +404,9 @@ function CanvasInner() {
         );
         if (el instanceof HTMLElement) {
           el.setAttribute("data-entering", "true");
-          setTimeout(() => el.removeAttribute("data-entering"), 200);
+          setTimeout(() => {
+            if (el.isConnected) el.removeAttribute("data-entering");
+          }, 200);
         }
       }, 0);
     },

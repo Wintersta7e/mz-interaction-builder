@@ -12,8 +12,6 @@ export const TRANSITION: Record<string, Transition> = {
   fast: { duration: DURATION.fast, ease: [0.25, 0.1, 0.25, 1.0] },
   normal: { duration: DURATION.normal, ease: [0.25, 0.1, 0.25, 1.0] },
   slow: { duration: DURATION.slow, ease: [0.25, 0.1, 0.25, 1.0] },
-  spring: { type: "spring", stiffness: 400, damping: 30 },
-  gentle: { type: "spring", stiffness: 300, damping: 25 },
 };
 
 // ── Variant presets (for AnimatePresence) ──────────────

@@ -359,7 +359,6 @@ export default function App() {
         const result = await window.api.file.save(currentPath, content);
         if (result.success) {
           useDocumentStore.getState().setDirty(false);
-          console.log("Auto-saved at", new Date().toLocaleTimeString());
         } else {
           console.error("Auto-save failed:", result.error);
           await window.api.dialog.message({
@@ -410,7 +409,7 @@ export default function App() {
         }
         palette={<NodePalette onDragStart={setDraggingNodeType} />}
         canvas={<Canvas />}
-        preview={previewIsOpen ? <PreviewPanel /> : null}
+        preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
         properties={<PropertiesPanel />}
         statusbar={<StatusBar />}
       />

@@ -59,8 +59,16 @@ export function ExecutionLog(): React.JSX.Element {
   const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const transcript = usePreviewStore((s) => s.previewState?.transcript ?? []);
+
+  // Clean up copied timer on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Auto-scroll to bottom when transcript grows
   useEffect(() => {
@@ -69,17 +77,21 @@ export function ExecutionLog(): React.JSX.Element {
     }
   }, [transcript.length, expanded]);
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     if (transcript.length === 0) return;
 
     const text = transcript
       .map((e) => `[${e.stepIndex}] ${e.content}`)
       .join("\n");
 
-    navigator.clipboard.writeText(text).then(() => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
+    } catch {
+      console.error("Failed to copy execution log");
+    }
   }, [transcript]);
 
   return (
