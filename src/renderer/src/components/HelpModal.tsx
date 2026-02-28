@@ -1,4 +1,6 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { X, Keyboard, Mouse, FileText, HelpCircle } from "lucide-react";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -6,11 +8,26 @@ interface HelpModalProps {
 }
 
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="max-h-[80vh] w-[600px] overflow-hidden rounded-lg border border-border bg-card shadow-xl">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          variants={VARIANTS.fadeIn}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={TRANSITION.fast}
+        >
+          <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+          <motion.div
+            className="relative max-h-[80vh] w-[600px] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+            variants={VARIANTS.scaleIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={TRANSITION.normal}
+          >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -227,7 +244,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             </p>
           </section>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

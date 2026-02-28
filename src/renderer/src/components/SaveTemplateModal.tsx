@@ -1,8 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useTemplateStore } from "../stores/templateStore";
 import { normalizePositions } from "../lib/templateUtils";
+import { VARIANTS, TRANSITION } from "../lib/animations";
 import type { InteractionNode, InteractionEdge, NodeTemplate } from "../types";
 
 interface SaveTemplateModalProps {
@@ -47,8 +49,6 @@ export function SaveTemplateModal({
     return counts;
   }, [nodes]);
 
-  if (!isOpen) return null;
-
   const handleSave = async () => {
     if (!name.trim()) return;
 
@@ -81,8 +81,28 @@ export function SaveTemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          variants={VARIANTS.fadeIn}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={TRANSITION.fast}
+        >
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
+            variants={VARIANTS.scaleIn}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={TRANSITION.normal}
+          >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Save as Template</h2>
           <button
@@ -172,7 +192,9 @@ export function SaveTemplateModal({
             Save Template
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
