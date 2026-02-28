@@ -351,6 +351,19 @@ function CanvasInner() {
         setEdgesState(allEdges);
         setNodes(allNodes);
         setEdges(allEdges);
+
+        // Brief entrance animation for template nodes
+        setTimeout(() => {
+          for (const node of newNodes) {
+            const el = window.document.querySelector(
+              `[data-id="${node.id}"] .interaction-node`,
+            );
+            if (el instanceof HTMLElement) {
+              el.setAttribute("data-entering", "true");
+              setTimeout(() => el.removeAttribute("data-entering"), 200);
+            }
+          }
+        }, 0);
         return;
       }
 
@@ -381,6 +394,17 @@ function CanvasInner() {
       push(useDocumentStore.getState().document);
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
+
+      // Brief entrance animation
+      setTimeout(() => {
+        const el = window.document.querySelector(
+          `[data-id="${newNode.id}"] .interaction-node`,
+        );
+        if (el instanceof HTMLElement) {
+          el.setAttribute("data-entering", "true");
+          setTimeout(() => el.removeAttribute("data-entering"), 200);
+        }
+      }, 0);
     },
     [
       screenToFlowPosition,
