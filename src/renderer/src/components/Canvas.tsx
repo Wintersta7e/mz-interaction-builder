@@ -19,6 +19,7 @@ import {
   type EdgeChange,
   type OnMoveEnd,
 } from "@xyflow/react";
+import { AnimatePresence } from "framer-motion";
 import "@xyflow/react/dist/style.css";
 
 import { nodeTypes } from "../nodes";
@@ -539,53 +540,55 @@ function CanvasInner() {
           )}
         </ReactFlow>
         <AlignmentGuides guides={guideLines} />
-        {contextMenu && (
-          <CanvasContextMenu
-            position={{ x: contextMenu.x, y: contextMenu.y }}
-            onAddNode={handleContextMenuAddNode}
-            onClose={() => setContextMenu(null)}
-            onSaveAsTemplate={handleSaveAsTemplate}
-            onToggleMute={() => {
-              handleToggleMute();
-              setContextMenu(null);
-            }}
-            onPreviewFromHere={(nodeId) => {
-              usePreviewStore.getState().open(nodeId);
-              setContextMenu(null);
-            }}
-            hasSelectedNodes={
-              nodes.some((n) => n.selected) || selectedNodeId !== null
-            }
-            selectedNodeId={selectedNodeId}
-            selectedNodeType={
-              selectedNodeId
-                ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null)
-                : null
-            }
-            isMuted={(() => {
-              // I-2: Compute from full selection, not just selectedNodeId
-              const mutableTypes = new Set([
-                "action",
-                "menu",
-                "condition",
-                "end",
-              ]);
-              const selected = nodes.filter(
-                (n) => n.selected && mutableTypes.has(n.type ?? ""),
-              );
-              if (selected.length > 0) {
-                return selected.every((n) => !!n.data.muted);
+        <AnimatePresence>
+          {contextMenu && (
+            <CanvasContextMenu
+              position={{ x: contextMenu.x, y: contextMenu.y }}
+              onAddNode={handleContextMenuAddNode}
+              onClose={() => setContextMenu(null)}
+              onSaveAsTemplate={handleSaveAsTemplate}
+              onToggleMute={() => {
+                handleToggleMute();
+                setContextMenu(null);
+              }}
+              onPreviewFromHere={(nodeId) => {
+                usePreviewStore.getState().open(nodeId);
+                setContextMenu(null);
+              }}
+              hasSelectedNodes={
+                nodes.some((n) => n.selected) || selectedNodeId !== null
               }
-              // Fallback to single selected node
-              const sel = selectedNodeId
-                ? nodes.find((n) => n.id === selectedNodeId)
-                : null;
-              return sel && mutableTypes.has(sel.type ?? "")
-                ? !!sel.data.muted
-                : false;
-            })()}
-          />
-        )}
+              selectedNodeId={selectedNodeId}
+              selectedNodeType={
+                selectedNodeId
+                  ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null)
+                  : null
+              }
+              isMuted={(() => {
+                // I-2: Compute from full selection, not just selectedNodeId
+                const mutableTypes = new Set([
+                  "action",
+                  "menu",
+                  "condition",
+                  "end",
+                ]);
+                const selected = nodes.filter(
+                  (n) => n.selected && mutableTypes.has(n.type ?? ""),
+                );
+                if (selected.length > 0) {
+                  return selected.every((n) => !!n.data.muted);
+                }
+                // Fallback to single selected node
+                const sel = selectedNodeId
+                  ? nodes.find((n) => n.id === selectedNodeId)
+                  : null;
+                return sel && mutableTypes.has(sel.type ?? "")
+                  ? !!sel.data.muted
+                  : false;
+              })()}
+            />
+          )}
+        </AnimatePresence>
         {searchOpen && <SearchPanel onNavigateToNode={navigateToNode} />}
         <BookmarkPanel onNavigateToNode={navigateToNode} />
         <AlignmentToolbar
