@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Copy, Check, Download } from "lucide-react";
-import { useDocumentStore, useProjectStore } from "../stores";
+import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
 import { exportToMZCommands, exportAsJSON } from "../lib/export";
 import { VARIANTS, TRANSITION } from "../lib/animations";
 import "../types/api.d";
@@ -91,6 +91,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     await navigator.clipboard.writeText(json);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    useUIStore.getState().addToast({ message: "Copied to clipboard", type: "success" });
   };
 
   const handleExportToMap = async () => {

@@ -21,6 +21,7 @@ import {
   useProjectStore,
   useTemplateStore,
   usePreviewStore,
+  useUIStore,
 } from "./stores";
 import type { InteractionNodeType } from "./types";
 import "./types/api.d";
@@ -191,6 +192,7 @@ export default function App() {
 
     setSavedPath(filePath);
     useDocumentStore.getState().setDirty(false);
+    useUIStore.getState().addToast({ message: "File saved", type: "success" });
   }, [savedPath, document, setSavedPath]);
 
   // Handle Export

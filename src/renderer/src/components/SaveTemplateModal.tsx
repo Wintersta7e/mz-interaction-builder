@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { v4 as uuid } from "uuid";
 import { useTemplateStore } from "../stores/templateStore";
+import { useUIStore } from "../stores";
 import { normalizePositions } from "../lib/templateUtils";
 import { VARIANTS, TRANSITION } from "../lib/animations";
 import type { InteractionNode, InteractionEdge, NodeTemplate } from "../types";
@@ -70,6 +71,7 @@ export function SaveTemplateModal({
 
     const result = await saveTemplate(template);
     if (result.success) {
+      useUIStore.getState().addToast({ message: "Template saved", type: "success" });
       onClose();
     } else {
       await window.api.dialog.message({
