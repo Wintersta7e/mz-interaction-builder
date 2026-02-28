@@ -263,8 +263,8 @@ textarea:disabled {
 
 /* Preview highlighting (Phase 6) */
 @keyframes preview-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px hsl(217 91% 60% / 0.6), 0 0 15px hsl(217 91% 60% / 0.3); }
-  50% { box-shadow: 0 0 0 6px hsl(217 91% 60% / 0), 0 0 15px hsl(217 91% 60% / 0); }
+  0%, 100% { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.6), 0 0 15px hsl(var(--primary) / 0.3); }
+  50% { box-shadow: 0 0 0 6px hsl(var(--primary) / 0), 0 0 15px hsl(var(--primary) / 0); }
 }
 
 .preview-current .interaction-node {
@@ -294,4 +294,23 @@ textarea:disabled {
 .react-flow[data-previewing] .react-flow__edge.preview-visited {
   opacity: 0.8;
   transition: opacity 0.3s ease;
+}
+
+/* Accessibility: respect system reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .interaction-node,
+  .react-flow__edge-path,
+  .react-flow__handle,
+  button {
+    transition: none !important;
+  }
+  .react-flow__node.selected .interaction-node,
+  .search-highlight-current .interaction-node,
+  .preview-current .interaction-node,
+  .react-flow__edge:hover .react-flow__edge-path,
+  .react-flow__edge.selected .react-flow__edge-path,
+  .interaction-node[data-entering="true"],
+  .interaction-node[data-pasted="true"] {
+    animation: none !important;
+  }
 }

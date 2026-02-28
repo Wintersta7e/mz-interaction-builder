@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Play, X, AlertTriangle, RotateCcw } from "lucide-react";
 import { usePreviewStore } from "../../stores";
 import { useDocumentStore } from "../../stores";
-import { TRANSITION } from "../../lib/animations";
+import { TRANSITION, VARIANTS } from "../../lib/animations";
 import { PreviewControls } from "./PreviewControls";
 import { DialogueWindow } from "./DialogueWindow";
 import { VariableInspector } from "./VariableInspector";
@@ -94,9 +94,10 @@ export function PreviewPanel(): React.JSX.Element {
 
   return (
     <motion.div
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: 400, opacity: 1 }}
-      exit={{ width: 0, opacity: 0 }}
+      variants={VARIANTS.slideInRight}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       transition={TRANSITION.normal}
       className="flex-shrink-0 border-l border-border flex flex-col bg-background overflow-hidden"
     >
