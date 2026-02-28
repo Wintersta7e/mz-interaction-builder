@@ -38,7 +38,7 @@ export function PropertiesPanel() {
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
+      <h2 className="mb-4 text-sm font-semibold tracking-wider text-muted-foreground">
         PROPERTIES
       </h2>
 
