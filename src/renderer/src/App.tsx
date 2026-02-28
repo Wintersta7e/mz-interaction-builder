@@ -12,6 +12,7 @@ import { StatusBar } from "./components/StatusBar";
 import { ExportModal } from "./components/ExportModal";
 import { HelpModal } from "./components/HelpModal";
 import { ValidationPanel } from "./components/ValidationPanel";
+import { ToastContainer } from "./components/ToastContainer";
 import { PreviewPanel } from "./components/preview/PreviewPanel";
 import {
   useDocumentStore,
@@ -419,6 +420,7 @@ export default function App() {
       {showValidation && (
         <ValidationPanel onClose={() => setShowValidation(false)} />
       )}
+      <ToastContainer />
     </div>
   );
 }
