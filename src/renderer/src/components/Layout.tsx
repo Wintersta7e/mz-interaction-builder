@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { AnimatePresence } from "framer-motion";
 
 interface LayoutProps {
   toolbar: ReactNode;
@@ -33,7 +34,7 @@ export function Layout({
         <div className="flex-1 overflow-hidden">{canvas}</div>
 
         {/* Preview Panel (optional) */}
-        {preview}
+        <AnimatePresence>{preview}</AnimatePresence>
 
         {/* Properties Panel */}
         <div className="w-[320px] flex-shrink-0 border-l border-border overflow-y-auto">

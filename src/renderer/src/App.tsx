@@ -19,6 +19,7 @@ import {
   useHistoryStore,
   useProjectStore,
   useTemplateStore,
+  usePreviewStore,
 } from "./stores";
 import type { InteractionNodeType } from "./types";
 import "./types/api.d";
@@ -47,6 +48,7 @@ export default function App() {
     setError,
   } = useProjectStore();
   const { loadTemplates } = useTemplateStore();
+  const previewIsOpen = usePreviewStore((s) => s.isOpen);
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -405,7 +407,7 @@ export default function App() {
         }
         palette={<NodePalette onDragStart={setDraggingNodeType} />}
         canvas={<Canvas />}
-        preview={<PreviewPanel />}
+        preview={previewIsOpen ? <PreviewPanel /> : null}
         properties={<PropertiesPanel />}
         statusbar={<StatusBar />}
       />

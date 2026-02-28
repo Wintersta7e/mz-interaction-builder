@@ -1,7 +1,9 @@
 import { Component, useEffect, useMemo, type ReactNode } from "react";
+import { motion } from "framer-motion";
 import { Play, X, AlertTriangle, RotateCcw } from "lucide-react";
 import { usePreviewStore } from "../../stores";
 import { useDocumentStore } from "../../stores";
+import { TRANSITION } from "../../lib/animations";
 import { PreviewControls } from "./PreviewControls";
 import { DialogueWindow } from "./DialogueWindow";
 import { VariableInspector } from "./VariableInspector";
@@ -57,8 +59,7 @@ class PreviewErrorBoundary extends Component<
 
 // ─── Preview Panel ───────────────────────────────────────────────
 
-export function PreviewPanel(): React.JSX.Element | null {
-  const isOpen = usePreviewStore((s) => s.isOpen);
+export function PreviewPanel(): React.JSX.Element {
   const previewState = usePreviewStore((s) => s.previewState);
   const coverageData = usePreviewStore((s) => s.coverageData);
   const autoPlay = usePreviewStore((s) => s.autoPlay);
@@ -77,8 +78,6 @@ export function PreviewPanel(): React.JSX.Element | null {
 
   // Compute coverage stat: count functional nodes (exclude group, comment, start)
   const coverageStat = useMemo(() => {
-    if (!isOpen) return null;
-
     const functionalNodes = nodes.filter(
       (n) => n.type !== "group" && n.type !== "comment" && n.type !== "start",
     );
@@ -91,12 +90,16 @@ export function PreviewPanel(): React.JSX.Element | null {
     const pct = Math.round((visitedCount / totalCount) * 100);
 
     return `${visitedCount}/${totalCount} (${pct}%)`;
-  }, [isOpen, nodes, coverageData.visitedNodes]);
-
-  if (!isOpen) return null;
+  }, [nodes, coverageData.visitedNodes]);
 
   return (
-    <div className="w-[400px] flex-shrink-0 border-l border-border flex flex-col bg-background overflow-hidden">
+    <motion.div
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: 400, opacity: 1 }}
+      exit={{ width: 0, opacity: 0 }}
+      transition={TRANSITION.normal}
+      className="flex-shrink-0 border-l border-border flex flex-col bg-background overflow-hidden"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
@@ -128,6 +131,6 @@ export function PreviewPanel(): React.JSX.Element | null {
           <ExecutionLog />
         </div>
       </PreviewErrorBoundary>
-    </div>
+    </motion.div>
   );
 }
