@@ -73,6 +73,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
         boxShadow: selected
           ? `0 0 0 2px ${NODE_ACCENT_COLORS.menu}, 0 0 15px color-mix(in srgb, ${NODE_ACCENT_COLORS.menu} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
+        color: selected ? NODE_ACCENT_COLORS.menu : undefined,
       }}
     >
       {/* Input Handle - on the left, vertically centered */}

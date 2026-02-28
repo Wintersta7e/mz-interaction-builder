@@ -66,6 +66,7 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
         boxShadow: selected
           ? `0 0 0 2px ${NODE_ACCENT_COLORS.condition}, 0 0 15px color-mix(in srgb, ${NODE_ACCENT_COLORS.condition} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
+        color: selected ? NODE_ACCENT_COLORS.condition : undefined,
       }}
     >
       {/* Accent strip */}
