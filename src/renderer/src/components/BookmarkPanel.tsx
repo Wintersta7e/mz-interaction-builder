@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, ChevronDown, ChevronRight, X } from "lucide-react";
 import {
   Play,
@@ -11,6 +12,7 @@ import {
 import { useDocumentStore, useUIStore } from "../stores";
 import type { InteractionNodeType } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
+import { TRANSITION } from "../lib/animations";
 
 const nodeIcons: Record<InteractionNodeType, React.ReactNode> = {
   start: <Play className="h-3 w-3" />,
@@ -52,47 +54,57 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
       </button>
 
       {/* List */}
-      {showBookmarks && (
-        <div className="max-h-[200px] overflow-y-auto border-t border-border py-1">
-          {bookmarks.map((nodeId) => {
-            const node = nodes.find((n) => n.id === nodeId);
-            if (!node) return null;
-            const nodeType = node.type as InteractionNodeType;
-            return (
-              <button
-                key={nodeId}
-                className="group flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer text-left"
-                onClick={() => onNavigateToNode(nodeId)}
-              >
-                <span style={{ color: NODE_ACCENT_COLORS[nodeType] }}>
-                  {nodeIcons[nodeType]}
-                </span>
-                <span className="flex-1 truncate text-foreground">
-                  {node.data.label}
-                </span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeBookmark(nodeId);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      removeBookmark(nodeId);
-                    }
-                  }}
-                  className="hidden rounded p-0.5 text-muted-foreground hover:text-foreground group-hover:block"
-                >
-                  <X className="h-3 w-3" />
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <AnimatePresence>
+        {showBookmarks && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={TRANSITION.normal}
+            className="overflow-hidden"
+          >
+            <div className="max-h-[200px] overflow-y-auto border-t border-border py-1">
+              {bookmarks.map((nodeId) => {
+                const node = nodes.find((n) => n.id === nodeId);
+                if (!node) return null;
+                const nodeType = node.type as InteractionNodeType;
+                return (
+                  <button
+                    key={nodeId}
+                    className="group flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-muted cursor-pointer text-left"
+                    onClick={() => onNavigateToNode(nodeId)}
+                  >
+                    <span style={{ color: NODE_ACCENT_COLORS[nodeType] }}>
+                      {nodeIcons[nodeType]}
+                    </span>
+                    <span className="flex-1 truncate text-foreground">
+                      {node.data.label}
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeBookmark(nodeId);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          removeBookmark(nodeId);
+                        }
+                      }}
+                      className="hidden rounded p-0.5 text-muted-foreground hover:text-foreground group-hover:block"
+                    >
+                      <X className="h-3 w-3" />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
