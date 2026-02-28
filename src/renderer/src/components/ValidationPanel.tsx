@@ -34,7 +34,7 @@ export function ValidationPanel({ onClose }: ValidationPanelProps) {
       animate="animate"
       exit="exit"
       transition={TRANSITION.normal}
-      className="fixed bottom-16 right-4 z-40 w-80 rounded-lg border border-border bg-card shadow-xl"
+      className="fixed bottom-16 right-4 z-40 w-80 rounded-lg border border-border bg-card/90 shadow-overlay backdrop-blur-md"
     >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border px-3 py-2">

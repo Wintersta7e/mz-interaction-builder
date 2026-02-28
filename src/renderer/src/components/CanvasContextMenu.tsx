@@ -136,7 +136,7 @@ export function CanvasContextMenu({
   return (
     <motion.div
       ref={menuRef}
-      className="absolute z-50 min-w-[180px] rounded-xl border border-border bg-card/95 py-1 shadow-xl backdrop-blur-md"
+      className="absolute z-50 min-w-[180px] rounded-xl border border-border bg-card/90 py-1 shadow-overlay backdrop-blur-md"
       variants={VARIANTS.contextMenu}
       initial="initial"
       animate="animate"
