@@ -25,7 +25,12 @@ A visual node-graph editor for creating RPG Maker MZ character interactions with
 - **Validation** - Real-time warnings for unconnected nodes and dead ends
 - **Auto-Save** - Automatically saves every 30 seconds when file path exists
 - **Help System** - Press F1 or ? for keyboard shortcuts and node reference
-- **Dark Theme** - Blue-tinted palette with Inter/JetBrains Mono fonts
+- **Dialogue Preview** - F5 to test dialogue flow with typewriter text, choices, and variable inspection
+- **Coverage Overlay** - See which nodes have been visited during preview testing
+- **Templates** - Save node selections as reusable templates, drag to instantiate
+- **Toast Notifications** - Visual feedback for save, copy, and template actions
+- **Dark Theme** - Blue-tinted palette with Inter/JetBrains Mono fonts, smooth animations
+- **Accessibility** - Respects OS reduced-motion preference
 - **Search** - Ctrl+F to find nodes by label or content
 - **Path Highlighting** - Alt+Click a node to trace upstream/downstream connections
 - **Bookmarks** - Pin important nodes for quick navigation
@@ -175,6 +180,10 @@ Interactions are saved as `.mzinteraction` JSON files:
 | Alt+L/C/R/T/M/B | Align selected nodes |
 | 1-7 | Quick-add node (Start, Menu, Action, Condition, End, Group, Comment) |
 | Right-Click | Context menu to add nodes |
+| F5 | Toggle dialogue preview |
+| Space (in preview) | Step to next node |
+| 1-9 (in preview) | Pick choice by number |
+| R (in preview) | Restart preview |
 | F1 / ? | Show help |
 | Scroll Wheel | Zoom in/out |
 | Click + Drag | Pan canvas (or rectangle select) |
@@ -234,10 +243,12 @@ src/
         ├── edges/        # InteractionEdge (custom color-coded edge component)
         ├── nodes/        # BaseNode + 7 node types
         ├── hooks/        # useCanvasKeyboard, useCanvasLayout, useDebouncedSync, etc.
-        ├── stores/       # Zustand: Document, History, UI, Project, Template
+        ├── stores/       # Zustand: Document, History, UI, Project, Template, Preview
         ├── lib/
         │   ├── export/          # RPG Maker command generation
+        │   ├── preview/         # Dialogue preview engine + sandboxed script eval
         │   ├── presets/         # Variable presets
+        │   ├── animations.ts    # Centralized animation constants (Framer Motion)
         │   ├── nodeColors.ts    # Centralized node accent colors
         │   ├── nodeFactory.ts   # Node creation helpers
         │   ├── edgeUtils.ts     # Edge type/color logic

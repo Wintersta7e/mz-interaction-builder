@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.1.1] - 2026-02-28
 
 ### Added
 
@@ -13,7 +13,20 @@
 - **Canvas highlighting** — pulsing blue ring on current node, dimmed non-active nodes, visited edge highlighting
 - **Quick test from any node** — right-click "Preview from here" context menu option
 - **Preview toolbar button** and keyboard shortcuts (F5, Space, 1-9, R, Esc)
-- 46 new tests (178 total across 13 test files)
+
+#### Visual Polish
+- **Framer Motion animations** — smooth open/close transitions on modals, panels, context menu, and toast notifications
+- **Toast notification system** — success/error toasts for save, clipboard copy, and template actions (auto-dismiss, max 3 stacked)
+- **Theme refinement** — shadow token system, glassmorphism on floating overlays, gradient accent strips on nodes, softer borders and typography
+- **Node animations** — scale entrance on drop, paste highlight flash, opacity transition on mute toggle
+- **Panel animations** — slide in/out for search, validation, preview, and bookmark panels; crossfade on properties panel node switch
+- **Accessibility** — `prefers-reduced-motion` support for both CSS animations and Framer Motion (via `MotionConfig`)
+
+### Fixed
+- SaveTemplateModal no longer unmounts when switching nodes while the modal is open
+- Clipboard error in ExecutionLog now shows a toast instead of silent console.error
+- Node entrance and paste animations use `requestAnimationFrame` instead of `setTimeout(0)` for reliable DOM queries
+- 181 tests across 14 test files
 
 ## [2.1.0] - 2026-02-21
 
