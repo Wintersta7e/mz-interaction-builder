@@ -58,7 +58,6 @@ export function BaseNode({
         boxShadow: selected
           ? `0 0 0 2px ${accentColor}, 0 0 15px color-mix(in srgb, ${accentColor} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
-        color: selected ? accentColor : undefined,
       }}
     >
       {/* Accent strip */}

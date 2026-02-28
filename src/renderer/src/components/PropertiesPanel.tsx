@@ -108,36 +108,47 @@ export function PropertiesPanel() {
           {selectedNode.type === "condition" && (
             <ConditionProperties node={selectedNode} updateNode={updateNode} />
           )}
-          {selectedNode.type === "group" && selectedNode.data.type === "group" && (
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Color
-                </label>
-                <div className="flex gap-1.5">
-                  {(
-                    ["blue", "green", "purple", "amber", "rose", "gray"] as const
-                  ).map((c) => (
-                    <button
-                      key={c}
-                      onClick={() =>
-                        updateNode(selectedNode.id, {
-                          data: { ...selectedNode.data, color: c as GroupColor },
-                        })
-                      }
-                      className={`h-6 w-6 rounded-full border-2 ${
-                        selectedNode.data.color === c
-                          ? "border-white"
-                          : "border-transparent"
-                      }`}
-                      style={{ backgroundColor: GROUP_COLORS[c] }}
-                      title={c}
-                    />
-                  ))}
+          {selectedNode.type === "group" &&
+            selectedNode.data.type === "group" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Color
+                  </label>
+                  <div className="flex gap-1.5">
+                    {(
+                      [
+                        "blue",
+                        "green",
+                        "purple",
+                        "amber",
+                        "rose",
+                        "gray",
+                      ] as const
+                    ).map((c) => (
+                      <button
+                        key={c}
+                        onClick={() =>
+                          updateNode(selectedNode.id, {
+                            data: {
+                              ...selectedNode.data,
+                              color: c as GroupColor,
+                            },
+                          })
+                        }
+                        className={`h-6 w-6 rounded-full border-2 ${
+                          selectedNode.data.color === c
+                            ? "border-white"
+                            : "border-transparent"
+                        }`}
+                        style={{ backgroundColor: GROUP_COLORS[c] }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
           {selectedNode.type === "comment" &&
             selectedNode.data.type === "comment" && (
               <CommentProperties node={selectedNode} updateNode={updateNode} />

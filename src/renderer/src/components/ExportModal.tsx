@@ -101,9 +101,13 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopied(true);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-      useUIStore.getState().addToast({ message: "Copied to clipboard", type: "success" });
+      useUIStore
+        .getState()
+        .addToast({ message: "Copied to clipboard", type: "success" });
     } catch {
-      useUIStore.getState().addToast({ message: "Failed to copy to clipboard", type: "error" });
+      useUIStore
+        .getState()
+        .addToast({ message: "Failed to copy to clipboard", type: "error" });
     }
   };
 
