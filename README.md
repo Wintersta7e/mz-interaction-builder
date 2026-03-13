@@ -219,6 +219,18 @@ The export generates standard RPG Maker MZ event commands:
 
 Loops are handled with Labels (118) and Jump to Label (119).
 
+## Security
+
+This application follows Electron security best practices:
+
+- **Sandboxed renderer** — `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`
+- **IPC validation** — File operations restricted to `.mzinteraction` files; project paths validated before acceptance
+- **Content Security Policy** — Restricts script, style, connect, object, and frame sources
+- **Navigation blocking** — `will-navigate` handler prevents renderer from loading external pages
+- **Protocol allowlist** — `shell.openExternal` limited to `https:` and `http:` URLs
+- **Script sandbox** — Preview script evaluation shadows `window`, `document`, `fetch`, and other globals to prevent access to the IPC bridge
+- **Error boundaries** — Global React error boundary prevents white-screen crashes with recovery UI
+
 ## Tech Stack
 
 - **Framework**: Electron 40 + Vite 7
@@ -227,6 +239,7 @@ Loops are handled with Labels (118) and Jump to Label (119).
 - **State**: Zustand 5
 - **Layout**: Dagre (auto-layout engine)
 - **Styling**: Tailwind CSS 3
+- **Animation**: Framer Motion 12
 
 ## Project Structure
 
@@ -259,6 +272,15 @@ src/
         ├── styles/       # globals.css with CSS variables
         └── types/        # TypeScript interfaces
 ```
+
+## Testing
+
+```bash
+npm test              # 181 tests across 14 files
+npm run test:coverage # Coverage report
+```
+
+Tested modules include graph traversal, node search, alignment/layout, export (muted paths), document validation, preview engine, script sandbox, debounced sync, templates, and UI components.
 
 ## Development
 
