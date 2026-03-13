@@ -71,7 +71,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e2", source: "act-1", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // No script commands should appear
     const scriptCmds = commands.filter(
@@ -141,7 +141,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e5", source: "act-b", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // ActionA's script should appear
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -229,7 +229,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e5", source: "act-b", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // ActionA's script should appear (choice-0 path followed)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -266,7 +266,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e1", source: "start-1", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Only the terminating END command (code 0 at indent 0) should appear
     expect(commands).toHaveLength(1);
@@ -309,7 +309,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e2", source: "act-1", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Action's script commands should still appear (start mute is ignored)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -377,7 +377,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e4", source: "act-3", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Only Action3's script should appear
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -442,7 +442,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e3", source: "act-false", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Fallback should follow the false edge (only outgoing edge)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -506,7 +506,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e3", source: "act-1", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Fallback should follow choice-1 edge (only outgoing edge)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -541,7 +541,7 @@ describe("exportMuted — muted node bypass", () => {
       // No outgoing edge from act-1
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // No script commands (muted), only terminal END
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
@@ -638,7 +638,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e6", source: "act-false", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // Condition structure should be intact
     const condCmds = commands.filter((c) => c.code === CODE.CONDITIONAL_BRANCH);
@@ -747,7 +747,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e5", source: "act-b", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // No script commands for hide/disable conditions should leak through
     const allScriptParams = commands
@@ -861,7 +861,7 @@ describe("exportMuted — muted node bypass", () => {
       { id: "e6", source: "muted-conv", target: "end-1" },
     ];
 
-    const commands = exportToMZCommands(makeDoc(nodes, edges));
+    const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
     // The muted convergence node should have a LABEL command
     const labelCmds = commands.filter((c) => c.code === CODE.LABEL);

@@ -41,7 +41,11 @@ export function validateDocument(
   // Check each node for issues
   nodes.forEach((node) => {
     // Check for unconnected inputs (except start nodes)
-    if (node.type !== "start") {
+    if (
+      node.type !== "start" &&
+      node.type !== "group" &&
+      node.type !== "comment"
+    ) {
       const hasIncomingEdge = edges.some((e) => e.target === node.id);
       if (!hasIncomingEdge) {
         issues.push({
@@ -54,7 +58,11 @@ export function validateDocument(
     }
 
     // Check for unconnected outputs (except end nodes)
-    if (node.type !== "end") {
+    if (
+      node.type !== "end" &&
+      node.type !== "group" &&
+      node.type !== "comment"
+    ) {
       const hasOutgoingEdge = edges.some((e) => e.source === node.id);
       if (!hasOutgoingEdge) {
         issues.push({

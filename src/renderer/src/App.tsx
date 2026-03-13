@@ -2,7 +2,7 @@ import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/jetbrains-mono/400.css";
-import { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, MotionConfig } from "framer-motion";
 import { Layout } from "./components/Layout";
 import { Toolbar } from "./components/Toolbar";
@@ -29,6 +29,47 @@ import "./styles/globals.css";
 
 // Auto-save interval in milliseconds (30 seconds)
 const AUTO_SAVE_INTERVAL = 30000;
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-background p-8">
+          <div className="max-w-md space-y-4 text-center">
+            <h1 className="text-xl font-bold text-foreground">
+              Something went wrong
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {this.state.error?.message || "An unexpected error occurred."}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Your work may have been auto-saved. Try reloading the application.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
+            >
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const {
@@ -59,6 +100,40 @@ export default function App() {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const projectLoadingRef = useRef<AbortController | null>(null);
 
+  // Handle Save
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    let filePath = savedPath;
+
+    if (!filePath) {
+      filePath = await window.api.dialog.saveFile({
+        defaultPath: `${document.name}.mzinteraction`,
+        filters: [
+          { name: "MZ Interaction Files", extensions: ["mzinteraction"] },
+          { name: "All Files", extensions: ["*"] },
+        ],
+      });
+    }
+
+    if (!filePath) return false;
+
+    const content = JSON.stringify(document, null, 2);
+    const result = await window.api.file.save(filePath, content);
+
+    if (!result.success) {
+      await window.api.dialog.message({
+        type: "error",
+        title: "Error",
+        message: result.error || "Failed to save file",
+      });
+      return false;
+    }
+
+    setSavedPath(filePath);
+    useDocumentStore.getState().setDirty(false);
+    useUIStore.getState().addToast({ message: "File saved", type: "success" });
+    return true;
+  }, [savedPath, document, setSavedPath]);
+
   // Handle New
   const handleNew = useCallback(async () => {
     if (isDirty) {
@@ -71,7 +146,8 @@ export default function App() {
       });
 
       if (result === 0) {
-        await handleSave();
+        const saved = await handleSave();
+        if (!saved) return;
       } else if (result === 2) {
         return;
       }
@@ -79,7 +155,7 @@ export default function App() {
 
     newDocument();
     clear();
-  }, [isDirty, newDocument, clear]);
+  }, [isDirty, newDocument, clear, handleSave]);
 
   // Handle Open
   const handleOpen = useCallback(async () => {
@@ -93,7 +169,8 @@ export default function App() {
       });
 
       if (result === 0) {
-        await handleSave();
+        const saved = await handleSave();
+        if (!saved) return;
       } else if (result === 2) {
         return;
       }
@@ -160,40 +237,7 @@ export default function App() {
         message: e instanceof Error ? e.message : "Invalid file format",
       });
     }
-  }, [isDirty, setDocument, setSavedPath, clear]);
-
-  // Handle Save
-  const handleSave = useCallback(async () => {
-    let filePath = savedPath;
-
-    if (!filePath) {
-      filePath = await window.api.dialog.saveFile({
-        defaultPath: `${document.name}.mzinteraction`,
-        filters: [
-          { name: "MZ Interaction Files", extensions: ["mzinteraction"] },
-          { name: "All Files", extensions: ["*"] },
-        ],
-      });
-    }
-
-    if (!filePath) return;
-
-    const content = JSON.stringify(document, null, 2);
-    const result = await window.api.file.save(filePath, content);
-
-    if (!result.success) {
-      await window.api.dialog.message({
-        type: "error",
-        title: "Error",
-        message: result.error || "Failed to save file",
-      });
-      return;
-    }
-
-    setSavedPath(filePath);
-    useDocumentStore.getState().setDirty(false);
-    useUIStore.getState().addToast({ message: "File saved", type: "success" });
-  }, [savedPath, document, setSavedPath]);
+  }, [isDirty, setDocument, setSavedPath, clear, handleSave]);
 
   // Handle Export
   const handleExport = useCallback(() => {
@@ -282,7 +326,8 @@ export default function App() {
       await window.api.dialog.message({
         type: "error",
         title: "Error",
-        message: "Failed to load project",
+        message:
+          error instanceof Error ? error.message : "Failed to load project",
       });
     } finally {
       if (projectLoadingRef.current?.signal === signal) {
@@ -374,11 +419,18 @@ export default function App() {
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [isDirty, savedPath, document]);
+  }, [isDirty, savedPath]);
 
   // Load templates from disk on startup
   useEffect(() => {
-    loadTemplates();
+    loadTemplates().then(({ error }) => {
+      if (error) {
+        useUIStore.getState().addToast({
+          message: `Failed to load templates: ${error}`,
+          type: "error",
+        });
+      }
+    });
   }, [loadTemplates]);
 
   // Toggle help with F1
@@ -394,41 +446,43 @@ export default function App() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <div className="dark">
-        <Layout
-          toolbar={
-            <Toolbar
-              onNew={handleNew}
-              onOpen={handleOpen}
-              onSave={handleSave}
-              onExport={handleExport}
-              onOpenProject={handleOpenProject}
-              onHelp={() => setIsHelpModalOpen(true)}
-              onValidate={() => setShowValidation(!showValidation)}
-            />
-          }
-          palette={<NodePalette onDragStart={setDraggingNodeType} />}
-          canvas={<Canvas />}
-          preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
-          properties={<PropertiesPanel />}
-          statusbar={<StatusBar />}
-        />
-        <ExportModal
-          isOpen={isExportModalOpen}
-          onClose={() => setIsExportModalOpen(false)}
-        />
-        <HelpModal
-          isOpen={isHelpModalOpen}
-          onClose={() => setIsHelpModalOpen(false)}
-        />
-        <AnimatePresence>
-          {showValidation && (
-            <ValidationPanel onClose={() => setShowValidation(false)} />
-          )}
-        </AnimatePresence>
-        <ToastContainer />
-      </div>
-    </MotionConfig>
+    <ErrorBoundary>
+      <MotionConfig reducedMotion="user">
+        <div className="dark">
+          <Layout
+            toolbar={
+              <Toolbar
+                onNew={handleNew}
+                onOpen={handleOpen}
+                onSave={handleSave}
+                onExport={handleExport}
+                onOpenProject={handleOpenProject}
+                onHelp={() => setIsHelpModalOpen(true)}
+                onValidate={() => setShowValidation(!showValidation)}
+              />
+            }
+            palette={<NodePalette onDragStart={setDraggingNodeType} />}
+            canvas={<Canvas />}
+            preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
+            properties={<PropertiesPanel />}
+            statusbar={<StatusBar />}
+          />
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+          />
+          <HelpModal
+            isOpen={isHelpModalOpen}
+            onClose={() => setIsHelpModalOpen(false)}
+          />
+          <AnimatePresence>
+            {showValidation && (
+              <ValidationPanel onClose={() => setShowValidation(false)} />
+            )}
+          </AnimatePresence>
+          <ToastContainer />
+        </div>
+      </MotionConfig>
+    </ErrorBoundary>
   );
 }

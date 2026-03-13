@@ -10,7 +10,7 @@ interface TemplateState {
   templates: NodeTemplate[];
   isLoaded: boolean;
 
-  loadTemplates: () => Promise<void>;
+  loadTemplates: () => Promise<{ error?: string }>;
   saveTemplate: (template: NodeTemplate) => Promise<TemplateResult>;
   deleteTemplate: (id: string) => Promise<TemplateResult>;
 }
@@ -23,9 +23,11 @@ export const useTemplateStore = create<TemplateState>()((set) => ({
     const result = await window.api.template.list();
     if (result.success) {
       set({ templates: result.templates, isLoaded: true });
+      return {};
     } else {
       console.error("Failed to load templates:", result.error);
       set({ isLoaded: true });
+      return { error: result.error ?? "Unknown error" };
     }
   },
 

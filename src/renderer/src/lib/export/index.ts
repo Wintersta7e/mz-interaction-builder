@@ -15,6 +15,11 @@ interface MZCommand {
   parameters: unknown[];
 }
 
+export interface ExportResult {
+  commands: MZCommand[];
+  warnings: string[];
+}
+
 // Event codes reference
 const EVENT_CODES = {
   END: 0,
@@ -47,12 +52,12 @@ function generateConditionScript(condition: Condition): string {
   switch (condition.type) {
     case "switch": {
       const switchVal = condition.switchValue === "on" ? "true" : "false";
-      return `$gameSwitches.value(${condition.switchId || 0}) === ${switchVal}`;
+      return `$gameSwitches.value(${condition.switchId ?? 0}) === ${switchVal}`;
     }
     case "variable": {
-      const op = condition.variableOperator || "==";
-      const val = condition.variableCompareValue || 0;
-      return `$gameVariables.value(${condition.variableId || 0}) ${op} ${val}`;
+      const op = condition.variableOperator ?? "==";
+      const val = condition.variableCompareValue ?? 0;
+      return `$gameVariables.value(${condition.variableId ?? 0}) ${op} ${val}`;
     }
     case "script":
       return condition.script || "true";
@@ -78,8 +83,11 @@ function mapCancelType(
   }
 }
 
-export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
+export function exportToMZCommands(
+  document: InteractionDocument,
+): ExportResult {
   const commands: MZCommand[] = [];
+  const warnings: string[] = [];
   const visited = new Set<string>();
   const nodeMap = new Map(document.nodes.map((n) => [n.id, n]));
   const edgesBySource = new Map<string, InteractionEdge[]>();
@@ -108,8 +116,8 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
   // Find start node
   const startNode = document.nodes.find((n) => n.type === "start");
   if (!startNode) {
-    console.warn("No start node found");
-    return commands;
+    warnings.push("No start node found — export will be empty");
+    return { commands, warnings };
   }
 
   // Track nodes that need labels (visited more than once or are convergence points)
@@ -483,8 +491,8 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
                 break;
               case "toggle":
                 // RMMZ doesn't have native toggle - warn and default to ON
-                console.warn(
-                  "Toggle not supported in direct export, defaulting to ON",
+                warnings.push(
+                  `Switch toggle not supported in export (node "${node.data.label}"), defaulting to ON`,
                 );
                 operation = 0;
                 break;
@@ -509,7 +517,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
               div: 4,
               mod: 5,
             };
-            const operation = opMap[action.variableOperation || "set"] || 0;
+            const operation = opMap[action.variableOperation ?? "set"] ?? 0;
             commands.push({
               code: EVENT_CODES.CONTROL_VARIABLES,
               indent,
@@ -518,7 +526,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
                 action.variableId,
                 operation,
                 0, // Operand type (constant)
-                action.variableValue || 0,
+                action.variableValue ?? 0,
               ],
             });
           }
@@ -583,7 +591,9 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
     const condition = data.condition;
 
     if (!condition) {
-      console.warn("Condition node has no condition defined");
+      warnings.push(
+        `Condition node "${node.data.label}" has no condition defined — skipped`,
+      );
       return;
     }
 
@@ -604,7 +614,7 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
       case "switch":
         conditionParams = [
           0,
-          condition.switchId || 0,
+          condition.switchId ?? 0,
           condition.switchValue === "on" ? 0 : 1,
         ];
         break;
@@ -620,10 +630,10 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
         };
         conditionParams = [
           1,
-          condition.variableId || 0,
+          condition.variableId ?? 0,
           0, // Compare to constant
-          condition.variableCompareValue || 0,
-          opMap[condition.variableOperator || "=="] || 0,
+          condition.variableCompareValue ?? 0,
+          opMap[condition.variableOperator ?? "=="] ?? 0,
         ];
         break;
       }
@@ -684,11 +694,11 @@ export function exportToMZCommands(document: InteractionDocument): MZCommand[] {
   // Add terminating command
   commands.push({ code: EVENT_CODES.END, indent: 0, parameters: [] });
 
-  return commands;
+  return { commands, warnings };
 }
 
 // Export commands as JSON string (for clipboard)
 export function exportAsJSON(document: InteractionDocument): string {
-  const commands = exportToMZCommands(document);
+  const { commands } = exportToMZCommands(document);
   return JSON.stringify(commands, null, 2);
 }
