@@ -1,6 +1,13 @@
 import { IpcMain } from "electron";
 import { readFile, writeFile } from "fs/promises";
 import { existsSync } from "fs";
+import { extname } from "path";
+
+/** Validate that a file path is safe for interaction file operations */
+function isAllowedFilePath(filePath: string): boolean {
+  const ext = extname(filePath).toLowerCase();
+  return ext === ".mzinteraction";
+}
 
 export function setupFileHandlers(ipcMain: IpcMain): void {
   // Save interaction file
@@ -12,6 +19,12 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
       content: string,
     ): Promise<{ success: boolean; error?: string }> => {
       try {
+        if (!isAllowedFilePath(filePath)) {
+          return {
+            success: false,
+            error: "Only .mzinteraction files are allowed",
+          };
+        }
         await writeFile(filePath, content, "utf-8");
         return { success: true };
       } catch (error) {
@@ -28,6 +41,12 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
       filePath: string,
     ): Promise<{ success: boolean; content?: string; error?: string }> => {
       try {
+        if (!isAllowedFilePath(filePath)) {
+          return {
+            success: false,
+            error: "Only .mzinteraction files are allowed",
+          };
+        }
         if (!existsSync(filePath)) {
           return { success: false, error: "File not found" };
         }

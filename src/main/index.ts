@@ -22,7 +22,7 @@ function createWindow(): void {
     icon: join(__dirname, "../../build/icon.png"),
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
-      sandbox: false,
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -33,15 +33,45 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
+    try {
+      const url = new URL(details.url);
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        shell.openExternal(details.url).catch((err) => {
+          console.error("Failed to open external URL:", details.url, err);
+        });
+      }
+    } catch {
+      // Invalid URL — ignore
+    }
     return { action: "deny" };
   });
 
-  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
-  } else {
-    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
-  }
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (
+      is.dev &&
+      process.env["ELECTRON_RENDERER_URL"] &&
+      url.startsWith(process.env["ELECTRON_RENDERER_URL"])
+    ) {
+      return; // Allow dev server navigation
+    }
+    event.preventDefault();
+  });
+
+  mainWindow.on("maximize", () => {
+    mainWindow?.webContents.send("window-maximized-changed", true);
+  });
+  mainWindow.on("unmaximize", () => {
+    mainWindow?.webContents.send("window-maximized-changed", false);
+  });
+
+  const loadPromise =
+    is.dev && process.env["ELECTRON_RENDERER_URL"]
+      ? mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"])
+      : mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+
+  loadPromise.catch((err) => {
+    dialog.showErrorBox("Failed to load application", (err as Error).message);
+  });
 }
 
 // Window control handlers
@@ -65,18 +95,6 @@ ipcMain.handle("window-is-maximized", () => {
   return mainWindow?.isMaximized();
 });
 
-// Notify renderer when window maximized state changes
-function setupMaximizeListener(): void {
-  if (mainWindow) {
-    mainWindow.on("maximize", () => {
-      mainWindow?.webContents.send("window-maximized-changed", true);
-    });
-    mainWindow.on("unmaximize", () => {
-      mainWindow?.webContents.send("window-maximized-changed", false);
-    });
-  }
-}
-
 app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.mzinteractionbuilder");
 
@@ -91,7 +109,6 @@ app.whenReady().then(() => {
   setupTemplateHandlers(ipcMain);
 
   createWindow();
-  setupMaximizeListener();
 
   app.on("activate", function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

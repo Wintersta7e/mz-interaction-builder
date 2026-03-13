@@ -69,16 +69,31 @@ export function evaluateScript(
   switches: Map<number, boolean>,
 ): unknown {
   try {
+    // Shadow dangerous globals to prevent scripts from accessing IPC bridge and DOM.
+    // This is intentional security hardening — new Function() is required here
+    // to evaluate user-authored RPG Maker MZ scripts for preview.
     const fn = new Function(
       "$gameSwitches",
       "$gameVariables",
       "$gameSelfSwitches",
+      "window",
+      "document",
+      "globalThis",
+      "self",
+      "fetch",
+      "XMLHttpRequest",
       '"use strict"; return (' + script + ");",
     );
     return fn(
       createMockSwitches(switches),
       createMockVariables(variables),
       createMockSelfSwitches(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
     );
   } catch (err) {
     return err instanceof Error ? err : new Error(String(err));
@@ -97,16 +112,29 @@ export function executeScript(
   switches: Map<number, boolean>,
 ): Error | null {
   try {
+    // Shadow dangerous globals — same hardening as evaluateScript above
     const fn = new Function(
       "$gameSwitches",
       "$gameVariables",
       "$gameSelfSwitches",
+      "window",
+      "document",
+      "globalThis",
+      "self",
+      "fetch",
+      "XMLHttpRequest",
       '"use strict"; ' + script,
     );
     fn(
       createMockSwitches(switches),
       createMockVariables(variables),
       createMockSelfSwitches(),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
     );
     return null;
   } catch (err) {

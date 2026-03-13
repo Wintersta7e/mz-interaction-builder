@@ -66,8 +66,25 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   // Set project path
   ipcMain.handle(
     "project:set-path",
-    async (_event, path: string): Promise<void> => {
-      projectPath = path;
+    async (
+      _event,
+      path: string,
+    ): Promise<{ success?: boolean; error?: string }> => {
+      try {
+        const files = await readdir(path);
+        const hasProject = files.some(
+          (f) =>
+            f.toLowerCase().endsWith(".rmmzproject") ||
+            f.toLowerCase().endsWith(".rpgproject"),
+        );
+        if (!hasProject || !existsSync(join(path, "data"))) {
+          return { error: "Not a valid RPG Maker MZ project" };
+        }
+        projectPath = path;
+        return { success: true };
+      } catch (error) {
+        return { error: (error as Error).message };
+      }
     },
   );
 
@@ -89,7 +106,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(mapInfoFile, "utf-8");
-        const mapInfos = JSON.parse(data);
+        let mapInfos;
+        try {
+          mapInfos = JSON.parse(data);
+        } catch (parseError) {
+          return {
+            error: `Failed to parse MapInfos.json: ${(parseError as Error).message}`,
+          };
+        }
         return mapInfos
           .filter((m: MZMapInfo | null) => m)
           .map((m: MZMapInfo) => ({ id: m.id, name: m.name }));
@@ -107,6 +131,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       mapId: number,
     ): Promise<MZMapEvent[] | { error: string }> => {
       if (!projectPath) return { error: "No project loaded" };
+      if (
+        typeof mapId !== "number" ||
+        !Number.isFinite(mapId) ||
+        mapId < 1 ||
+        mapId !== Math.floor(mapId)
+      ) {
+        return { error: "Invalid map ID" };
+      }
 
       const mapFile = join(
         projectPath,
@@ -119,7 +151,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(mapFile, "utf-8");
-        const mapData = JSON.parse(data);
+        let mapData;
+        try {
+          mapData = JSON.parse(data);
+        } catch (parseError) {
+          return {
+            error: `Failed to parse Map${String(mapId).padStart(3, "0")}.json: ${(parseError as Error).message}`,
+          };
+        }
         return mapData.events
           .filter(
             (e: { id: number; name: string; pages: unknown[] } | null) => e,
@@ -148,7 +187,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(file, "utf-8");
-        const system = JSON.parse(data);
+        let system;
+        try {
+          system = JSON.parse(data);
+        } catch (parseError) {
+          return {
+            error: `Failed to parse System.json: ${(parseError as Error).message}`,
+          };
+        }
         return system.switches
           .map((name: string, index: number) => ({
             id: index,
@@ -174,7 +220,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(file, "utf-8");
-        const system = JSON.parse(data);
+        let system;
+        try {
+          system = JSON.parse(data);
+        } catch (parseError) {
+          return {
+            error: `Failed to parse System.json: ${(parseError as Error).message}`,
+          };
+        }
         return system.variables
           .map((name: string, index: number) => ({
             id: index,
@@ -200,6 +253,22 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       },
     ): Promise<{ success: boolean; commandCount?: number; error?: string }> => {
       if (!projectPath) return { success: false, error: "No project loaded" };
+      if (
+        typeof options.mapId !== "number" ||
+        !Number.isFinite(options.mapId) ||
+        options.mapId < 1 ||
+        options.mapId !== Math.floor(options.mapId)
+      ) {
+        return { success: false, error: "Invalid map ID" };
+      }
+      if (
+        typeof options.eventId !== "number" ||
+        !Number.isFinite(options.eventId) ||
+        options.eventId < 1 ||
+        options.eventId !== Math.floor(options.eventId)
+      ) {
+        return { success: false, error: "Invalid event ID" };
+      }
 
       const mapFile = join(
         projectPath,
@@ -215,7 +284,22 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(mapFile, "utf-8");
-        const mapData = JSON.parse(data);
+        let mapData;
+        try {
+          mapData = JSON.parse(data);
+        } catch (parseError) {
+          return {
+            success: false,
+            error: `Failed to parse Map${String(options.mapId).padStart(3, "0")}.json: ${(parseError as Error).message}`,
+          };
+        }
+
+        if (!Array.isArray(mapData?.events)) {
+          return {
+            success: false,
+            error: "Invalid map file structure: no events array",
+          };
+        }
 
         // Find the event
         const mapEvent = mapData.events.find(
@@ -233,6 +317,13 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           return {
             success: false,
             error: `Page ${options.pageIndex} not found in event`,
+          };
+        }
+
+        if (!Array.isArray(page?.list)) {
+          return {
+            success: false,
+            error: `Page ${options.pageIndex} has no command list`,
           };
         }
 
