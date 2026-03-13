@@ -10,6 +10,14 @@ export function findUpstreamNodes(
   nodeId: string,
   edges: InteractionEdge[],
 ): TraversalResult {
+  // Pre-build adjacency map: target → edges
+  const byTarget = new Map<string, InteractionEdge[]>();
+  for (const edge of edges) {
+    const arr = byTarget.get(edge.target);
+    if (arr) arr.push(edge);
+    else byTarget.set(edge.target, [edge]);
+  }
+
   const nodeIds = new Set<string>([nodeId]);
   const edgeIds = new Set<string>();
   const queue = [nodeId];
@@ -17,11 +25,14 @@ export function findUpstreamNodes(
 
   while (head < queue.length) {
     const current = queue[head++];
-    for (const edge of edges) {
-      if (edge.target === current && !nodeIds.has(edge.source)) {
-        nodeIds.add(edge.source);
-        edgeIds.add(edge.id);
-        queue.push(edge.source);
+    const incoming = byTarget.get(current);
+    if (incoming) {
+      for (const edge of incoming) {
+        if (!nodeIds.has(edge.source)) {
+          nodeIds.add(edge.source);
+          edgeIds.add(edge.id);
+          queue.push(edge.source);
+        }
       }
     }
   }
@@ -34,6 +45,14 @@ export function findDownstreamNodes(
   nodeId: string,
   edges: InteractionEdge[],
 ): TraversalResult {
+  // Pre-build adjacency map: source → edges
+  const bySource = new Map<string, InteractionEdge[]>();
+  for (const edge of edges) {
+    const arr = bySource.get(edge.source);
+    if (arr) arr.push(edge);
+    else bySource.set(edge.source, [edge]);
+  }
+
   const nodeIds = new Set<string>([nodeId]);
   const edgeIds = new Set<string>();
   const queue = [nodeId];
@@ -41,11 +60,14 @@ export function findDownstreamNodes(
 
   while (head < queue.length) {
     const current = queue[head++];
-    for (const edge of edges) {
-      if (edge.source === current && !nodeIds.has(edge.target)) {
-        nodeIds.add(edge.target);
-        edgeIds.add(edge.id);
-        queue.push(edge.target);
+    const outgoing = bySource.get(current);
+    if (outgoing) {
+      for (const edge of outgoing) {
+        if (!nodeIds.has(edge.target)) {
+          nodeIds.add(edge.target);
+          edgeIds.add(edge.id);
+          queue.push(edge.target);
+        }
       }
     }
   }
@@ -61,6 +83,14 @@ export function findShortestPath(
 ): string[] | null {
   if (sourceId === targetId) return [sourceId];
 
+  // Pre-build adjacency map: source → edges
+  const bySource = new Map<string, InteractionEdge[]>();
+  for (const edge of edges) {
+    const arr = bySource.get(edge.source);
+    if (arr) arr.push(edge);
+    else bySource.set(edge.source, [edge]);
+  }
+
   const visited = new Set<string>([sourceId]);
   const parent = new Map<string, string>();
   const queue = [sourceId];
@@ -68,20 +98,23 @@ export function findShortestPath(
 
   while (head < queue.length) {
     const current = queue[head++];
-    for (const edge of edges) {
-      if (edge.source === current && !visited.has(edge.target)) {
-        visited.add(edge.target);
-        parent.set(edge.target, current);
-        if (edge.target === targetId) {
-          const path: string[] = [targetId];
-          let node = targetId;
-          while (parent.has(node)) {
-            node = parent.get(node)!;
-            path.unshift(node);
+    const outgoing = bySource.get(current);
+    if (outgoing) {
+      for (const edge of outgoing) {
+        if (!visited.has(edge.target)) {
+          visited.add(edge.target);
+          parent.set(edge.target, current);
+          if (edge.target === targetId) {
+            const path: string[] = [targetId];
+            let node = targetId;
+            while (parent.has(node)) {
+              node = parent.get(node)!;
+              path.unshift(node);
+            }
+            return path;
           }
-          return path;
+          queue.push(edge.target);
         }
-        queue.push(edge.target);
       }
     }
   }

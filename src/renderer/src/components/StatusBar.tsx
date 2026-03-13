@@ -1,7 +1,10 @@
 import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
 
 export function StatusBar() {
-  const { document, savedPath, isDirty } = useDocumentStore();
+  const nodeCount = useDocumentStore((s) => s.document.nodes.length);
+  const edgeCount = useDocumentStore((s) => s.document.edges.length);
+  const savedPath = useDocumentStore((s) => s.savedPath);
+  const isDirty = useDocumentStore((s) => s.isDirty);
   const { projectPath } = useProjectStore();
   const { zoom } = useUIStore();
 
@@ -17,8 +20,8 @@ export function StatusBar() {
         )}
       </div>
       <div className="flex items-center gap-4">
-        <span>Nodes: {document.nodes.length}</span>
-        <span>Edges: {document.edges.length}</span>
+        <span>Nodes: {nodeCount}</span>
+        <span>Edges: {edgeCount}</span>
         <span>Zoom: {Math.round(zoom * 100)}%</span>
       </div>
     </div>

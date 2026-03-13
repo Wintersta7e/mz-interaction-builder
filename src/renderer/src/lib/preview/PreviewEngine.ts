@@ -607,6 +607,9 @@ export class PreviewEngine {
       stepIndex: this._state.stepCount,
     };
     this._state.transcript.push(entry);
+    if (this._state.transcript.length > 500) {
+      this._state.transcript = this._state.transcript.slice(-500);
+    }
 
     if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
       console.debug(

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { List, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -28,13 +28,15 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
   const bookmarked = useDocumentStore((s) =>
     (s.document.bookmarks ?? []).includes(id),
   );
-  const isPreviewOpen = usePreviewStore((s) => s.isOpen);
-  const coverageVisited = usePreviewStore((s) => s.coverageData.visitedNodes);
-  const coverageStatus = isPreviewOpen
-    ? coverageVisited.has(id)
-      ? "visited"
-      : "unvisited"
-    : null;
+  const coverageStatus = usePreviewStore(
+    useCallback(
+      (s) => {
+        if (!s.isOpen) return null;
+        return s.coverageData.visitedNodes.has(id) ? "visited" : "unvisited";
+      },
+      [id],
+    ),
+  );
   const choices = data.choices || [];
 
   // Calculate the vertical position of each choice handle relative to the node top

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -36,14 +36,17 @@ export function BaseNode({
   hasOutput = true,
   outputCount = 1,
 }: BaseNodeProps) {
-  const isPreviewOpen = usePreviewStore((s) => s.isOpen);
-  const coverageVisited = usePreviewStore((s) => s.coverageData.visitedNodes);
-  const coverageStatus =
-    nodeId && isPreviewOpen
-      ? coverageVisited.has(nodeId)
-        ? "visited"
-        : "unvisited"
-      : null;
+  const coverageStatus = usePreviewStore(
+    useCallback(
+      (s) => {
+        if (!nodeId || !s.isOpen) return null;
+        return s.coverageData.visitedNodes.has(nodeId)
+          ? "visited"
+          : "unvisited";
+      },
+      [nodeId],
+    ),
+  );
 
   return (
     <div
