@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useProjectStore, generateId } from "../stores";
 import { SearchableSelect } from "./SearchableSelect";
 import { DebouncedTextarea } from "./DebouncedInputs";
@@ -20,10 +21,11 @@ export function ConditionEditor({
   scriptRows = 2,
 }: ConditionEditorProps) {
   const { switches, variables } = useProjectStore();
-  const currentCondition = condition || {
-    id: generateId("cond"),
-    type: "script" as const,
-  };
+  const defaultCondition = useMemo(
+    () => ({ id: generateId("cond"), type: "script" as const, script: "" }),
+    [],
+  );
+  const currentCondition = condition || defaultCondition;
 
   return (
     <div className="rounded border border-border p-2 space-y-2">
