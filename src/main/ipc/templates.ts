@@ -64,7 +64,13 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
         )
         .map((r) => r.value);
 
-      return { success: true, templates };
+      const failures = results
+        .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+        .map((r) =>
+          r.reason instanceof Error ? r.reason.message : String(r.reason),
+        );
+
+      return { success: true, templates, failures };
     } catch (error) {
       return {
         success: false,
@@ -100,8 +106,8 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
 
       const dir = await ensureTemplatesDir();
       const filePath = join(dir, `${id}.json`);
-      await unlink(filePath).catch(() => {
-        // File already gone — treat as success
+      await unlink(filePath).catch((err: NodeJS.ErrnoException) => {
+        if (err.code !== "ENOENT") throw err;
       });
       return { success: true };
     } catch (error) {

@@ -7,7 +7,12 @@ export function TitleBar() {
 
   useEffect(() => {
     // Get initial state
-    window.api.window.isMaximized().then(setIsMaximized);
+    window.api.window
+      .isMaximized()
+      .then(setIsMaximized)
+      .catch(() => {
+        // Window may not exist yet during startup
+      });
 
     // Listen for changes
     const unsubscribe = window.api.window.onMaximizeChange(setIsMaximized);

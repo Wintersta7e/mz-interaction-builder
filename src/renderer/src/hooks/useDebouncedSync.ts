@@ -80,7 +80,11 @@ export function useDebouncedSync<T>(
       timerRef.current = null;
     }
     if (hasPendingRef.current) {
-      commitFnRef.current(pendingValueRef.current);
+      try {
+        commitFnRef.current(pendingValueRef.current);
+      } catch (e) {
+        console.error("useDebouncedSync: flush commit failed", e);
+      }
       hasPendingRef.current = false;
     }
   }, []);

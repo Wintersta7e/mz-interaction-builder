@@ -59,8 +59,9 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       }
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const loadEvents = async (mapId: number) => {
@@ -76,8 +77,9 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       }
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleSelectProject = async () => {
@@ -104,10 +106,12 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       useUIStore
         .getState()
         .addToast({ message: "Copied to clipboard", type: "success" });
-    } catch {
-      useUIStore
-        .getState()
-        .addToast({ message: "Failed to copy to clipboard", type: "error" });
+    } catch (err) {
+      const detail = err instanceof Error ? `: ${err.message}` : "";
+      useUIStore.getState().addToast({
+        message: `Failed to copy to clipboard${detail}`,
+        type: "error",
+      });
     }
   };
 
@@ -121,7 +125,21 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     setError(null);
 
     try {
-      const commands = exportToMZCommands(document);
+      const { commands, warnings } = exportToMZCommands(document);
+
+      if (warnings.length > 0) {
+        const proceed = await window.api.dialog.message({
+          type: "warning",
+          title: "Export Warnings",
+          message: `The following issues were found:\n\n${warnings.map((w) => `• ${w}`).join("\n")}\n\nDo you want to proceed with the export?`,
+          buttons: ["Export Anyway", "Cancel"],
+        });
+        if (proceed !== 0) {
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const result = await window.api.project.exportToMap({
         mapId: selectedMapId,
         eventId: selectedEventId,
@@ -141,9 +159,9 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
       }
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const selectedEvent = events.find((e) => e.id === selectedEventId);
