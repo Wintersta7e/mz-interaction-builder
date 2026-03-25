@@ -20,11 +20,7 @@ describe("scriptSandbox", () => {
     it("reads $gameVariables.value(10) > 20 — true when var 10 is 42", () => {
       const vars = new Map<number, number>([[10, 42]]);
       const switches = new Map<number, boolean>();
-      const result = evaluateScript(
-        "$gameVariables.value(10) > 20",
-        vars,
-        switches,
-      );
+      const result = evaluateScript("$gameVariables.value(10) > 20", vars, switches);
       expect(result).toBe(true);
     });
 
@@ -53,11 +49,7 @@ describe("scriptSandbox", () => {
     it("$gameVariables.setValue(1, 99) mutates the variables map", () => {
       const vars = new Map<number, number>();
       const switches = new Map<number, boolean>();
-      const result = executeScript(
-        "$gameVariables.setValue(1, 99)",
-        vars,
-        switches,
-      );
+      const result = executeScript("$gameVariables.setValue(1, 99)", vars, switches);
       expect(result).toBeNull();
       expect(vars.get(1)).toBe(99);
     });
@@ -65,11 +57,7 @@ describe("scriptSandbox", () => {
     it("$gameSwitches.setValue(2, true) mutates the switches map", () => {
       const vars = new Map<number, number>();
       const switches = new Map<number, boolean>();
-      const result = executeScript(
-        "$gameSwitches.setValue(2, true)",
-        vars,
-        switches,
-      );
+      const result = executeScript("$gameSwitches.setValue(2, true)", vars, switches);
       expect(result).toBeNull();
       expect(switches.get(2)).toBe(true);
     });

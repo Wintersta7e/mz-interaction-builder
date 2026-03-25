@@ -2,13 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computeGuideLines } from "../alignmentGuides";
 import type { InteractionNode } from "../../types";
 
-function makeNode(
-  id: string,
-  x: number,
-  y: number,
-  w = 180,
-  h = 80,
-): InteractionNode {
+function makeNode(id: string, x: number, y: number, w = 180, h = 80): InteractionNode {
   return {
     id,
     type: "action",
@@ -23,18 +17,14 @@ describe("computeGuideLines", () => {
     const dragging = makeNode("a", 100, 0);
     const others = [makeNode("b", 100, 200)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 100),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 100)).toBe(true);
   });
 
   it("returns horizontal guide when top edges align", () => {
     const dragging = makeNode("a", 0, 50);
     const others = [makeNode("b", 200, 50)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "horizontal" && g.position === 50),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "horizontal" && g.position === 50)).toBe(true);
   });
 
   it("returns guide within snap threshold", () => {
@@ -62,9 +52,7 @@ describe("computeGuideLines", () => {
     const dragging = makeNode("a", 100, 0);
     const others = [makeNode("b", 100, 100), makeNode("c", 100, 200)];
     const guides = computeGuideLines(dragging, others);
-    const verticalAt100 = guides.filter(
-      (g) => g.orientation === "vertical" && g.position === 100,
-    );
+    const verticalAt100 = guides.filter((g) => g.orientation === "vertical" && g.position === 100);
     expect(verticalAt100.length).toBe(1);
   });
 
@@ -74,9 +62,7 @@ describe("computeGuideLines", () => {
     const others = [makeNode("b", 100, 200)];
     const guides = computeGuideLines(dragging, others);
     // Should have a guide at center x = 190
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 190),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 190)).toBe(true);
   });
 
   it("detects right edge alignment", () => {
@@ -84,9 +70,7 @@ describe("computeGuideLines", () => {
     const dragging = makeNode("a", 100, 0);
     const others = [makeNode("b", 100, 200)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 280),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 280)).toBe(true);
   });
 
   it("detects bottom edge alignment", () => {
@@ -94,9 +78,7 @@ describe("computeGuideLines", () => {
     const dragging = makeNode("a", 0, 50);
     const others = [makeNode("b", 200, 50)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "horizontal" && g.position === 130),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "horizontal" && g.position === 130)).toBe(true);
   });
 
   it("detects cross-edge alignment (left of dragging with right of other)", () => {
@@ -104,9 +86,7 @@ describe("computeGuideLines", () => {
     const dragging = makeNode("a", 280, 0);
     const others = [makeNode("b", 100, 200)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 280),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 280)).toBe(true);
   });
 
   it("skips the dragging node if it appears in others list", () => {
@@ -141,20 +121,14 @@ describe("computeGuideLines", () => {
       },
     ];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 100),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 100)).toBe(true);
   });
 
   it("returns guides from multiple other nodes", () => {
     const dragging = makeNode("a", 100, 50);
     const others = [makeNode("b", 100, 200), makeNode("c", 0, 50)];
     const guides = computeGuideLines(dragging, others);
-    expect(
-      guides.some((g) => g.orientation === "vertical" && g.position === 100),
-    ).toBe(true);
-    expect(
-      guides.some((g) => g.orientation === "horizontal" && g.position === 50),
-    ).toBe(true);
+    expect(guides.some((g) => g.orientation === "vertical" && g.position === 100)).toBe(true);
+    expect(guides.some((g) => g.orientation === "horizontal" && g.position === 50)).toBe(true);
   });
 });

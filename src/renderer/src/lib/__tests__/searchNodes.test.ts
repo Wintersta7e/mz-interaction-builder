@@ -72,31 +72,31 @@ const testNodes: InteractionNode[] = [
 
 describe("getSearchableText", () => {
   it("extracts label from start node", () => {
-    expect(getSearchableText(testNodes[0])).toContain("Game Start");
+    expect(getSearchableText(testNodes[0]!)).toContain("Game Start");
   });
 
   it("extracts label and choice text from menu node", () => {
-    const text = getSearchableText(testNodes[1]);
+    const text = getSearchableText(testNodes[1]!);
     expect(text).toContain("Talk Menu");
     expect(text).toContain("Ask about school");
     expect(text).toContain("Say goodbye");
   });
 
   it("extracts label, script, and text from action node", () => {
-    const text = getSearchableText(testNodes[2]);
+    const text = getSearchableText(testNodes[2]!);
     expect(text).toContain("Set Affection");
     expect(text).toContain("$gameVariables.setValue(5, 10)");
     expect(text).toContain("Sara smiles warmly.");
   });
 
   it("extracts label and condition script from condition node", () => {
-    const text = getSearchableText(testNodes[3]);
+    const text = getSearchableText(testNodes[3]!);
     expect(text).toContain("Check Flag");
     expect(text).toContain("$gameSwitches.value(42)");
   });
 
   it("extracts label and text from comment node", () => {
-    const text = getSearchableText(testNodes[5]);
+    const text = getSearchableText(testNodes[5]!);
     expect(text).toContain("Design Note");
     expect(text).toContain("festival scene");
   });

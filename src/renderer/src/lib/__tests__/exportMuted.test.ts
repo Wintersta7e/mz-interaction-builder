@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { exportToMZCommands } from "../export";
-import type {
-  InteractionDocument,
-  InteractionNode,
-  InteractionEdge,
-} from "../../types";
+import type { InteractionDocument, InteractionNode, InteractionEdge } from "../../types";
 
 // Event codes for assertions
 const CODE = {
@@ -22,10 +18,7 @@ const CODE = {
   SCRIPT_LINE: 655,
 };
 
-function makeDoc(
-  nodes: InteractionNode[],
-  edges: InteractionEdge[],
-): InteractionDocument {
+function makeDoc(nodes: InteractionNode[], edges: InteractionEdge[]): InteractionDocument {
   return {
     version: "1.0.0",
     name: "Test",
@@ -54,9 +47,7 @@ describe("exportMuted — muted node bypass", () => {
           type: "action",
           label: "MutedAct",
           muted: true,
-          actions: [
-            { id: "a1", type: "script", script: "console.log('should skip')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('should skip')" }],
         },
       },
       {
@@ -146,7 +137,7 @@ describe("exportMuted — muted node bypass", () => {
     // ActionA's script should appear
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('A')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('A')");
 
     // No conditional branch commands (muted condition is bypassed)
     const condCmds = commands.filter((c) => c.code === CODE.CONDITIONAL_BRANCH);
@@ -234,7 +225,7 @@ describe("exportMuted — muted node bypass", () => {
     // ActionA's script should appear (choice-0 path followed)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('yes')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('yes')");
 
     // No Show Choices commands (muted menu is bypassed)
     const choiceCmds = commands.filter((c) => c.code === CODE.SHOW_CHOICES);
@@ -262,9 +253,7 @@ describe("exportMuted — muted node bypass", () => {
         data: { type: "end", label: "MutedEnd", muted: true },
       },
     ];
-    const edges: InteractionEdge[] = [
-      { id: "e1", source: "start-1", target: "end-1" },
-    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "start-1", target: "end-1" }];
 
     const { commands } = exportToMZCommands(makeDoc(nodes, edges));
 
@@ -292,9 +281,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "Act",
-          actions: [
-            { id: "a1", type: "script", script: "console.log('hello')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('hello')" }],
         },
       },
       {
@@ -314,7 +301,7 @@ describe("exportMuted — muted node bypass", () => {
     // Action's script commands should still appear (start mute is ignored)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('hello')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('hello')");
   });
 
   it("multiple consecutive muted nodes chain correctly", () => {
@@ -333,9 +320,7 @@ describe("exportMuted — muted node bypass", () => {
           type: "action",
           label: "MutedAct1",
           muted: true,
-          actions: [
-            { id: "a1", type: "script", script: "console.log('skip1')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('skip1')" }],
         },
       },
       {
@@ -346,9 +331,7 @@ describe("exportMuted — muted node bypass", () => {
           type: "action",
           label: "MutedAct2",
           muted: true,
-          actions: [
-            { id: "a2", type: "script", script: "console.log('skip2')" },
-          ],
+          actions: [{ id: "a2", type: "script", script: "console.log('skip2')" }],
         },
       },
       {
@@ -358,9 +341,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "Action3",
-          actions: [
-            { id: "a3", type: "script", script: "console.log('keep')" },
-          ],
+          actions: [{ id: "a3", type: "script", script: "console.log('keep')" }],
         },
       },
       {
@@ -382,7 +363,7 @@ describe("exportMuted — muted node bypass", () => {
     // Only Action3's script should appear
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds).toHaveLength(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('keep')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('keep')");
 
     // Skipped scripts should not appear
     const allScriptParams = commands
@@ -418,9 +399,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "FalseAction",
-          actions: [
-            { id: "a1", type: "script", script: "console.log('false-branch')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('false-branch')" }],
         },
       },
       {
@@ -447,7 +426,7 @@ describe("exportMuted — muted node bypass", () => {
     // Fallback should follow the false edge (only outgoing edge)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('false-branch')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('false-branch')");
   });
 
   it("T-2: muted menu with no choice-0 edge follows fallback", () => {
@@ -482,9 +461,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "Choice1Action",
-          actions: [
-            { id: "a1", type: "script", script: "console.log('choice-1')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('choice-1')" }],
         },
       },
       {
@@ -511,7 +488,7 @@ describe("exportMuted — muted node bypass", () => {
     // Fallback should follow choice-1 edge (only outgoing edge)
     const scriptCmds = commands.filter((c) => c.code === CODE.SCRIPT);
     expect(scriptCmds.length).toBeGreaterThanOrEqual(1);
-    expect(scriptCmds[0].parameters[0]).toBe("console.log('choice-1')");
+    expect(scriptCmds[0]!.parameters[0]).toBe("console.log('choice-1')");
   });
 
   it("T-3: muted node with no outgoing edges (dead end)", () => {
@@ -530,9 +507,7 @@ describe("exportMuted — muted node bypass", () => {
           type: "action",
           label: "MutedDeadEnd",
           muted: true,
-          actions: [
-            { id: "a1", type: "script", script: "console.log('dead')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('dead')" }],
         },
       },
     ];
@@ -595,9 +570,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "AfterMuted",
-          actions: [
-            { id: "a2", type: "script", script: "console.log('after-muted')" },
-          ],
+          actions: [{ id: "a2", type: "script", script: "console.log('after-muted')" }],
         },
       },
       {
@@ -607,9 +580,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "FalseAction",
-          actions: [
-            { id: "a3", type: "script", script: "console.log('false-side')" },
-          ],
+          actions: [{ id: "a3", type: "script", script: "console.log('false-side')" }],
         },
       },
       {
@@ -705,9 +676,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "ActionA",
-          actions: [
-            { id: "a1", type: "script", script: "console.log('optA')" },
-          ],
+          actions: [{ id: "a1", type: "script", script: "console.log('optA')" }],
         },
       },
       {
@@ -717,9 +686,7 @@ describe("exportMuted — muted node bypass", () => {
         data: {
           type: "action",
           label: "ActionB",
-          actions: [
-            { id: "a2", type: "script", script: "console.log('optB')" },
-          ],
+          actions: [{ id: "a2", type: "script", script: "console.log('optB')" }],
         },
       },
       {
@@ -757,9 +724,7 @@ describe("exportMuted — muted node bypass", () => {
     expect(allScriptParams).not.toContain("$gameSwitches.value(2)");
 
     // No Show Choices commands
-    expect(commands.filter((c) => c.code === CODE.SHOW_CHOICES)).toHaveLength(
-      0,
-    );
+    expect(commands.filter((c) => c.code === CODE.SHOW_CHOICES)).toHaveLength(0);
 
     // Only choice-0 path followed (ActionA)
     expect(allScriptParams).toContain("console.log('optA')");
@@ -866,9 +831,7 @@ describe("exportMuted — muted node bypass", () => {
     // The muted convergence node should have a LABEL command
     const labelCmds = commands.filter((c) => c.code === CODE.LABEL);
     expect(labelCmds.length).toBeGreaterThanOrEqual(1);
-    const mutedLabel = labelCmds.find((c) =>
-      (c.parameters[0] as string).includes("muted-conv"),
-    );
+    const mutedLabel = labelCmds.find((c) => (c.parameters[0] as string).includes("muted-conv"));
     expect(mutedLabel).toBeDefined();
 
     // The muted node's script should NOT appear

@@ -30,9 +30,7 @@ describe("autoLayout", () => {
 
   it("places start node left of end node in LR direction", () => {
     const nodes = [makeNode("start", "start"), makeNode("end", "end")];
-    const edges: InteractionEdge[] = [
-      { id: "e1", source: "start", target: "end" },
-    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "start", target: "end" }];
 
     const positions = autoLayout(nodes, edges, { direction: "LR" });
 
@@ -41,9 +39,7 @@ describe("autoLayout", () => {
 
   it("places start node above end node in TB direction", () => {
     const nodes = [makeNode("start", "start"), makeNode("end", "end")];
-    const edges: InteractionEdge[] = [
-      { id: "e1", source: "start", target: "end" },
-    ];
+    const edges: InteractionEdge[] = [{ id: "e1", source: "start", target: "end" }];
 
     const positions = autoLayout(nodes, edges, { direction: "TB" });
 
@@ -180,8 +176,7 @@ describe("autoLayout", () => {
     });
 
     const measuredGap = positions.get("b")!.x - positions.get("a")!.x;
-    const defaultGap =
-      defaultPositions.get("b")!.x - defaultPositions.get("a")!.x;
+    const defaultGap = defaultPositions.get("b")!.x - defaultPositions.get("a")!.x;
     expect(measuredGap).toBeGreaterThan(defaultGap);
   });
 

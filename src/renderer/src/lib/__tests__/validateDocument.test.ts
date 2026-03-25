@@ -36,15 +36,13 @@ describe("validateDocument", () => {
         (i) => i.type === "error" && i.message.includes("Multiple Start"),
       );
       expect(startErrors).toHaveLength(2);
-      expect(startErrors[0].nodeId).toBe("s1");
-      expect(startErrors[1].nodeId).toBe("s2");
+      expect(startErrors[0]!.nodeId).toBe("s1");
+      expect(startErrors[1]!.nodeId).toBe("s2");
     });
 
     it("returns no start-related errors for exactly one start node", () => {
       const nodes = [node("s1", "start"), node("e1", "end")];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "e1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
       const issues = validateDocument(nodes, edges);
       const startErrors = issues.filter(
         (i) =>
@@ -60,18 +58,14 @@ describe("validateDocument", () => {
       const nodes = [node("s1", "start"), node("a1", "action")];
       const edges: InteractionEdge[] = [];
       const issues = validateDocument(nodes, edges);
-      const unreachable = issues.filter((i) =>
-        i.message.includes("unreachable"),
-      );
+      const unreachable = issues.filter((i) => i.message.includes("unreachable"));
       expect(unreachable).toHaveLength(1);
-      expect(unreachable[0].nodeId).toBe("a1");
+      expect(unreachable[0]!.nodeId).toBe("a1");
     });
 
     it("does not warn about start node having no incoming edges", () => {
       const nodes = [node("s1", "start"), node("e1", "end")];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "e1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
       const issues = validateDocument(nodes, edges);
       const startUnreachable = issues.filter(
         (i) => i.nodeId === "s1" && i.message.includes("unreachable"),
@@ -81,24 +75,18 @@ describe("validateDocument", () => {
 
     it("warns when a non-end node has no outgoing edges", () => {
       const nodes = [node("s1", "start"), node("a1", "action")];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "a1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "a1" }];
       const issues = validateDocument(nodes, edges);
       const deadEnd = issues.filter((i) => i.message.includes("dead end"));
       expect(deadEnd).toHaveLength(1);
-      expect(deadEnd[0].nodeId).toBe("a1");
+      expect(deadEnd[0]!.nodeId).toBe("a1");
     });
 
     it("does not warn about end node having no outgoing edges", () => {
       const nodes = [node("s1", "start"), node("e1", "end")];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "e1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
       const issues = validateDocument(nodes, edges);
-      const endDeadEnd = issues.filter(
-        (i) => i.nodeId === "e1" && i.message.includes("dead end"),
-      );
+      const endDeadEnd = issues.filter((i) => i.nodeId === "e1" && i.message.includes("dead end"));
       expect(endDeadEnd).toHaveLength(0);
     });
   });
@@ -203,9 +191,7 @@ describe("validateDocument", () => {
 
     it("warns about both branches when neither is connected", () => {
       const nodes = [node("s1", "start"), node("c1", "condition")];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "c1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "c1" }];
       const issues = validateDocument(nodes, edges);
       const branchWarnings = issues.filter(
         (i) => i.nodeId === "c1" && i.message.includes("branch"),
@@ -252,9 +238,7 @@ describe("validateDocument", () => {
           actions: [],
         }),
       ];
-      const edges: InteractionEdge[] = [
-        { id: "e-1", source: "s1", target: "a1" },
-      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "a1" }];
       const issues = validateDocument(nodes, edges);
       const emptyActions = issues.filter(
         (i) => i.nodeId === "a1" && i.message.includes("no actions"),
@@ -319,8 +303,8 @@ describe("validateDocument", () => {
     it("returns an error for empty nodes array", () => {
       const issues = validateDocument([], []);
       expect(issues).toHaveLength(1);
-      expect(issues[0].type).toBe("error");
-      expect(issues[0].message).toContain("No Start node");
+      expect(issues[0]!.type).toBe("error");
+      expect(issues[0]!.message).toContain("No Start node");
     });
   });
 });

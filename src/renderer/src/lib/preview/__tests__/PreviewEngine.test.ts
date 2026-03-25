@@ -11,10 +11,7 @@ import type {
 } from "../../../types";
 
 /** Helper to create a minimal InteractionDocument */
-function makeDoc(
-  nodes: InteractionNode[],
-  edges: InteractionEdge[],
-): InteractionDocument {
+function makeDoc(nodes: InteractionNode[], edges: InteractionEdge[]): InteractionDocument {
   return {
     version: "1.0.0",
     name: "Test",
@@ -171,7 +168,7 @@ describe("PreviewEngine", () => {
       expect(engine.state.visitedNodes.has("s1")).toBe(true);
       expect(engine.state.status).toBe("running");
       expect(engine.state.transcript.length).toBeGreaterThan(0);
-      expect(engine.state.transcript[0].nodeType).toBe("start");
+      expect(engine.state.transcript[0]!.nodeType).toBe("start");
     });
 
     it("end node sets status to ended and adds transcript entry containing End", () => {
@@ -185,9 +182,7 @@ describe("PreviewEngine", () => {
       engine.step(); // process end
 
       expect(engine.state.status).toBe("ended");
-      const endEntry = engine.state.transcript.find(
-        (t) => t.nodeType === "end",
-      );
+      const endEntry = engine.state.transcript.find((t) => t.nodeType === "end");
       expect(endEntry).toBeDefined();
       expect(endEntry!.content).toContain("End");
     });
@@ -295,9 +290,7 @@ describe("PreviewEngine", () => {
       engine.step(); // start → a1
       engine.step(); // action → e1
 
-      const actionEntry = engine.state.transcript.find(
-        (t) => t.nodeType === "action",
-      );
+      const actionEntry = engine.state.transcript.find((t) => t.nodeType === "action");
       expect(actionEntry).toBeDefined();
       expect(actionEntry!.content).toContain("Show Text");
       expect(actionEntry!.content).toContain("Hello world!");
@@ -325,9 +318,7 @@ describe("PreviewEngine", () => {
       engine.step(); // start
       engine.step(); // action
 
-      const actionEntry = engine.state.transcript.find(
-        (t) => t.nodeType === "action",
-      );
+      const actionEntry = engine.state.transcript.find((t) => t.nodeType === "action");
       expect(actionEntry).toBeDefined();
       expect(actionEntry!.detail).toBe("$gameVariables.setValue(1, 10)");
     });
@@ -355,9 +346,7 @@ describe("PreviewEngine", () => {
       engine.step(); // start
       engine.step(); // condition
 
-      const condEntry = engine.state.transcript.find(
-        (t) => t.nodeType === "condition",
-      );
+      const condEntry = engine.state.transcript.find((t) => t.nodeType === "condition");
       expect(condEntry).toBeDefined();
       expect(condEntry!.detail).toBe("$gameSwitches.value(5)");
     });
@@ -400,12 +389,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          condNode,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), condNode, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -435,12 +419,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          condNode,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), condNode, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -470,12 +449,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          condNode,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), condNode, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -504,12 +478,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          condNode,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), condNode, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -538,12 +507,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          condNode,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), condNode, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -558,9 +522,7 @@ describe("PreviewEngine", () => {
       expect(engine.state.currentNodeId).toBe("f1");
 
       // Verify transcript has error result
-      const condEntry = engine.state.transcript.find(
-        (t) => t.nodeType === "condition",
-      );
+      const condEntry = engine.state.transcript.find((t) => t.nodeType === "condition");
       expect(condEntry).toBeDefined();
       expect(condEntry!.result).toBe("error");
     });
@@ -580,12 +542,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          menuNode,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),
@@ -599,7 +556,7 @@ describe("PreviewEngine", () => {
 
       expect(engine.state.status).toBe("waiting_choice");
       expect(engine.state.availableChoices).toHaveLength(2);
-      expect(engine.state.availableChoices[0].text).toBe("Option A");
+      expect(engine.state.availableChoices[0]!.text).toBe("Option A");
     });
 
     it("advances on choice selection", () => {
@@ -615,12 +572,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          menuNode,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),
@@ -659,12 +611,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          menuNode,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),
@@ -681,7 +628,7 @@ describe("PreviewEngine", () => {
 
       const nonHidden = engine.state.availableChoices.filter((c) => !c.hidden);
       expect(nonHidden).toHaveLength(1);
-      expect(nonHidden[0].text).toBe("Visible");
+      expect(nonHidden[0]!.text).toBe("Visible");
     });
 
     it("marks disabled choices", () => {
@@ -706,12 +653,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          menuNode,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),
@@ -726,7 +668,7 @@ describe("PreviewEngine", () => {
       engine.step(); // start → m1
       engine.step(); // process menu → waiting_choice
 
-      expect(engine.state.availableChoices[1].disabled).toBe(true);
+      expect(engine.state.availableChoices[1]!.disabled).toBe(true);
     });
   });
 
@@ -772,12 +714,7 @@ describe("PreviewEngine", () => {
       } as Partial<ConditionNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          mutedCond,
-          makeNode("t1", "end"),
-          makeNode("f1", "end"),
-        ],
+        [makeNode("s1", "start"), mutedCond, makeNode("t1", "end"), makeNode("f1", "end")],
         [
           makeEdge("e-1", "s1", "c1"),
           makeEdge("e-true", "c1", "t1", "true"),
@@ -809,12 +746,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          mutedMenu,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), mutedMenu, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),
@@ -883,13 +815,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          actionNode,
-          condNode,
-          menuNode,
-          makeNode("e1", "end"),
-        ],
+        [makeNode("s1", "start"), actionNode, condNode, menuNode, makeNode("e1", "end")],
         [],
       );
       const engine = new PreviewEngine(doc);
@@ -1068,9 +994,7 @@ describe("PreviewEngine", () => {
     it("switch toggle operation flips the value", () => {
       const action1 = makeNode("a1", "action", {
         type: "action",
-        actions: [
-          { id: "act-1", type: "set_switch", switchId: 5, switchValue: "on" },
-        ],
+        actions: [{ id: "act-1", type: "set_switch", switchId: 5, switchValue: "on" }],
       } as Partial<ActionNodeData>);
 
       const action2 = makeNode("a2", "action", {
@@ -1087,11 +1011,7 @@ describe("PreviewEngine", () => {
 
       const doc = makeDoc(
         [makeNode("s1", "start"), action1, action2, makeNode("e1", "end")],
-        [
-          makeEdge("e-1", "s1", "a1"),
-          makeEdge("e-2", "a1", "a2"),
-          makeEdge("e-3", "a2", "e1"),
-        ],
+        [makeEdge("e-1", "s1", "a1"), makeEdge("e-2", "a1", "a2"), makeEdge("e-3", "a2", "e1")],
       );
       const engine = new PreviewEngine(doc);
 
@@ -1258,8 +1178,8 @@ describe("PreviewEngine", () => {
 
       expect(engine.state.status).toBe("waiting_choice");
       expect(engine.state.availableChoices).toHaveLength(2);
-      expect(engine.state.availableChoices[0].hidden).toBe(true);
-      expect(engine.state.availableChoices[1].hidden).toBe(true);
+      expect(engine.state.availableChoices[0]!.hidden).toBe(true);
+      expect(engine.state.availableChoices[1]!.hidden).toBe(true);
     });
 
     it("script action mutates variables via $gameVariables.setValue()", () => {
@@ -1324,12 +1244,7 @@ describe("PreviewEngine", () => {
       } as Partial<MenuNodeData>);
 
       const doc = makeDoc(
-        [
-          makeNode("s1", "start"),
-          menuNode,
-          makeNode("ea", "end"),
-          makeNode("eb", "end"),
-        ],
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end"), makeNode("eb", "end")],
         [
           makeEdge("e-1", "s1", "m1"),
           makeEdge("e-c0", "m1", "ea", "choice-0"),

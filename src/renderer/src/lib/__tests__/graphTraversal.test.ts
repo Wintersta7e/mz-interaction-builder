@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  findUpstreamNodes,
-  findDownstreamNodes,
-  findShortestPath,
-} from "../graphTraversal";
+import { findUpstreamNodes, findDownstreamNodes, findShortestPath } from "../graphTraversal";
 import type { InteractionEdge } from "../../types";
 
 // Shared test graph:
@@ -60,9 +56,7 @@ describe("findDownstreamNodes", () => {
 
   it("finds downstream from menu", () => {
     const result = findDownstreamNodes("menu", edges);
-    expect(result.nodeIds).toEqual(
-      new Set(["menu", "action", "condition", "end", "end2"]),
-    );
+    expect(result.nodeIds).toEqual(new Set(["menu", "action", "condition", "end", "end2"]));
     expect(result.edgeIds).toEqual(new Set(["e2", "e3", "e4", "e5"]));
   });
 });
