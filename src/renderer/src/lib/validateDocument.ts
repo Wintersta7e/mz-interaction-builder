@@ -24,8 +24,7 @@ export function validateDocument(
       type: "error",
       nodeId: "",
       nodeLabel: "Document",
-      message:
-        "No Start node found. Every interaction needs exactly one Start node.",
+      message: "No Start node found. Every interaction needs exactly one Start node.",
     });
   } else if (startNodes.length > 1) {
     startNodes.forEach((n) => {
@@ -41,11 +40,7 @@ export function validateDocument(
   // Check each node for issues
   nodes.forEach((node) => {
     // Check for unconnected inputs (except start nodes)
-    if (
-      node.type !== "start" &&
-      node.type !== "group" &&
-      node.type !== "comment"
-    ) {
+    if (node.type !== "start" && node.type !== "group" && node.type !== "comment") {
       const hasIncomingEdge = edges.some((e) => e.target === node.id);
       if (!hasIncomingEdge) {
         issues.push({
@@ -58,11 +53,7 @@ export function validateDocument(
     }
 
     // Check for unconnected outputs (except end nodes)
-    if (
-      node.type !== "end" &&
-      node.type !== "group" &&
-      node.type !== "comment"
-    ) {
+    if (node.type !== "end" && node.type !== "group" && node.type !== "comment") {
       const hasOutgoingEdge = edges.some((e) => e.source === node.id);
       if (!hasOutgoingEdge) {
         issues.push({
@@ -76,8 +67,7 @@ export function validateDocument(
 
     // Check menu nodes for missing choice connections
     if (node.type === "menu") {
-      const choices =
-        (node.data as { choices?: { id: string }[] }).choices || [];
+      const choices = (node.data as { choices?: { id: string }[] }).choices || [];
       choices.forEach((_choice, index) => {
         const hasConnection = edges.some(
           (e) => e.source === node.id && e.sourceHandle === `choice-${index}`,

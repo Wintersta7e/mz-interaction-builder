@@ -1,10 +1,6 @@
 import type { Connection } from "@xyflow/react";
 import { NODE_ACCENT_COLORS } from "./nodeColors";
-import type {
-  InteractionNode,
-  InteractionNodeType,
-  InteractionEdgeData,
-} from "../types";
+import type { InteractionNode, InteractionEdgeData } from "../types";
 
 /**
  * Determine the edge type and data (style, colors, branch info) for a new connection.
@@ -16,8 +12,8 @@ export function getEdgeTypeAndData(
 ): { type: string; data: InteractionEdgeData } {
   const sourceNode = nodes.find((n) => n.id === connection.source);
   const targetNode = nodes.find((n) => n.id === connection.target);
-  const sourceType = sourceNode?.type as InteractionNodeType | undefined;
-  const targetType = targetNode?.type as InteractionNodeType | undefined;
+  const sourceType = sourceNode?.type;
+  const targetType = targetNode?.type;
 
   const sourceColor = sourceType ? NODE_ACCENT_COLORS[sourceType] : "#9ca3af";
   const targetColor = targetType ? NODE_ACCENT_COLORS[targetType] : "#9ca3af";

@@ -173,10 +173,7 @@ export class PreviewEngine {
         case "action": {
           const data = node.data as ActionNodeData;
           for (const action of data.actions) {
-            if (
-              action.type === "set_variable" &&
-              action.variableId !== undefined
-            ) {
+            if (action.type === "set_variable" && action.variableId !== undefined) {
               varSet.add(action.variableId);
             }
             if (action.type === "set_switch" && action.switchId !== undefined) {
@@ -258,14 +255,10 @@ export class PreviewEngine {
     }
 
     const content =
-      summaryParts.length > 0
-        ? summaryParts.join("; ")
-        : `Action "${node.data.label}"`;
+      summaryParts.length > 0 ? summaryParts.join("; ") : `Action "${node.data.label}"`;
 
     // detail: raw dialogue text for typewriter display, or script sources
-    const detail =
-      dialogueText ??
-      (detailParts.length > 0 ? detailParts.join("; ") : undefined);
+    const detail = dialogueText ?? (detailParts.length > 0 ? detailParts.join("; ") : undefined);
 
     this.addTranscript({
       nodeId: node.id,
@@ -361,11 +354,7 @@ export class PreviewEngine {
 
       case "script": {
         const scriptSrc = action.script ?? "";
-        const err = executeScript(
-          scriptSrc,
-          this._state.variables,
-          this._state.switches,
-        );
+        const err = executeScript(scriptSrc, this._state.variables, this._state.switches);
         if (err) {
           return `[Script Error: ${err.message}]`;
         }
@@ -411,11 +400,7 @@ export class PreviewEngine {
         break;
       case "script": {
         const scriptSrc = condition.script ?? "";
-        const scriptResult = evaluateScript(
-          scriptSrc,
-          this._state.variables,
-          this._state.switches,
-        );
+        const scriptResult = evaluateScript(scriptSrc, this._state.variables, this._state.switches);
         if (scriptResult instanceof Error) {
           result = "error";
           detail = scriptResult.message;
@@ -446,21 +431,19 @@ export class PreviewEngine {
     const data = node.data as MenuNodeData;
     const choices = data.choices;
 
-    const availableChoices: PreviewState["availableChoices"] = choices.map(
-      (choice, index) => {
-        let hidden = false;
-        let disabled = false;
+    const availableChoices: PreviewState["availableChoices"] = choices.map((choice, index) => {
+      let hidden = false;
+      let disabled = false;
 
-        if (choice.hideCondition) {
-          hidden = this.evaluateConditionValue(choice.hideCondition);
-        }
-        if (choice.disableCondition) {
-          disabled = this.evaluateConditionValue(choice.disableCondition);
-        }
+      if (choice.hideCondition) {
+        hidden = this.evaluateConditionValue(choice.hideCondition);
+      }
+      if (choice.disableCondition) {
+        disabled = this.evaluateConditionValue(choice.disableCondition);
+      }
 
-        return { index, text: choice.text, hidden, disabled };
-      },
-    );
+      return { index, text: choice.text, hidden, disabled };
+    });
 
     this._state.availableChoices = availableChoices;
 
@@ -496,8 +479,7 @@ export class PreviewEngine {
 
     // Find the choice text for the transcript
     const data = node.data as MenuNodeData;
-    const choiceText =
-      data.choices[choiceIndex]?.text ?? `Choice ${choiceIndex}`;
+    const choiceText = data.choices[choiceIndex]?.text ?? `Choice ${choiceIndex}`;
 
     this._state.choiceHistory.push(choiceIndex);
 
@@ -519,8 +501,7 @@ export class PreviewEngine {
   private evaluateConditionValue(condition: Condition): boolean {
     switch (condition.type) {
       case "switch": {
-        const switchVal =
-          this._state.switches.get(condition.switchId ?? 0) ?? false;
+        const switchVal = this._state.switches.get(condition.switchId ?? 0) ?? false;
         return switchVal === (condition.switchValue === "on");
       }
 
@@ -611,7 +592,7 @@ export class PreviewEngine {
       this._state.transcript = this._state.transcript.slice(-500);
     }
 
-    if (typeof process === "undefined" || process.env?.NODE_ENV !== "test") {
+    if (typeof process === "undefined" || process.env?.["NODE_ENV"] !== "test") {
       console.debug(
         `[Preview] [${entry.stepIndex}] ${entry.content}`,
         entry.detail ? `| ${entry.detail}` : "",

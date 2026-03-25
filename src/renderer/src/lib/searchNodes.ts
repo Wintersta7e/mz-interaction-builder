@@ -1,27 +1,20 @@
-import type {
-  InteractionNode,
-  InteractionNodeData,
-  MenuNodeData,
-  ActionNodeData,
-  ConditionNodeData,
-  CommentNodeData,
-} from "../types";
+import type { InteractionNode } from "../types";
 
 /** Extract all searchable text from a node as a single lowercase string */
 export function getSearchableText(node: InteractionNode): string {
   const parts: string[] = [node.data.label];
-  const data = node.data as InteractionNodeData;
+  const data = node.data;
 
   switch (data.type) {
     case "menu": {
-      const menuData = data as MenuNodeData;
+      const menuData = data;
       for (const choice of menuData.choices) {
         parts.push(choice.text);
       }
       break;
     }
     case "action": {
-      const actionData = data as ActionNodeData;
+      const actionData = data;
       for (const action of actionData.actions) {
         if (action.script) parts.push(action.script);
         if (action.text) parts.push(action.text);
@@ -29,12 +22,12 @@ export function getSearchableText(node: InteractionNode): string {
       break;
     }
     case "condition": {
-      const condData = data as ConditionNodeData;
+      const condData = data;
       if (condData.condition.script) parts.push(condData.condition.script);
       break;
     }
     case "comment": {
-      const commentData = data as CommentNodeData;
+      const commentData = data;
       if (commentData.text) parts.push(commentData.text);
       break;
     }

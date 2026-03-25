@@ -6,10 +6,7 @@ interface TraversalResult {
 }
 
 /** BFS backward from nodeId, collecting all upstream nodes and edges */
-export function findUpstreamNodes(
-  nodeId: string,
-  edges: InteractionEdge[],
-): TraversalResult {
+export function findUpstreamNodes(nodeId: string, edges: InteractionEdge[]): TraversalResult {
   // Pre-build adjacency map: target → edges
   const byTarget = new Map<string, InteractionEdge[]>();
   for (const edge of edges) {
@@ -24,7 +21,7 @@ export function findUpstreamNodes(
   let head = 0;
 
   while (head < queue.length) {
-    const current = queue[head++];
+    const current = queue[head++]!;
     const incoming = byTarget.get(current);
     if (incoming) {
       for (const edge of incoming) {
@@ -41,10 +38,7 @@ export function findUpstreamNodes(
 }
 
 /** BFS forward from nodeId, collecting all downstream nodes and edges */
-export function findDownstreamNodes(
-  nodeId: string,
-  edges: InteractionEdge[],
-): TraversalResult {
+export function findDownstreamNodes(nodeId: string, edges: InteractionEdge[]): TraversalResult {
   // Pre-build adjacency map: source → edges
   const bySource = new Map<string, InteractionEdge[]>();
   for (const edge of edges) {
@@ -59,7 +53,7 @@ export function findDownstreamNodes(
   let head = 0;
 
   while (head < queue.length) {
-    const current = queue[head++];
+    const current = queue[head++]!;
     const outgoing = bySource.get(current);
     if (outgoing) {
       for (const edge of outgoing) {
@@ -97,7 +91,7 @@ export function findShortestPath(
   let head = 0;
 
   while (head < queue.length) {
-    const current = queue[head++];
+    const current = queue[head++]!;
     const outgoing = bySource.get(current);
     if (outgoing) {
       for (const edge of outgoing) {

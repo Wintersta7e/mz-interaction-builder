@@ -67,10 +67,7 @@ function generateConditionScript(condition: Condition): string {
 }
 
 // Map menu cancel-type setting to the numeric value RPG Maker expects.
-function mapCancelType(
-  cancelType: MenuNodeData["cancelType"],
-  choiceCount: number,
-): number {
+function mapCancelType(cancelType: MenuNodeData["cancelType"], choiceCount: number): number {
   switch (cancelType) {
     case "disallow":
       return -1;
@@ -83,9 +80,7 @@ function mapCancelType(
   }
 }
 
-export function exportToMZCommands(
-  document: InteractionDocument,
-): ExportResult {
+export function exportToMZCommands(document: InteractionDocument): ExportResult {
   const commands: MZCommand[] = [];
   const warnings: string[] = [];
   const visited = new Set<string>();
@@ -217,7 +212,7 @@ export function exportToMZCommands(
     // Process next connected node
     const outEdges = edgesBySource.get(nodeId) || [];
     if (outEdges.length > 0) {
-      const nextNodeId = outEdges[0].target;
+      const nextNodeId = outEdges[0]!.target;
       processNode(nextNodeId, indent);
     }
   }
@@ -255,9 +250,7 @@ export function exportToMZCommands(
     }
 
     // Check if any choices have hide/disable conditions
-    const hasConditions = choices.some(
-      (c) => c.hideCondition || c.disableCondition,
-    );
+    const hasConditions = choices.some((c) => c.hideCondition || c.disableCondition);
 
     if (hasConditions) {
       // Use script-based dynamic choice menu
@@ -341,17 +334,13 @@ export function exportToMZCommands(
 
         if (choice.disableCondition) {
           // Apply gray color if disabled
-          const disableScript = generateConditionScript(
-            choice.disableCondition,
-          );
+          const disableScript = generateConditionScript(choice.disableCondition);
           initLines.push(
             `  const _t = (${disableScript}) ? '\\\\C[8]${choiceText}\\\\C[0]' : '${choiceText}';`,
           );
           initLines.push(`  _mzib_c.push(_t); _mzib_m.push(${index});`);
         } else {
-          initLines.push(
-            `  _mzib_c.push('${choiceText}'); _mzib_m.push(${index});`,
-          );
+          initLines.push(`  _mzib_c.push('${choiceText}'); _mzib_m.push(${index});`);
         }
 
         initLines.push("}");
@@ -366,9 +355,7 @@ export function exportToMZCommands(
         initLines.push(`}`);
       } else {
         // No conditions - always add
-        initLines.push(
-          `_mzib_c.push('${choiceText}'); _mzib_m.push(${index});`,
-        );
+        initLines.push(`_mzib_c.push('${choiceText}'); _mzib_m.push(${index});`);
       }
     });
 
@@ -388,12 +375,8 @@ export function exportToMZCommands(
 
     // Add the script to set up choices
     initLines.push(`$gameMessage.setChoices(_mzib_c, 0, ${cancelScript});`);
-    initLines.push(
-      `$gameMessage.setChoiceBackground(${data.windowBackground ?? 0});`,
-    );
-    initLines.push(
-      `$gameMessage.setChoicePositionType(${data.windowPosition ?? 2});`,
-    );
+    initLines.push(`$gameMessage.setChoiceBackground(${data.windowBackground ?? 0});`);
+    initLines.push(`$gameMessage.setChoicePositionType(${data.windowPosition ?? 2});`);
     initLines.push(
       `$gameMessage.setChoiceCallback(n => { $gameVariables.setValue(${TEMP_CHOICE_VAR}, _mzib_m[n] ?? -1); });`,
     );
@@ -570,11 +553,7 @@ export function exportToMZCommands(
             commands.push({
               code: EVENT_CODES.PLUGIN_COMMAND,
               indent,
-              parameters: [
-                action.pluginName,
-                action.commandName,
-                action.commandArgs || {},
-              ],
+              parameters: [action.pluginName, action.commandName, action.commandArgs || {}],
             });
           }
           break;
@@ -583,17 +562,12 @@ export function exportToMZCommands(
   }
 
   // Helper to generate condition commands
-  function generateConditionCommands(
-    node: InteractionNode,
-    indent: number,
-  ): void {
+  function generateConditionCommands(node: InteractionNode, indent: number): void {
     const data = node.data as ConditionNodeData;
     const condition = data.condition;
 
     if (!condition) {
-      warnings.push(
-        `Condition node "${node.data.label}" has no condition defined — skipped`,
-      );
+      warnings.push(`Condition node "${node.data.label}" has no condition defined — skipped`);
       return;
     }
 
@@ -612,11 +586,7 @@ export function exportToMZCommands(
 
     switch (condition.type) {
       case "switch":
-        conditionParams = [
-          0,
-          condition.switchId ?? 0,
-          condition.switchValue === "on" ? 0 : 1,
-        ];
+        conditionParams = [0, condition.switchId ?? 0, condition.switchValue === "on" ? 0 : 1];
         break;
 
       case "variable": {
@@ -688,7 +658,7 @@ export function exportToMZCommands(
   // Start processing from start node
   const startEdges = edgesBySource.get(startNode.id) || [];
   if (startEdges.length > 0) {
-    processNode(startEdges[0].target, 0);
+    processNode(startEdges[0]!.target, 0);
   }
 
   // Add terminating command

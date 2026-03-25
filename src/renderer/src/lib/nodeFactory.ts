@@ -1,14 +1,8 @@
 import { generateId } from "../stores";
-import type {
-  InteractionNodeType,
-  InteractionNode,
-  InteractionNodeData,
-} from "../types";
+import type { InteractionNodeType, InteractionNode, InteractionNodeData } from "../types";
 
 /** Return default node data for a given node type. */
-export function getDefaultNodeData(
-  type: InteractionNodeType,
-): InteractionNodeData {
+export function getDefaultNodeData(type: InteractionNodeType): InteractionNodeData {
   switch (type) {
     case "start":
       return { type: "start", label: "Start" };

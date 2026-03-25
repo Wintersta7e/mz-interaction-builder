@@ -20,9 +20,7 @@ export function autoLayout(
   const { direction = "LR", nodeSpacing = 80, rankSpacing = 200 } = options;
 
   // Filter out visual-only nodes — they should not participate in layout
-  const layoutNodes = nodes.filter(
-    (n) => n.type !== "group" && n.type !== "comment",
-  );
+  const layoutNodes = nodes.filter((n) => n.type !== "group" && n.type !== "comment");
 
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));

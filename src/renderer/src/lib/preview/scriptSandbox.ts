@@ -72,6 +72,7 @@ export function evaluateScript(
     // Shadow dangerous globals to prevent scripts from accessing IPC bridge and DOM.
     // This is intentional security hardening — new Function() is required here
     // to evaluate user-authored RPG Maker MZ scripts for preview.
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const fn = new Function(
       "$gameSwitches",
       "$gameVariables",
@@ -83,7 +84,7 @@ export function evaluateScript(
       "fetch",
       "XMLHttpRequest",
       '"use strict"; return (' + script + ");",
-    );
+    ) as (...args: unknown[]) => unknown;
     return fn(
       createMockSwitches(switches),
       createMockVariables(variables),
@@ -113,6 +114,7 @@ export function executeScript(
 ): Error | null {
   try {
     // Shadow dangerous globals — same hardening as evaluateScript above
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const fn = new Function(
       "$gameSwitches",
       "$gameVariables",
@@ -124,7 +126,7 @@ export function executeScript(
       "fetch",
       "XMLHttpRequest",
       '"use strict"; ' + script,
-    );
+    ) as (...args: unknown[]) => unknown;
     fn(
       createMockSwitches(switches),
       createMockVariables(variables),

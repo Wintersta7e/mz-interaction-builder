@@ -5,9 +5,7 @@ import { generateId } from "../stores";
  * Normalize node positions so the top-left node sits at (0, 0).
  * Returns a new array of nodes with adjusted positions.
  */
-export function normalizePositions(
-  nodes: InteractionNode[],
-): InteractionNode[] {
+export function normalizePositions(nodes: InteractionNode[]): InteractionNode[] {
   if (nodes.length === 0) return [];
 
   const minX = Math.min(...nodes.map((n) => n.position.x));

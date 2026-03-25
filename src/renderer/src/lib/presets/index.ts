@@ -118,10 +118,7 @@ export const builtInPresets: VariablePreset[] = [
 ];
 
 // Create a custom preset
-export function createCustomPreset(
-  name: string,
-  description: string = "",
-): VariablePreset {
+export function createCustomPreset(name: string, description: string = ""): VariablePreset {
   return {
     id: `custom-${Date.now()}`,
     name,
