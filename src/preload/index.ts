@@ -2,13 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 
 // File API
 export interface FileAPI {
-  save: (
-    filePath: string,
-    content: string,
-  ) => Promise<{ success: boolean; error?: string }>;
-  load: (
-    filePath: string,
-  ) => Promise<{ success: boolean; content?: string; error?: string }>;
+  save: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
+  load: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
   exists: (filePath: string) => Promise<boolean>;
 }
 
@@ -38,15 +33,9 @@ export interface ProjectAPI {
   getMaps: () => Promise<{ id: number; name: string }[] | { error: string }>;
   getMapEvents: (
     mapId: number,
-  ) => Promise<
-    { id: number; name: string; pages: number }[] | { error: string }
-  >;
-  getSwitches: () => Promise<
-    { id: number; name: string }[] | { error: string }
-  >;
-  getVariables: () => Promise<
-    { id: number; name: string }[] | { error: string }
-  >;
+  ) => Promise<{ id: number; name: string; pages: number }[] | { error: string }>;
+  getSwitches: () => Promise<{ id: number; name: string }[] | { error: string }>;
+  getVariables: () => Promise<{ id: number; name: string }[] | { error: string }>;
   exportToMap: (options: {
     mapId: number;
     eventId: number;
@@ -76,8 +65,7 @@ export interface WindowAPI {
 }
 
 const fileApi: FileAPI = {
-  save: (filePath, content) =>
-    ipcRenderer.invoke("file:save", filePath, content),
+  save: (filePath, content) => ipcRenderer.invoke("file:save", filePath, content),
   load: (filePath) => ipcRenderer.invoke("file:load", filePath),
   exists: (filePath) => ipcRenderer.invoke("file:exists", filePath),
 };
@@ -97,8 +85,7 @@ const projectApi: ProjectAPI = {
   getMapEvents: (mapId) => ipcRenderer.invoke("project:get-map-events", mapId),
   getSwitches: () => ipcRenderer.invoke("project:get-switches"),
   getVariables: () => ipcRenderer.invoke("project:get-variables"),
-  exportToMap: (options) =>
-    ipcRenderer.invoke("project:export-to-map", options),
+  exportToMap: (options) => ipcRenderer.invoke("project:export-to-map", options),
 };
 
 const windowApi: WindowAPI = {
@@ -107,11 +94,9 @@ const windowApi: WindowAPI = {
   close: () => ipcRenderer.send("window-close"),
   isMaximized: () => ipcRenderer.invoke("window-is-maximized"),
   onMaximizeChange: (callback) => {
-    const handler = (_event: unknown, isMaximized: boolean): void =>
-      callback(isMaximized);
+    const handler = (_event: unknown, isMaximized: boolean): void => callback(isMaximized);
     ipcRenderer.on("window-maximized-changed", handler);
-    return () =>
-      ipcRenderer.removeListener("window-maximized-changed", handler);
+    return () => ipcRenderer.removeListener("window-maximized-changed", handler);
   },
 };
 

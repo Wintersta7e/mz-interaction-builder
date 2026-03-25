@@ -59,10 +59,7 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
   );
 
   // Check if file exists
-  ipcMain.handle(
-    "file:exists",
-    async (_event, filePath: string): Promise<boolean> => {
-      return existsSync(filePath);
-    },
-  );
+  ipcMain.handle("file:exists", (_event, filePath: string): boolean => {
+    return existsSync(filePath);
+  });
 }

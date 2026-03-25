@@ -24,29 +24,50 @@ interface MZVariable {
   name: string;
 }
 
+/** Raw RPG Maker MZ map event structure from JSON */
+interface RawMZEvent {
+  id: number;
+  name: string;
+  pages: RawMZEventPage[];
+}
+
+/** Raw RPG Maker MZ event page */
+interface RawMZEventPage {
+  list: unknown[];
+  [key: string]: unknown;
+}
+
+/** Raw RPG Maker MZ map data from JSON */
+interface RawMZMapData {
+  events: (RawMZEvent | null)[];
+  [key: string]: unknown;
+}
+
+/** Raw RPG Maker MZ system data from JSON */
+interface RawMZSystemData {
+  switches: string[];
+  variables: string[];
+  [key: string]: unknown;
+}
+
 let projectPath: string | null = null;
 
 export function setupProjectHandlers(ipcMain: IpcMain): void {
   // Validate project path
   ipcMain.handle(
     "project:validate",
-    async (
-      _event,
-      path: string,
-    ): Promise<{ valid: boolean; error?: string }> => {
+    async (_event, path: string): Promise<{ valid: boolean; error?: string }> => {
       try {
         // Check for RPG Maker MZ project files (case-insensitive)
         const files = await readdir(path);
         const projectFile = files.find(
           (f) =>
-            f.toLowerCase().endsWith(".rmmzproject") ||
-            f.toLowerCase().endsWith(".rpgproject"),
+            f.toLowerCase().endsWith(".rmmzproject") || f.toLowerCase().endsWith(".rpgproject"),
         );
         if (!projectFile) {
           return {
             valid: false,
-            error:
-              "Not a valid RPG Maker MZ project (no .rmmzproject or .rpgproject file found)",
+            error: "Not a valid RPG Maker MZ project (no .rmmzproject or .rpgproject file found)",
           };
         }
         // Also verify data folder exists
@@ -66,16 +87,12 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   // Set project path
   ipcMain.handle(
     "project:set-path",
-    async (
-      _event,
-      path: string,
-    ): Promise<{ success?: boolean; error?: string }> => {
+    async (_event, path: string): Promise<{ success?: boolean; error?: string }> => {
       try {
         const files = await readdir(path);
         const hasProject = files.some(
           (f) =>
-            f.toLowerCase().endsWith(".rmmzproject") ||
-            f.toLowerCase().endsWith(".rpgproject"),
+            f.toLowerCase().endsWith(".rmmzproject") || f.toLowerCase().endsWith(".rpgproject"),
         );
         if (!hasProject || !existsSync(join(path, "data"))) {
           return { error: "Not a valid RPG Maker MZ project" };
@@ -89,47 +106,41 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   );
 
   // Get project path
-  ipcMain.handle("project:get-path", async (): Promise<string | null> => {
+  ipcMain.handle("project:get-path", (): string | null => {
     return projectPath;
   });
 
   // Get maps list
-  ipcMain.handle(
-    "project:get-maps",
-    async (): Promise<MZMapInfo[] | { error: string }> => {
-      if (!projectPath) return { error: "No project loaded" };
+  ipcMain.handle("project:get-maps", async (): Promise<MZMapInfo[] | { error: string }> => {
+    if (!projectPath) return { error: "No project loaded" };
 
-      const mapInfoFile = join(projectPath, "data", "MapInfos.json");
-      if (!existsSync(mapInfoFile)) {
-        return { error: "MapInfos.json not found" };
-      }
+    const mapInfoFile = join(projectPath, "data", "MapInfos.json");
+    if (!existsSync(mapInfoFile)) {
+      return { error: "MapInfos.json not found" };
+    }
 
+    try {
+      const data = await readFile(mapInfoFile, "utf-8");
+      let mapInfos: (MZMapInfo | null)[];
       try {
-        const data = await readFile(mapInfoFile, "utf-8");
-        let mapInfos;
-        try {
-          mapInfos = JSON.parse(data);
-        } catch (parseError) {
-          return {
-            error: `Failed to parse MapInfos.json: ${(parseError as Error).message}`,
-          };
-        }
-        return mapInfos
-          .filter((m: MZMapInfo | null) => m)
-          .map((m: MZMapInfo) => ({ id: m.id, name: m.name }));
-      } catch (error) {
-        return { error: (error as Error).message };
+        mapInfos = JSON.parse(data) as (MZMapInfo | null)[];
+      } catch (parseError) {
+        return {
+          error: `Failed to parse MapInfos.json: ${(parseError as Error).message}`,
+        };
       }
-    },
-  );
+      return mapInfos
+        .filter((m): m is MZMapInfo => m !== null)
+        .map((m) => ({ id: m.id, name: m.name }));
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  });
 
   // Get events in a map
   ipcMain.handle(
     "project:get-map-events",
-    async (
-      _event,
-      mapId: number,
-    ): Promise<MZMapEvent[] | { error: string }> => {
+    async (_event, mapId: number): Promise<MZMapEvent[] | { error: string }> => {
       if (!projectPath) return { error: "No project loaded" };
       if (
         typeof mapId !== "number" ||
@@ -140,30 +151,24 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         return { error: "Invalid map ID" };
       }
 
-      const mapFile = join(
-        projectPath,
-        "data",
-        `Map${String(mapId).padStart(3, "0")}.json`,
-      );
+      const mapFile = join(projectPath, "data", `Map${String(mapId).padStart(3, "0")}.json`);
       if (!existsSync(mapFile)) {
         return { error: "Map file not found" };
       }
 
       try {
         const data = await readFile(mapFile, "utf-8");
-        let mapData;
+        let mapData: RawMZMapData;
         try {
-          mapData = JSON.parse(data);
+          mapData = JSON.parse(data) as RawMZMapData;
         } catch (parseError) {
           return {
             error: `Failed to parse Map${String(mapId).padStart(3, "0")}.json: ${(parseError as Error).message}`,
           };
         }
         return mapData.events
-          .filter(
-            (e: { id: number; name: string; pages: unknown[] } | null) => e,
-          )
-          .map((e: { id: number; name: string; pages: unknown[] }) => ({
+          .filter((e): e is RawMZEvent => e !== null)
+          .map((e) => ({
             id: e.id,
             name: e.name || "(unnamed)",
             pages: e.pages?.length || 1,
@@ -175,70 +180,64 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   );
 
   // Get switches
-  ipcMain.handle(
-    "project:get-switches",
-    async (): Promise<MZSwitch[] | { error: string }> => {
-      if (!projectPath) return { error: "No project loaded" };
+  ipcMain.handle("project:get-switches", async (): Promise<MZSwitch[] | { error: string }> => {
+    if (!projectPath) return { error: "No project loaded" };
 
-      const file = join(projectPath, "data", "System.json");
-      if (!existsSync(file)) {
-        return { error: "System.json not found" };
-      }
+    const file = join(projectPath, "data", "System.json");
+    if (!existsSync(file)) {
+      return { error: "System.json not found" };
+    }
 
+    try {
+      const data = await readFile(file, "utf-8");
+      let system: RawMZSystemData;
       try {
-        const data = await readFile(file, "utf-8");
-        let system;
-        try {
-          system = JSON.parse(data);
-        } catch (parseError) {
-          return {
-            error: `Failed to parse System.json: ${(parseError as Error).message}`,
-          };
-        }
-        return system.switches
-          .map((name: string, index: number) => ({
-            id: index,
-            name: name || "",
-          }))
-          .filter((s: MZSwitch) => s.id > 0);
-      } catch (error) {
-        return { error: (error as Error).message };
+        system = JSON.parse(data) as RawMZSystemData;
+      } catch (parseError) {
+        return {
+          error: `Failed to parse System.json: ${(parseError as Error).message}`,
+        };
       }
-    },
-  );
+      return system.switches
+        .map((name, index) => ({
+          id: index,
+          name: name || "",
+        }))
+        .filter((s) => s.id > 0);
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  });
 
   // Get variables
-  ipcMain.handle(
-    "project:get-variables",
-    async (): Promise<MZVariable[] | { error: string }> => {
-      if (!projectPath) return { error: "No project loaded" };
+  ipcMain.handle("project:get-variables", async (): Promise<MZVariable[] | { error: string }> => {
+    if (!projectPath) return { error: "No project loaded" };
 
-      const file = join(projectPath, "data", "System.json");
-      if (!existsSync(file)) {
-        return { error: "System.json not found" };
-      }
+    const file = join(projectPath, "data", "System.json");
+    if (!existsSync(file)) {
+      return { error: "System.json not found" };
+    }
 
+    try {
+      const data = await readFile(file, "utf-8");
+      let system: RawMZSystemData;
       try {
-        const data = await readFile(file, "utf-8");
-        let system;
-        try {
-          system = JSON.parse(data);
-        } catch (parseError) {
-          return {
-            error: `Failed to parse System.json: ${(parseError as Error).message}`,
-          };
-        }
-        return system.variables
-          .map((name: string, index: number) => ({
-            id: index,
-            name: name || "",
-          }))
-          .filter((v: MZVariable) => v.id > 0);
-      } catch (error) {
-        return { error: (error as Error).message };
+        system = JSON.parse(data) as RawMZSystemData;
+      } catch (parseError) {
+        return {
+          error: `Failed to parse System.json: ${(parseError as Error).message}`,
+        };
       }
-    },
-  );
+      return system.variables
+        .map((name, index) => ({
+          id: index,
+          name: name || "",
+        }))
+        .filter((v) => v.id > 0);
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  });
 
   // Export to map
   ipcMain.handle(
@@ -284,9 +283,9 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
       try {
         const data = await readFile(mapFile, "utf-8");
-        let mapData;
+        let mapData: RawMZMapData;
         try {
-          mapData = JSON.parse(data);
+          mapData = JSON.parse(data) as RawMZMapData;
         } catch (parseError) {
           return {
             success: false,
@@ -294,7 +293,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           };
         }
 
-        if (!Array.isArray(mapData?.events)) {
+        if (!Array.isArray(mapData.events)) {
           return {
             success: false,
             error: "Invalid map file structure: no events array",
@@ -303,7 +302,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
         // Find the event
         const mapEvent = mapData.events.find(
-          (e: { id: number } | null) => e && e.id === options.eventId,
+          (e): e is RawMZEvent => e !== null && e.id === options.eventId,
         );
         if (!mapEvent) {
           return {
@@ -312,7 +311,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           };
         }
 
-        const page = mapEvent.pages[options.pageIndex];
+        const page: RawMZEventPage | undefined = mapEvent.pages[options.pageIndex];
         if (!page) {
           return {
             success: false,
@@ -320,7 +319,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           };
         }
 
-        if (!Array.isArray(page?.list)) {
+        if (!Array.isArray(page.list)) {
           return {
             success: false,
             error: `Page ${options.pageIndex} has no command list`,

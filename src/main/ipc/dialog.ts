@@ -6,7 +6,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"],
     });
-    return result.canceled ? null : result.filePaths[0];
+    return result.canceled ? null : (result.filePaths[0] ?? null);
   });
 
   // Save file dialog
@@ -19,13 +19,16 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
         filters?: { name: string; extensions: string[] }[];
       } = {},
     ): Promise<string | null> => {
-      const result = await dialog.showSaveDialog({
-        defaultPath: options.defaultPath,
+      const dialogOptions: Electron.SaveDialogOptions = {
         filters: options.filters || [
           { name: "MZ Interaction Files", extensions: ["mzinteraction"] },
           { name: "All Files", extensions: ["*"] },
         ],
-      });
+      };
+      if (options.defaultPath !== undefined) {
+        dialogOptions.defaultPath = options.defaultPath;
+      }
+      const result = await dialog.showSaveDialog(dialogOptions);
       return result.canceled ? null : result.filePath;
     },
   );
@@ -44,7 +47,7 @@ export function setupDialogHandlers(ipcMain: IpcMain, dialog: Dialog): void {
           { name: "All Files", extensions: ["*"] },
         ],
       });
-      return result.canceled ? null : result.filePaths[0];
+      return result.canceled ? null : (result.filePaths[0] ?? null);
     },
   );
 

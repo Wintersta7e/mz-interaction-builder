@@ -14,8 +14,7 @@ async function ensureTemplatesDir(): Promise<string> {
 
 /** Validate that an ID is safe for use as a filename (no path traversal). */
 function isValidTemplateId(id: unknown): id is string {
-  if (typeof id !== "string" || id.length === 0 || id.length > 255)
-    return false;
+  if (typeof id !== "string" || id.length === 0 || id.length > 255) return false;
   // Must equal its own basename (no slashes, .., etc.) and only contain safe chars
   if (basename(id) !== id) return false;
   return /^[a-zA-Z0-9_-]+$/.test(id);
@@ -31,10 +30,10 @@ function isValidTemplatePayload(value: unknown): value is {
   if (typeof value !== "object" || value === null) return false;
   const obj = value as Record<string, unknown>;
   return (
-    typeof obj.id === "string" &&
-    typeof obj.name === "string" &&
-    Array.isArray(obj.nodes) &&
-    Array.isArray(obj.edges)
+    typeof obj["id"] === "string" &&
+    typeof obj["name"] === "string" &&
+    Array.isArray(obj["nodes"]) &&
+    Array.isArray(obj["edges"])
   );
 }
 
@@ -59,16 +58,20 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
 
       const templates = results
         .filter(
-          (r): r is PromiseFulfilledResult<ReturnType<typeof JSON.parse>> =>
-            r.status === "fulfilled",
+          (
+            r,
+          ): r is PromiseFulfilledResult<{
+            id: string;
+            name: string;
+            nodes: unknown[];
+            edges: unknown[];
+          }> => r.status === "fulfilled",
         )
         .map((r) => r.value);
 
       const failures = results
         .filter((r): r is PromiseRejectedResult => r.status === "rejected")
-        .map((r) =>
-          r.reason instanceof Error ? r.reason.message : String(r.reason),
-        );
+        .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
 
       return { success: true, templates, failures };
     } catch (error) {

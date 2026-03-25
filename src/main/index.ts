@@ -95,7 +95,7 @@ ipcMain.handle("window-is-maximized", () => {
   return mainWindow?.isMaximized();
 });
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.mzinteractionbuilder");
 
   app.on("browser-window-created", (_, window) => {
