@@ -9,6 +9,10 @@
   "compilerOptions": {
     "composite": true,
     "baseUrl": ".",
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],
       "@/*": ["src/renderer/src/*"]
