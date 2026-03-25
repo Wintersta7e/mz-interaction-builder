@@ -11,10 +11,8 @@ interface EndNodeProps {
   selected?: boolean;
 }
 
-function EndNodeComponent({ id, data, selected }: EndNodeProps) {
-  const bookmarked = useDocumentStore((s) =>
-    (s.document.bookmarks ?? []).includes(id),
-  );
+function EndNodeComponent({ id, data, selected }: EndNodeProps): React.JSX.Element {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id));
 
   return (
     <BaseNode

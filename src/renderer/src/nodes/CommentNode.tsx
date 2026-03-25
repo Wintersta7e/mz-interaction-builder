@@ -3,7 +3,10 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import { MessageSquare } from "lucide-react";
 import type { InteractionNode } from "../types";
 
-function CommentNodeComponent({ data, selected }: NodeProps<InteractionNode>) {
+function CommentNodeComponent({
+  data,
+  selected,
+}: NodeProps<InteractionNode>): React.JSX.Element | null {
   if (data.type !== "comment") return null;
 
   return (
@@ -27,10 +30,7 @@ function CommentNodeComponent({ data, selected }: NodeProps<InteractionNode>) {
             className="h-3.5 w-3.5 flex-shrink-0"
             style={{ color: "hsl(40 90% 55%)" }}
           />
-          <span
-            className="text-xs font-medium truncate"
-            style={{ color: "hsl(40 90% 55%)" }}
-          >
+          <span className="text-xs font-medium truncate" style={{ color: "hsl(40 90% 55%)" }}>
             {data.label || "Note"}
           </span>
         </div>

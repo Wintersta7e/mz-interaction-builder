@@ -3,11 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
 import { usePreviewStore } from "../stores";
-import {
-  MutedBadge,
-  MUTED_NODE_CLASSES,
-  MUTED_LABEL_CLASS,
-} from "./MutedBadge";
+import { MutedBadge, MUTED_NODE_CLASSES, MUTED_LABEL_CLASS } from "./MutedBadge";
 
 interface BaseNodeProps {
   nodeId?: string; // For coverage badge lookup
@@ -35,14 +31,12 @@ export function BaseNode({
   hasInput = true,
   hasOutput = true,
   outputCount = 1,
-}: BaseNodeProps) {
+}: BaseNodeProps): React.JSX.Element {
   const coverageStatus = usePreviewStore(
     useCallback(
       (s) => {
         if (!nodeId || !s.isOpen) return null;
-        return s.coverageData.visitedNodes.has(nodeId)
-          ? "visited"
-          : "unvisited";
+        return s.coverageData.visitedNodes.has(nodeId) ? "visited" : "unvisited";
       },
       [nodeId],
     ),
@@ -55,9 +49,7 @@ export function BaseNode({
         muted && MUTED_NODE_CLASSES,
       )}
       style={{
-        borderColor: selected
-          ? accentColor
-          : `color-mix(in srgb, ${accentColor} 30%, transparent)`,
+        borderColor: selected ? accentColor : `color-mix(in srgb, ${accentColor} 30%, transparent)`,
         boxShadow: selected
           ? `0 0 0 2px ${accentColor}, 0 0 15px color-mix(in srgb, ${accentColor} 40%, transparent)`
           : "0 4px 12px hsl(0 0% 0% / 0.3)",
@@ -74,25 +66,16 @@ export function BaseNode({
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <span style={{ color: accentColor }}>{icon}</span>
-        <span
-          className={cn(
-            "text-sm font-medium text-foreground",
-            muted && MUTED_LABEL_CLASS,
-          )}
-        >
+        <span className={cn("text-sm font-medium text-foreground", muted && MUTED_LABEL_CLASS)}>
           {label}
         </span>
         <span className="ml-auto flex items-center gap-1.5">
-          {bookmarked && (
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-          )}
+          {bookmarked && <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />}
           {muted && <MutedBadge />}
           {coverageStatus === "visited" && (
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           )}
-          {coverageStatus === "unvisited" && (
-            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
-          )}
+          {coverageStatus === "unvisited" && <CircleDot className="h-3.5 w-3.5 text-amber-400" />}
         </span>
       </div>
 

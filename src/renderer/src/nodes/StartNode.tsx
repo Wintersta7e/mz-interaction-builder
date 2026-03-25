@@ -11,10 +11,8 @@ interface StartNodeProps {
   selected?: boolean;
 }
 
-function StartNodeComponent({ id, data, selected }: StartNodeProps) {
-  const bookmarked = useDocumentStore((s) =>
-    (s.document.bookmarks ?? []).includes(id),
-  );
+function StartNodeComponent({ id, data, selected }: StartNodeProps): React.JSX.Element {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id));
 
   return (
     <BaseNode
@@ -28,9 +26,7 @@ function StartNodeComponent({ id, data, selected }: StartNodeProps) {
       hasInput={false}
       hasOutput={true}
     >
-      <p className="text-xs text-muted-foreground">
-        Entry point for the interaction
-      </p>
+      <p className="text-xs text-muted-foreground">Entry point for the interaction</p>
     </BaseNode>
   );
 }

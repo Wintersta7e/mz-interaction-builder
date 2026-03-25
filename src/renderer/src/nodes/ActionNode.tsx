@@ -52,10 +52,8 @@ function getActionSummary(action: Action): string {
   }
 }
 
-function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
-  const bookmarked = useDocumentStore((s) =>
-    (s.document.bookmarks ?? []).includes(id),
-  );
+function ActionNodeComponent({ id, data, selected }: ActionNodeProps): React.JSX.Element {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id));
   const actions = data.actions || [];
 
   return (
@@ -83,9 +81,7 @@ function ActionNodeComponent({ id, data, selected }: ActionNodeProps) {
             </div>
           ))}
           {actions.length > 3 && (
-            <p className="text-[11px] text-muted-foreground">
-              +{actions.length - 3} more
-            </p>
+            <p className="text-[11px] text-muted-foreground">+{actions.length - 3} more</p>
           )}
         </div>
       )}

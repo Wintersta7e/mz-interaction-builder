@@ -3,11 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { List, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useDocumentStore, usePreviewStore } from "../stores";
-import {
-  MutedBadge,
-  MUTED_NODE_CLASSES,
-  MUTED_LABEL_CLASS,
-} from "./MutedBadge";
+import { MutedBadge, MUTED_NODE_CLASSES, MUTED_LABEL_CLASS } from "./MutedBadge";
 import type { MenuNodeData } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
@@ -24,10 +20,8 @@ const CONTENT_PADDING = 12; // content: p-3 = 12px
 const CHOICE_HEIGHT = 30; // choice row: py-1.5 + text-sm ≈ 30px
 const CHOICE_GAP = 8; // gap: space-y-2 = 8px
 
-function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
-  const bookmarked = useDocumentStore((s) =>
-    (s.document.bookmarks ?? []).includes(id),
-  );
+function MenuNodeComponent({ id, data, selected }: MenuNodeProps): React.JSX.Element {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id));
   const coverageStatus = usePreviewStore(
     useCallback(
       (s) => {
@@ -42,10 +36,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
   // Calculate the vertical position of each choice handle relative to the node top
   const getChoiceHandleTop = (index: number): number => {
     return (
-      HEADER_HEIGHT +
-      CONTENT_PADDING +
-      index * (CHOICE_HEIGHT + CHOICE_GAP) +
-      CHOICE_HEIGHT / 2
+      HEADER_HEIGHT + CONTENT_PADDING + index * (CHOICE_HEIGHT + CHOICE_GAP) + CHOICE_HEIGHT / 2
     );
   };
 
@@ -100,22 +91,16 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <List className="h-4 w-4" style={{ color: NODE_ACCENT_COLORS.menu }} />
-        <span
-          className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}
-        >
+        <span className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}>
           {data.label || "Choice Menu"}
         </span>
         <span className="ml-auto flex items-center gap-1.5">
-          {bookmarked && (
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-          )}
+          {bookmarked && <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />}
           {data.muted && <MutedBadge />}
           {coverageStatus === "visited" && (
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           )}
-          {coverageStatus === "unvisited" && (
-            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
-          )}
+          {coverageStatus === "unvisited" && <CircleDot className="h-3.5 w-3.5 text-amber-400" />}
         </span>
       </div>
 
@@ -144,23 +129,15 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps) {
                 key={choice.id}
                 className="relative flex items-center justify-between rounded bg-muted px-2 py-1.5 text-sm"
               >
-                <span className="truncate pr-6">
-                  {choice.text || `Choice ${index + 1}`}
-                </span>
+                <span className="truncate pr-6">{choice.text || `Choice ${index + 1}`}</span>
                 <div className="flex items-center gap-1">
                   {choice.hideCondition && (
-                    <span
-                      className="text-xs text-amber-500"
-                      title="Has hide condition"
-                    >
+                    <span className="text-xs text-amber-500" title="Has hide condition">
                       H
                     </span>
                   )}
                   {choice.disableCondition && (
-                    <span
-                      className="text-xs text-red-500"
-                      title="Has disable condition"
-                    >
+                    <span className="text-xs text-red-500" title="Has disable condition">
                       D
                     </span>
                   )}

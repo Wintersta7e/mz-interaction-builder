@@ -1,9 +1,5 @@
 import { memo } from "react";
-import {
-  type EdgeProps,
-  getBezierPath,
-  EdgeLabelRenderer,
-} from "@xyflow/react";
+import { type EdgeProps, getBezierPath, EdgeLabelRenderer } from "@xyflow/react";
 import type { InteractionEdge as InteractionEdgeType } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
@@ -17,7 +13,7 @@ function InteractionEdgeComponent({
   targetPosition,
   data,
   selected,
-}: EdgeProps<InteractionEdgeType>) {
+}: EdgeProps<InteractionEdgeType>): React.JSX.Element {
   const edgeStyle = data?.edgeStyle;
   const sourceColor = data?.sourceColor || "hsl(230 5% 65% / 0.5)";
   const targetColor = data?.targetColor || sourceColor;

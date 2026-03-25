@@ -11,10 +11,13 @@ export const GROUP_COLORS: Record<string, string> = {
   gray: "hsl(220 10% 50%)",
 };
 
-function GroupNodeComponent({ data, selected }: NodeProps<InteractionNode>) {
+function GroupNodeComponent({
+  data,
+  selected,
+}: NodeProps<InteractionNode>): React.JSX.Element | null {
   if (data.type !== "group") return null;
 
-  const accentColor = GROUP_COLORS[data.color] || GROUP_COLORS.blue;
+  const accentColor = GROUP_COLORS[data.color] || GROUP_COLORS["blue"];
 
   return (
     <>
@@ -36,10 +39,7 @@ function GroupNodeComponent({ data, selected }: NodeProps<InteractionNode>) {
           className="flex items-center gap-2 rounded-t-lg px-3 py-1.5"
           style={{ backgroundColor: `${accentColor}15` }}
         >
-          <div
-            className="h-2.5 w-2.5 rounded-full"
-            style={{ backgroundColor: accentColor }}
-          />
+          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: accentColor }} />
           <span className="text-xs font-medium" style={{ color: accentColor }}>
             {data.label}
           </span>

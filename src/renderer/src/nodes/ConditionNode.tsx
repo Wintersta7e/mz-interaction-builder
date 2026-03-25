@@ -3,11 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { GitBranch, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useDocumentStore, usePreviewStore } from "../stores";
-import {
-  MutedBadge,
-  MUTED_NODE_CLASSES,
-  MUTED_LABEL_CLASS,
-} from "./MutedBadge";
+import { MutedBadge, MUTED_NODE_CLASSES, MUTED_LABEL_CLASS } from "./MutedBadge";
 import type { ConditionNodeData } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
 
@@ -17,10 +13,8 @@ interface ConditionNodeProps {
   selected?: boolean;
 }
 
-function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
-  const bookmarked = useDocumentStore((s) =>
-    (s.document.bookmarks ?? []).includes(id),
-  );
+function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps): React.JSX.Element {
+  const bookmarked = useDocumentStore((s) => (s.document.bookmarks ?? []).includes(id));
   const coverageStatus = usePreviewStore(
     useCallback(
       (s) => {
@@ -47,8 +41,7 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
       case "script":
         return (
           condition.script?.slice(0, 30) +
-            (condition.script && condition.script.length > 30 ? "..." : "") ||
-          "Script"
+            (condition.script && condition.script.length > 30 ? "..." : "") || "Script"
         );
       default:
         return "Unknown condition";
@@ -80,34 +73,23 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps) {
 
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <GitBranch
-          className="h-4 w-4"
-          style={{ color: NODE_ACCENT_COLORS.condition }}
-        />
-        <span
-          className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}
-        >
+        <GitBranch className="h-4 w-4" style={{ color: NODE_ACCENT_COLORS.condition }} />
+        <span className={cn("text-sm font-medium", data.muted && MUTED_LABEL_CLASS)}>
           {data.label || "Condition"}
         </span>
         <span className="ml-auto flex items-center gap-1.5">
-          {bookmarked && (
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-          )}
+          {bookmarked && <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />}
           {data.muted && <MutedBadge />}
           {coverageStatus === "visited" && (
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           )}
-          {coverageStatus === "unvisited" && (
-            <CircleDot className="h-3.5 w-3.5 text-amber-400" />
-          )}
+          {coverageStatus === "unvisited" && <CircleDot className="h-3.5 w-3.5 text-amber-400" />}
         </span>
       </div>
 
       {/* Content */}
       <div className="relative px-3 pb-3">
-        <p className="truncate text-[11px] text-muted-foreground">
-          {getConditionSummary()}
-        </p>
+        <p className="truncate text-[11px] text-muted-foreground">{getConditionSummary()}</p>
 
         {/* Branch labels */}
         <div className="mt-2 flex justify-between text-xs">

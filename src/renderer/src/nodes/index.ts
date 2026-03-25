@@ -16,12 +16,4 @@ export const nodeTypes = {
   comment: CommentNode,
 };
 
-export {
-  StartNode,
-  MenuNode,
-  ActionNode,
-  ConditionNode,
-  EndNode,
-  GroupNode,
-  CommentNode,
-};
+export { StartNode, MenuNode, ActionNode, ConditionNode, EndNode, GroupNode, CommentNode };
