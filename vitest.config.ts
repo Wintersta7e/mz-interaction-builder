@@ -10,6 +10,15 @@ export default defineConfig({
     setupFiles: ["./src/renderer/src/__tests__/setup.ts"],
     include: ["src/renderer/src/**/*.{test,spec}.{ts,tsx}"],
     css: false,
+    coverage: {
+      provider: "v8",
+      thresholds: {
+        statements: 50,
+        branches: 50,
+        functions: 50,
+        lines: 50,
+      },
+    },
   },
   resolve: {
     alias: {
