@@ -13,17 +13,13 @@ describe("useDebouncedSync", () => {
 
   it("returns the store value initially", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string>("hello", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string>("hello", commit, 300));
     expect(result.current.localValue).toBe("hello");
   });
 
   it("updates local value immediately on change", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string>("hello", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string>("hello", commit, 300));
 
     act(() => {
       result.current.setLocalValue("hello world");
@@ -35,9 +31,7 @@ describe("useDebouncedSync", () => {
 
   it("commits after delay", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string>("hello", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string>("hello", commit, 300));
 
     act(() => {
       result.current.setLocalValue("hello world");
@@ -52,9 +46,7 @@ describe("useDebouncedSync", () => {
 
   it("resets timer on rapid changes", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string>("", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string>("", commit, 300));
 
     act(() => {
       result.current.setLocalValue("a");
@@ -81,9 +73,7 @@ describe("useDebouncedSync", () => {
 
   it("commits immediately on flush", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string>("", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string>("", commit, 300));
 
     act(() => {
       result.current.setLocalValue("typed");
@@ -100,9 +90,7 @@ describe("useDebouncedSync", () => {
 
   it("flushes null values correctly", () => {
     const commit = vi.fn();
-    const { result } = renderHook(() =>
-      useDebouncedSync<string | null>("initial", commit, 300),
-    );
+    const { result } = renderHook(() => useDebouncedSync<string | null>("initial", commit, 300));
 
     act(() => {
       result.current.setLocalValue(null);

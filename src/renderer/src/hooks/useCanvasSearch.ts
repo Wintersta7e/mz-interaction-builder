@@ -12,7 +12,7 @@ import type { InteractionNode } from "../types";
 export function useCanvasSearch(
   wrapperRef: RefObject<HTMLDivElement | null>,
   nodes: InteractionNode[],
-) {
+): { searchOpen: boolean } {
   const searchOpen = useUIStore((s) => s.searchOpen);
   const searchTerm = useUIStore((s) => s.searchTerm);
   const searchMatches = useUIStore((s) => s.searchMatches);
@@ -37,14 +37,11 @@ export function useCanvasSearch(
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
-    const cleanup = () => {
+    const cleanup = (): void => {
       wrapper
         .querySelectorAll(".search-highlight-current, .search-highlight-match")
         .forEach((el) => {
-          el.classList.remove(
-            "search-highlight-current",
-            "search-highlight-match",
-          );
+          el.classList.remove("search-highlight-current", "search-highlight-match");
         });
     };
 

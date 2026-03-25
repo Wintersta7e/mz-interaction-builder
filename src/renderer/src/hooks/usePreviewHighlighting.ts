@@ -11,9 +11,7 @@ import { usePreviewStore } from "../stores";
  * all nodes just to toggle a CSS class. Follows the same pattern as
  * usePathHighlighting.ts.
  */
-export function usePreviewHighlighting(
-  wrapperRef: RefObject<HTMLDivElement | null>,
-) {
+export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | null>): void {
   const isOpen = usePreviewStore((s) => s.isOpen);
   const previewState = usePreviewStore((s) => s.previewState);
   const coverageData = usePreviewStore((s) => s.coverageData);
@@ -22,9 +20,7 @@ export function usePreviewHighlighting(
 
   // Apply preview DOM classes
   useEffect(() => {
-    const rfEl = wrapperRef.current?.querySelector(
-      ".react-flow",
-    ) as HTMLElement | null;
+    const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
 
     if (isOpen) {
@@ -32,11 +28,9 @@ export function usePreviewHighlighting(
     } else {
       rfEl.removeAttribute("data-previewing");
       // Clean up all preview classes
-      rfEl
-        .querySelectorAll(".preview-current, .preview-visited")
-        .forEach((el) => {
-          el.classList.remove("preview-current", "preview-visited");
-        });
+      rfEl.querySelectorAll(".preview-current, .preview-visited").forEach((el) => {
+        el.classList.remove("preview-current", "preview-visited");
+      });
       return;
     }
 
@@ -68,9 +62,7 @@ export function usePreviewHighlighting(
       rfEl.removeAttribute("data-previewing");
       rfEl
         .querySelectorAll(".preview-current, .preview-visited")
-        .forEach((el) =>
-          el.classList.remove("preview-current", "preview-visited"),
-        );
+        .forEach((el) => el.classList.remove("preview-current", "preview-visited"));
     };
   }, [isOpen, previewState, coverageData, wrapperRef]);
 
@@ -81,7 +73,7 @@ export function usePreviewHighlighting(
     if (node) {
       const w = node.measured?.width ?? 180;
       const h = node.measured?.height ?? 80;
-      setCenter(node.position.x + w / 2, node.position.y + h / 2, {
+      void setCenter(node.position.x + w / 2, node.position.y + h / 2, {
         zoom: 1,
         duration: 300,
       });
@@ -95,7 +87,7 @@ export function usePreviewHighlighting(
     if (node) {
       const w = node.measured?.width ?? 180;
       const h = node.measured?.height ?? 80;
-      setCenter(node.position.x + w / 2, node.position.y + h / 2, {
+      void setCenter(node.position.x + w / 2, node.position.y + h / 2, {
         zoom: 1,
         duration: 300,
       });

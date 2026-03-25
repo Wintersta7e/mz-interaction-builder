@@ -46,7 +46,7 @@ export function useCanvasLayout({
 
       setNodesState(updatedNodes);
       setNodes(updatedNodes);
-      fitView({ padding: 0.1, duration: 300 });
+      void fitView({ padding: 0.1, duration: 300 });
     },
     [nodesRef, edgesRef, push, setNodesState, setNodes, fitView],
   );
@@ -62,9 +62,7 @@ export function useCanvasLayout({
       const aligned = alignNodes(selected, mode);
       const alignedMap = new Map(aligned.map((n) => [n.id, n]));
       const updatedNodes = nodesRef.current.map((n) =>
-        alignedMap.has(n.id)
-          ? { ...n, position: alignedMap.get(n.id)!.position }
-          : n,
+        alignedMap.has(n.id) ? { ...n, position: alignedMap.get(n.id)!.position } : n,
       );
 
       setNodesState(updatedNodes);

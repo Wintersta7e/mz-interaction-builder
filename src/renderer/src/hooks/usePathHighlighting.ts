@@ -10,19 +10,16 @@ import { useUIStore } from "../stores";
  * all nodes just to toggle a CSS class. If React Flow changes its DOM
  * structure (data-id attributes), this may need updating.
  */
-export function usePathHighlighting(
-  wrapperRef: RefObject<HTMLDivElement | null>,
-) {
+export function usePathHighlighting(wrapperRef: RefObject<HTMLDivElement | null>): {
+  isHighlighting: boolean;
+} {
   const highlightedNodeIds = useUIStore((s) => s.highlightedNodeIds);
   const highlightedEdgeIds = useUIStore((s) => s.highlightedEdgeIds);
 
-  const isHighlighting =
-    highlightedNodeIds.length > 0 || highlightedEdgeIds.length > 0;
+  const isHighlighting = highlightedNodeIds.length > 0 || highlightedEdgeIds.length > 0;
 
   useEffect(() => {
-    const rfEl = wrapperRef.current?.querySelector(
-      ".react-flow",
-    ) as HTMLElement | null;
+    const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
 
     if (isHighlighting) {
@@ -56,9 +53,7 @@ export function usePathHighlighting(
 
     return () => {
       rfEl.removeAttribute("data-highlighting");
-      rfEl
-        .querySelectorAll(".highlighted")
-        .forEach((el) => el.classList.remove("highlighted"));
+      rfEl.querySelectorAll(".highlighted").forEach((el) => el.classList.remove("highlighted"));
     };
   }, [isHighlighting, highlightedNodeIds, highlightedEdgeIds, wrapperRef]);
 
