@@ -59,8 +59,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     })),
   setSavedPath: (savedPath) => set({ savedPath }),
   setDirty: (isDirty) => set({ isDirty }),
-  newDocument: () =>
-    set({ document: createEmptyDocument(), savedPath: null, isDirty: false }),
+  newDocument: () => set({ document: createEmptyDocument(), savedPath: null, isDirty: false }),
 
   // Nodes
   addNode: (node) =>
@@ -72,9 +71,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set((state) => ({
       document: {
         ...state.document,
-        nodes: state.document.nodes.map((n) =>
-          n.id === id ? { ...n, ...data } : n,
-        ),
+        nodes: state.document.nodes.map((n) => (n.id === id ? { ...n, ...data } : n)),
       },
       isDirty: true,
     })),
@@ -84,9 +81,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
         ...state.document,
         nodes: state.document.nodes.filter((n) => n.id !== id),
         // Also remove connected edges
-        edges: state.document.edges.filter(
-          (e) => e.source !== id && e.target !== id,
-        ),
+        edges: state.document.edges.filter((e) => e.source !== id && e.target !== id),
         bookmarks: (state.document.bookmarks ?? []).filter((bid) => bid !== id),
       },
       isDirty: true,
@@ -107,9 +102,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set((state) => ({
       document: {
         ...state.document,
-        edges: state.document.edges.map((e) =>
-          e.id === id ? { ...e, ...data } : e,
-        ),
+        edges: state.document.edges.map((e) => (e.id === id ? { ...e, ...data } : e)),
       },
       isDirty: true,
     })),
@@ -140,9 +133,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set((state) => ({
       document: {
         ...state.document,
-        variables: state.document.variables.map((p) =>
-          p.id === id ? { ...p, ...preset } : p,
-        ),
+        variables: state.document.variables.map((p) => (p.id === id ? { ...p, ...preset } : p)),
       },
       isDirty: true,
     })),
@@ -163,9 +154,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
       return {
         document: {
           ...state.document,
-          bookmarks: exists
-            ? bookmarks.filter((id) => id !== nodeId)
-            : [...bookmarks, nodeId],
+          bookmarks: exists ? bookmarks.filter((id) => id !== nodeId) : [...bookmarks, nodeId],
         },
         isDirty: true,
       };
@@ -174,9 +163,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
     set((state) => ({
       document: {
         ...state.document,
-        bookmarks: (state.document.bookmarks ?? []).filter(
-          (id) => id !== nodeId,
-        ),
+        bookmarks: (state.document.bookmarks ?? []).filter((id) => id !== nodeId),
       },
       isDirty: true,
     })),
@@ -217,7 +204,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     const { past, future } = get();
     if (past.length === 0) return null;
 
-    const previous = past[past.length - 1];
+    const previous = past[past.length - 1]!;
     // Snapshot read (not a subscription) — necessary to save current state before restoring
     const currentDoc = useDocumentStore.getState().document;
 
@@ -233,7 +220,7 @@ export const useHistoryStore = create<HistoryState>()((set, get) => ({
     const { past, future } = get();
     if (future.length === 0) return null;
 
-    const next = future[0];
+    const next = future[0]!;
     // Snapshot read (not a subscription) — necessary to save current state before restoring
     const currentDoc = useDocumentStore.getState().document;
 
@@ -333,10 +320,8 @@ export const useUIStore = create<UIState>()(
       snapToGrid: true,
       layoutTrigger: null,
 
-      setSelectedNodeId: (selectedNodeId) =>
-        set({ selectedNodeId, selectedEdgeId: null }),
-      setSelectedEdgeId: (selectedEdgeId) =>
-        set({ selectedEdgeId, selectedNodeId: null }),
+      setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId, selectedEdgeId: null }),
+      setSelectedEdgeId: (selectedEdgeId) => set({ selectedEdgeId, selectedNodeId: null }),
       setPaletteWidth: (paletteWidth) => set({ paletteWidth }),
       setPropertiesWidth: (propertiesWidth) => set({ propertiesWidth }),
       setShowMinimap: (showMinimap) => set({ showMinimap }),
@@ -345,23 +330,18 @@ export const useUIStore = create<UIState>()(
       setSearchOpen: (searchOpen) =>
         set({
           searchOpen,
-          ...(searchOpen
-            ? {}
-            : { searchTerm: "", searchMatches: [], searchCurrentIndex: 0 }),
+          ...(searchOpen ? {} : { searchTerm: "", searchMatches: [], searchCurrentIndex: 0 }),
         }),
       setSearchTerm: (searchTerm) => set({ searchTerm }),
       setSearchMatches: (searchMatches) => set({ searchMatches }),
-      setSearchCurrentIndex: (searchCurrentIndex) =>
-        set({ searchCurrentIndex }),
+      setSearchCurrentIndex: (searchCurrentIndex) => set({ searchCurrentIndex }),
       setSearchResults: (searchMatches, searchCurrentIndex) =>
         set({ searchMatches, searchCurrentIndex }),
       setHighlightedPaths: (highlightedNodeIds, highlightedEdgeIds) =>
         set({ highlightedNodeIds, highlightedEdgeIds }),
-      clearHighlightedPaths: () =>
-        set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
+      clearHighlightedPaths: () => set({ highlightedNodeIds: [], highlightedEdgeIds: [] }),
       setShowBookmarks: (showBookmarks) => set({ showBookmarks }),
-      toggleSnapToGrid: () =>
-        set((state) => ({ snapToGrid: !state.snapToGrid })),
+      toggleSnapToGrid: () => set((state) => ({ snapToGrid: !state.snapToGrid })),
       triggerAutoLayout: (layoutTrigger) => set({ layoutTrigger }),
       clearLayoutTrigger: () => set({ layoutTrigger: null }),
 
@@ -427,10 +407,7 @@ export const useProjectStore = create<ProjectState>()(
       setProjectPath: (projectPath) => set({ projectPath, error: null }),
       addRecentProject: (path) =>
         set((state) => ({
-          recentProjects: [
-            path,
-            ...state.recentProjects.filter((p) => p !== path),
-          ].slice(0, 10),
+          recentProjects: [path, ...state.recentProjects.filter((p) => p !== path)].slice(0, 10),
         })),
       setMaps: (maps) => set({ maps }),
       setSwitches: (switches) => set({ switches }),

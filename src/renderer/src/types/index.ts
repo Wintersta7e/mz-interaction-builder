@@ -116,13 +116,7 @@ export interface EndNodeData extends BaseNodeData {
 }
 
 // Group color presets
-export type GroupColor =
-  | "blue"
-  | "green"
-  | "purple"
-  | "amber"
-  | "rose"
-  | "gray";
+export type GroupColor = "blue" | "green" | "purple" | "amber" | "rose" | "gray";
 
 // Group/frame node - visual container (excluded from export)
 export interface GroupNodeData extends BaseNodeData {
@@ -151,18 +145,10 @@ export type InteractionNodeData =
 export type InteractionNode = Node<InteractionNodeData, InteractionNodeType>;
 
 // Edge types
-export type InteractionEdgeType =
-  | "default"
-  | "choice"
-  | "condition-true"
-  | "condition-false";
+export type InteractionEdgeType = "default" | "choice" | "condition-true" | "condition-false";
 
 // Edge style (visual style applied to rendered edges)
-export type EdgeStyle =
-  | "default"
-  | "choice"
-  | "condition-true"
-  | "condition-false";
+export type EdgeStyle = "default" | "choice" | "condition-true" | "condition-false";
 
 // Edge data
 export interface InteractionEdgeData {

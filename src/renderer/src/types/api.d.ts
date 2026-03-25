@@ -5,13 +5,8 @@ declare global {
   interface Window {
     api: {
       file: {
-        save: (
-          filePath: string,
-          content: string,
-        ) => Promise<{ success: boolean; error?: string }>;
-        load: (
-          filePath: string,
-        ) => Promise<{ success: boolean; content?: string; error?: string }>;
+        save: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
+        load: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
         exists: (filePath: string) => Promise<boolean>;
       };
       dialog: {
@@ -34,20 +29,12 @@ declare global {
         validate: (path: string) => Promise<{ valid: boolean; error?: string }>;
         setPath: (path: string) => Promise<void>;
         getPath: () => Promise<string | null>;
-        getMaps: () => Promise<
-          { id: number; name: string }[] | { error: string }
-        >;
+        getMaps: () => Promise<{ id: number; name: string }[] | { error: string }>;
         getMapEvents: (
           mapId: number,
-        ) => Promise<
-          { id: number; name: string; pages: number }[] | { error: string }
-        >;
-        getSwitches: () => Promise<
-          { id: number; name: string }[] | { error: string }
-        >;
-        getVariables: () => Promise<
-          { id: number; name: string }[] | { error: string }
-        >;
+        ) => Promise<{ id: number; name: string; pages: number }[] | { error: string }>;
+        getSwitches: () => Promise<{ id: number; name: string }[] | { error: string }>;
+        getVariables: () => Promise<{ id: number; name: string }[] | { error: string }>;
         exportToMap: (options: {
           mapId: number;
           eventId: number;
@@ -75,9 +62,7 @@ declare global {
         maximize: () => void;
         close: () => void;
         isMaximized: () => Promise<boolean>;
-        onMaximizeChange: (
-          callback: (isMaximized: boolean) => void,
-        ) => () => void;
+        onMaximizeChange: (callback: (isMaximized: boolean) => void) => () => void;
       };
     };
   }
