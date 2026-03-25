@@ -7,10 +7,7 @@ import type { TranscriptEntry, AvailableChoice } from "../../lib/preview/types";
  * Typewriter hook: reveals `text` one character at a time.
  * Returns [displayedText, isComplete, skipToEnd].
  */
-function useTypewriter(
-  text: string,
-  intervalMs: number = 16,
-): [string, boolean, () => void] {
+function useTypewriter(text: string, intervalMs: number = 16): [string, boolean, () => void] {
   const [charIndex, setCharIndex] = useState(0);
   const targetRef = useRef(text);
 
@@ -51,11 +48,7 @@ function useTypewriter(
  * "Show Text:" so we check both for robustness.
  */
 function extractShowText(entry: TranscriptEntry): string | null {
-  if (
-    entry.nodeType === "action" &&
-    entry.detail &&
-    entry.content.includes("Show Text")
-  ) {
+  if (entry.nodeType === "action" && entry.detail && entry.content.includes("Show Text")) {
     return entry.detail;
   }
   return null;
@@ -64,9 +57,7 @@ function extractShowText(entry: TranscriptEntry): string | null {
 /**
  * Gets the last transcript entry, if any.
  */
-function getLastEntry(
-  transcript: TranscriptEntry[],
-): TranscriptEntry | undefined {
+function getLastEntry(transcript: TranscriptEntry[]): TranscriptEntry | undefined {
   return transcript.length > 0 ? transcript[transcript.length - 1] : undefined;
 }
 
@@ -102,11 +93,7 @@ function DialogueText({ text }: { text: string }): React.JSX.Element {
   );
 }
 
-function RunningDisplay({
-  entry,
-}: {
-  entry: TranscriptEntry;
-}): React.JSX.Element {
+function RunningDisplay({ entry }: { entry: TranscriptEntry }): React.JSX.Element {
   const showText = extractShowText(entry);
 
   if (showText) {
@@ -119,9 +106,7 @@ function RunningDisplay({
       <p className="text-sm text-muted-foreground italic">
         {entry.content}
         {entry.detail && (
-          <span className="block text-xs mt-1 text-muted-foreground/70">
-            {entry.detail}
-          </span>
+          <span className="block text-xs mt-1 text-muted-foreground/70">{entry.detail}</span>
         )}
       </p>
     </div>
@@ -154,9 +139,7 @@ function ChoiceButton({
       onClick={() => onSelect(choice.index)}
       className="w-full text-left px-3 py-2 rounded border border-slate-600 bg-slate-800/80 text-foreground text-sm flex items-center gap-2 hover:bg-slate-700 hover:border-primary/50 transition-colors"
     >
-      <span className="text-xs font-mono text-primary w-5 text-center">
-        {choice.index + 1}
-      </span>
+      <span className="text-xs font-mono text-primary w-5 text-center">{choice.index + 1}</span>
       <span>{choice.text}</span>
     </button>
   );
@@ -189,11 +172,7 @@ function ChoiceDisplay({
       {/* Choice buttons */}
       <div className="space-y-1.5">
         {visibleChoices.map((choice) => (
-          <ChoiceButton
-            key={choice.index}
-            choice={choice}
-            onSelect={handleSelect}
-          />
+          <ChoiceButton key={choice.index} choice={choice} onSelect={handleSelect} />
         ))}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import React from "react";
 import { useDebouncedSync } from "../hooks/useDebouncedSync";
 
 export function DebouncedInput({
@@ -16,12 +17,8 @@ export function DebouncedInput({
   placeholder?: string;
   min?: number;
   max?: number;
-}) {
-  const { localValue, setLocalValue, flush } = useDebouncedSync(
-    String(value ?? ""),
-    onChange,
-    300,
-  );
+}): React.JSX.Element {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(String(value ?? ""), onChange, 300);
   return (
     <input
       type={type}
@@ -48,12 +45,8 @@ export function DebouncedTextarea({
   className?: string;
   rows?: number;
   placeholder?: string;
-}) {
-  const { localValue, setLocalValue, flush } = useDebouncedSync(
-    value,
-    onChange,
-    300,
-  );
+}): React.JSX.Element {
+  const { localValue, setLocalValue, flush } = useDebouncedSync(value, onChange, 300);
   return (
     <textarea
       value={localValue}

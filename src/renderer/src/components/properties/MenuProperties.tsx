@@ -1,13 +1,5 @@
-import { useState } from "react";
-import {
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  EyeOff,
-  Ban,
-} from "lucide-react";
+import React, { useState } from "react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from "lucide-react";
 import { generateId } from "../../stores";
 import { parseIntSafe } from "../../lib/parseIntSafe";
 import type { InteractionNode, MenuNodeData, MenuChoice } from "../../types";
@@ -19,13 +11,13 @@ export interface MenuPropertiesProps {
   updateNode: (id: string, data: Partial<InteractionNode>) => void;
 }
 
-export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
+export function MenuProperties({ node, updateNode }: MenuPropertiesProps): React.JSX.Element {
   // Safe: parent renders this component only when selectedNode.type === 'menu'
   const data = node.data as MenuNodeData;
   const choices = data.choices || [];
   const [expandedChoice, setExpandedChoice] = useState<string | null>(null);
 
-  const addChoice = () => {
+  const addChoice = (): void => {
     const newChoice: MenuChoice = {
       id: generateId("choice"),
       text: `Choice ${choices.length + 1}`,
@@ -35,26 +27,24 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
     });
   };
 
-  const updateChoice = (index: number, updates: Partial<MenuChoice>) => {
-    const newChoices = choices.map((c, i) =>
-      i === index ? { ...c, ...updates } : c,
-    );
+  const updateChoice = (index: number, updates: Partial<MenuChoice>): void => {
+    const newChoices = choices.map((c, i) => (i === index ? { ...c, ...updates } : c));
     updateNode(node.id, { data: { ...data, choices: newChoices } });
   };
 
-  const removeChoice = (index: number) => {
+  const removeChoice = (index: number): void => {
     const newChoices = choices.filter((_, i) => i !== index);
     updateNode(node.id, { data: { ...data, choices: newChoices } });
   };
 
-  const moveChoice = (index: number, direction: "up" | "down") => {
+  const moveChoice = (index: number, direction: "up" | "down"): void => {
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= choices.length) return;
     const newChoices = [...choices];
-    [newChoices[index], newChoices[newIndex]] = [
-      newChoices[newIndex],
-      newChoices[index],
-    ];
+    const a = newChoices[index];
+    const b = newChoices[newIndex];
+    if (a === undefined || b === undefined) return;
+    [newChoices[index], newChoices[newIndex]] = [b, a];
     updateNode(node.id, { data: { ...data, choices: newChoices } });
   };
 
@@ -98,11 +88,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                   placeholder={`Choice ${index + 1}`}
                 />
                 <button
-                  onClick={() =>
-                    setExpandedChoice(
-                      expandedChoice === choice.id ? null : choice.id,
-                    )
-                  }
+                  onClick={() => setExpandedChoice(expandedChoice === choice.id ? null : choice.id)}
                   className={`flex h-6 w-6 items-center justify-center rounded ${
                     choice.hideCondition || choice.disableCondition
                       ? "text-amber-500"
@@ -154,18 +140,12 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     {choice.hideCondition && (
                       <ConditionEditor
                         condition={choice.hideCondition}
-                        onChange={(cond) =>
-                          updateChoice(index, { hideCondition: cond })
-                        }
-                        onRemove={() =>
-                          updateChoice(index, { hideCondition: undefined })
-                        }
+                        onChange={(cond) => updateChoice(index, { hideCondition: cond })}
+                        onRemove={() => updateChoice(index, { hideCondition: undefined })}
                       />
                     )}
                     {!choice.hideCondition && (
-                      <p className="text-xs text-muted-foreground italic">
-                        Choice always visible
-                      </p>
+                      <p className="text-xs text-muted-foreground italic">Choice always visible</p>
                     )}
                   </div>
 
@@ -194,18 +174,12 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
                     {choice.disableCondition && (
                       <ConditionEditor
                         condition={choice.disableCondition}
-                        onChange={(cond) =>
-                          updateChoice(index, { disableCondition: cond })
-                        }
-                        onRemove={() =>
-                          updateChoice(index, { disableCondition: undefined })
-                        }
+                        onChange={(cond) => updateChoice(index, { disableCondition: cond })}
+                        onRemove={() => updateChoice(index, { disableCondition: undefined })}
                       />
                     )}
                     {!choice.disableCondition && (
-                      <p className="text-xs text-muted-foreground italic">
-                        Choice always enabled
-                      </p>
+                      <p className="text-xs text-muted-foreground italic">Choice always enabled</p>
                     )}
                   </div>
                 </div>
@@ -216,19 +190,14 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">
-          Cancel Behavior
-        </label>
+        <label className="mb-1 block text-xs text-muted-foreground">Cancel Behavior</label>
         <select
           value={data.cancelType || "disallow"}
           onChange={(e) =>
             updateNode(node.id, {
               data: {
                 ...data,
-                cancelType: e.target.value as
-                  | "disallow"
-                  | "branch"
-                  | "last_choice",
+                cancelType: e.target.value as "disallow" | "branch" | "last_choice",
               },
             })
           }
@@ -241,9 +210,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">
-          Window Background
-        </label>
+        <label className="mb-1 block text-xs text-muted-foreground">Window Background</label>
         <select
           value={data.windowBackground ?? 0}
           onChange={(e) => {
@@ -259,9 +226,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps) {
       </div>
 
       <div>
-        <label className="mb-1 block text-xs text-muted-foreground">
-          Window Position
-        </label>
+        <label className="mb-1 block text-xs text-muted-foreground">Window Position</label>
         <select
           value={data.windowPosition ?? 2}
           onChange={(e) => {

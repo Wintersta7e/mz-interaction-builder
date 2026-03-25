@@ -29,11 +29,7 @@ export function PreviewControls(): React.JSX.Element {
         disabled={isEnded || !hasEngine}
         onClick={() => usePreviewStore.getState().toggleAutoPlay()}
       >
-        {autoPlay ? (
-          <Pause className="h-4 w-4" />
-        ) : (
-          <Play className="h-4 w-4" />
-        )}
+        {autoPlay ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
 
       {/* Restart */}
@@ -48,24 +44,18 @@ export function PreviewControls(): React.JSX.Element {
 
       {/* Speed slider */}
       <div className="flex items-center gap-1.5 ml-2">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          Speed
-        </span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">Speed</span>
         <input
           type="range"
           min={500}
           max={2000}
           step={100}
           value={autoPlaySpeed}
-          onChange={(e) =>
-            usePreviewStore.getState().setAutoPlaySpeed(Number(e.target.value))
-          }
+          onChange={(e) => usePreviewStore.getState().setAutoPlaySpeed(Number(e.target.value))}
           className="w-20 h-1 accent-primary"
           title={`${autoPlaySpeed}ms per step`}
         />
-        <span className="text-xs text-muted-foreground w-10 text-right">
-          {autoPlaySpeed}ms
-        </span>
+        <span className="text-xs text-muted-foreground w-10 text-right">{autoPlaySpeed}ms</span>
       </div>
     </div>
   );

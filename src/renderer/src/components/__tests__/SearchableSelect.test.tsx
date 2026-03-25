@@ -31,9 +31,7 @@ describe("SearchableSelect", () => {
 
   it("filters items by name on typing", async () => {
     const user = userEvent.setup();
-    render(
-      <SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />,
-    );
+    render(<SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
@@ -46,9 +44,7 @@ describe("SearchableSelect", () => {
 
   it("filters items by ID on typing a number", async () => {
     const user = userEvent.setup();
-    render(
-      <SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />,
-    );
+    render(<SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
@@ -60,9 +56,7 @@ describe("SearchableSelect", () => {
   it("calls onChange when item is clicked", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <SearchableSelect items={mockItems} value={null} onChange={onChange} />,
-    );
+    render(<SearchableSelect items={mockItems} value={null} onChange={onChange} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
@@ -74,9 +68,7 @@ describe("SearchableSelect", () => {
   it("supports keyboard navigation", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <SearchableSelect items={mockItems} value={null} onChange={onChange} />,
-    );
+    render(<SearchableSelect items={mockItems} value={null} onChange={onChange} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);
@@ -86,17 +78,13 @@ describe("SearchableSelect", () => {
   });
 
   it("shows unnamed items with (unnamed)", () => {
-    render(
-      <SearchableSelect items={mockItems} value={100} onChange={vi.fn()} />,
-    );
+    render(<SearchableSelect items={mockItems} value={100} onChange={vi.fn()} />);
     expect(screen.getByDisplayValue("0100: (unnamed)")).toBeInTheDocument();
   });
 
   it("closes dropdown on Escape", async () => {
     const user = userEvent.setup();
-    render(
-      <SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />,
-    );
+    render(<SearchableSelect items={mockItems} value={null} onChange={vi.fn()} />);
 
     const input = screen.getByRole("combobox");
     await user.click(input);

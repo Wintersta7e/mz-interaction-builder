@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Minus, Square, X, Copy } from "lucide-react";
 import "../types/api.d";
 
-export function TitleBar() {
+export function TitleBar(): React.JSX.Element {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
@@ -23,9 +23,7 @@ export function TitleBar() {
     <div className="flex h-8 select-none items-center justify-between bg-background">
       {/* Draggable area */}
       <div className="flex-1 app-drag-region px-4">
-        <span className="text-sm font-medium text-muted-foreground">
-          MZ Interaction Builder
-        </span>
+        <span className="text-sm font-medium text-muted-foreground">MZ Interaction Builder</span>
       </div>
 
       {/* Window controls */}
@@ -40,11 +38,7 @@ export function TitleBar() {
           onClick={() => window.api.window.maximize()}
           className="flex h-8 w-12 items-center justify-center hover:bg-muted"
         >
-          {isMaximized ? (
-            <Copy className="h-3 w-3" />
-          ) : (
-            <Square className="h-3 w-3" />
-          )}
+          {isMaximized ? <Copy className="h-3 w-3" /> : <Square className="h-3 w-3" />}
         </button>
         <button
           onClick={() => window.api.window.close()}

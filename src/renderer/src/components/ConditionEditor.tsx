@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { useProjectStore, generateId } from "../stores";
 import { SearchableSelect } from "./SearchableSelect";
 import { DebouncedTextarea } from "./DebouncedInputs";
@@ -19,7 +19,7 @@ export function ConditionEditor({
   onRemove,
   label,
   scriptRows = 2,
-}: ConditionEditorProps) {
+}: ConditionEditorProps): React.JSX.Element {
   const { switches, variables } = useProjectStore();
   const defaultCondition = useMemo(
     () => ({ id: generateId("cond"), type: "script" as const, script: "" }),
@@ -30,9 +30,7 @@ export function ConditionEditor({
   return (
     <div className="rounded border border-border p-2 space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs text-muted-foreground">
-          {label || "Condition"}
-        </label>
+        <label className="text-xs text-muted-foreground">{label || "Condition"}</label>
         {onRemove && (
           <button
             onClick={onRemove}
@@ -96,8 +94,7 @@ export function ConditionEditor({
               onChange={(e) =>
                 onChange({
                   ...currentCondition,
-                  variableOperator: e.target
-                    .value as Condition["variableOperator"],
+                  variableOperator: e.target.value as Condition["variableOperator"],
                 })
               }
               className="w-20 rounded border border-border bg-background px-2 py-1 text-xs"
@@ -114,8 +111,7 @@ export function ConditionEditor({
               value={currentCondition.variableCompareValue || ""}
               onChange={(e) => {
                 const val = parseIntSafe(e.target.value);
-                if (val !== undefined)
-                  onChange({ ...currentCondition, variableCompareValue: val });
+                if (val !== undefined) onChange({ ...currentCondition, variableCompareValue: val });
               }}
               className="flex-1 rounded border border-border bg-background px-2 py-1 text-xs"
               placeholder="Value"

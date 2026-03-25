@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle, AlertCircle, Info, X } from "lucide-react";
 import { useUIStore, type Toast } from "../stores";
@@ -12,7 +12,7 @@ const ICON_MAP = {
 
 const AUTO_DISMISS_MS = 4000;
 
-function ToastItem({ toast }: { toast: Toast }) {
+function ToastItem({ toast }: { toast: Toast }): React.JSX.Element {
   const removeToast = useUIStore((s) => s.removeToast);
 
   useEffect(() => {
@@ -27,23 +27,20 @@ function ToastItem({ toast }: { toast: Toast }) {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={TRANSITION.normal}
+      transition={TRANSITION["normal"]}
       layout
       className="flex items-center gap-2 rounded-lg border border-border bg-card/90 px-3 py-2 text-sm shadow-lg backdrop-blur-md"
     >
       {ICON_MAP[toast.type]}
       <span>{toast.message}</span>
-      <button
-        onClick={() => removeToast(toast.id)}
-        className="ml-1 rounded p-0.5 hover:bg-muted"
-      >
+      <button onClick={() => removeToast(toast.id)} className="ml-1 rounded p-0.5 hover:bg-muted">
         <X className="h-3 w-3" />
       </button>
     </motion.div>
   );
 }
 
-export function ToastContainer() {
+export function ToastContainer(): React.JSX.Element {
   const toasts = useUIStore((s) => s.toasts);
 
   return (

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import { AnimatePresence } from "framer-motion";
 
 interface LayoutProps {
@@ -17,7 +17,7 @@ export function Layout({
   properties,
   statusbar,
   preview,
-}: LayoutProps) {
+}: LayoutProps): React.JSX.Element {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* Toolbar */}

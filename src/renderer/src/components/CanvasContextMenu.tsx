@@ -141,7 +141,7 @@ export function CanvasContextMenu({
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={TRANSITION.fast}
+      transition={TRANSITION["fast"]}
       style={{
         left: clampedPosition.x,
         top: clampedPosition.y,
@@ -160,9 +160,7 @@ export function CanvasContextMenu({
             onClose();
           }}
         >
-          <span style={{ color: NODE_ACCENT_COLORS[item.type] }}>
-            {item.icon}
-          </span>
+          <span style={{ color: NODE_ACCENT_COLORS[item.type] }}>{item.icon}</span>
           <span>{item.label}</span>
         </button>
       ))}

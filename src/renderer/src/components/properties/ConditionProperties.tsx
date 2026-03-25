@@ -1,3 +1,4 @@
+import React from "react";
 import type { InteractionNode, ConditionNodeData } from "../../types";
 import { ConditionEditor } from "../ConditionEditor";
 
@@ -9,14 +10,12 @@ export interface ConditionPropertiesProps {
 export function ConditionProperties({
   node,
   updateNode,
-}: ConditionPropertiesProps) {
+}: ConditionPropertiesProps): React.JSX.Element {
   const data = node.data as ConditionNodeData;
   return (
     <ConditionEditor
       condition={data.condition}
-      onChange={(condition) =>
-        updateNode(node.id, { data: { ...data, condition } })
-      }
+      onChange={(condition) => updateNode(node.id, { data: { ...data, condition } })}
       scriptRows={4}
     />
   );

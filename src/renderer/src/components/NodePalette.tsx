@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Play,
   List,
@@ -71,11 +71,8 @@ interface NodePaletteProps {
   onDragStart: (type: InteractionNodeType) => void;
 }
 
-export function NodePalette({ onDragStart }: NodePaletteProps) {
-  const handleDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    type: InteractionNodeType,
-  ) => {
+export function NodePalette({ onDragStart }: NodePaletteProps): React.JSX.Element {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, type: InteractionNodeType): void => {
     e.dataTransfer.setData("application/interaction-node", type);
     e.dataTransfer.effectAllowed = "move";
     onDragStart(type);
@@ -83,9 +80,7 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
 
   return (
     <div className="p-4">
-      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
-        NODES
-      </h2>
+      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">NODES</h2>
       <div className="space-y-2">
         {nodeTypes.map((node) => (
           <div
@@ -102,24 +97,19 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
             </div>
             <div>
               <div className="text-sm font-medium">{node.label}</div>
-              <div className="text-xs text-muted-foreground">
-                {node.description}
-              </div>
+              <div className="text-xs text-muted-foreground">{node.description}</div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
-          HELP
-        </h2>
+        <h2 className="mb-2 text-sm font-semibold text-muted-foreground">HELP</h2>
         <p className="text-xs text-muted-foreground">
           Drag nodes from here onto the canvas to create your interaction flow.
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
-          Connect nodes by dragging from output handles (right) to input handles
-          (left).
+          Connect nodes by dragging from output handles (right) to input handles (left).
         </p>
       </div>
 
@@ -128,11 +118,9 @@ export function NodePalette({ onDragStart }: NodePaletteProps) {
   );
 }
 
-function TemplatePalette() {
+function TemplatePalette(): React.JSX.Element | null {
   const { templates, isLoaded, deleteTemplate } = useTemplateStore();
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
-    new Set(),
-  );
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
   if (!isLoaded || templates.length === 0) return null;
 
@@ -151,7 +139,7 @@ function TemplatePalette() {
     return a.localeCompare(b);
   });
 
-  const toggleCategory = (cat: string) => {
+  const toggleCategory = (cat: string): void => {
     setCollapsedCategories((prev) => {
       const next = new Set(prev);
       if (next.has(cat)) next.delete(cat);
@@ -160,12 +148,12 @@ function TemplatePalette() {
     });
   };
 
-  const handleDragStart = (e: React.DragEvent, templateId: string) => {
+  const handleDragStart = (e: React.DragEvent, templateId: string): void => {
     e.dataTransfer.setData("application/interaction-template", templateId);
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDelete = async (e: React.MouseEvent, template: NodeTemplate) => {
+  const handleDelete = async (e: React.MouseEvent, template: NodeTemplate): Promise<void> => {
     e.stopPropagation();
     e.preventDefault();
     const result = await window.api.dialog.message({
@@ -188,9 +176,7 @@ function TemplatePalette() {
 
   return (
     <div className="mt-6">
-      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">
-        TEMPLATES
-      </h2>
+      <h2 className="mb-4 text-sm font-semibold text-muted-foreground">TEMPLATES</h2>
       <div className="space-y-2">
         {categories.map((cat) => (
           <div key={cat}>
@@ -216,16 +202,16 @@ function TemplatePalette() {
                     title={template.description || template.name}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
-                        {template.name}
-                      </div>
+                      <div className="truncate text-sm font-medium">{template.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {template.nodes.length} node
                         {template.nodes.length !== 1 ? "s" : ""}
                       </div>
                     </div>
                     <button
-                      onClick={(e) => handleDelete(e, template)}
+                      onClick={(e) => {
+                        void handleDelete(e, template);
+                      }}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
                     >
                       <Trash2 className="h-3 w-3" />

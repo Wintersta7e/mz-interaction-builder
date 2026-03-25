@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Copy, Check, Download } from "lucide-react";
 import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
@@ -11,14 +11,12 @@ interface ExportModalProps {
   onClose: () => void;
 }
 
-export function ExportModal({ isOpen, onClose }: ExportModalProps) {
+export function ExportModal({ isOpen, onClose }: ExportModalProps): React.JSX.Element {
   const { document } = useDocumentStore();
   const { projectPath, setProjectPath, maps, setMaps } = useProjectStore();
 
   const [selectedMapId, setSelectedMapId] = useState<number | null>(null);
-  const [events, setEvents] = useState<
-    { id: number; name: string; pages: number }[]
-  >([]);
+  const [events, setEvents] = useState<{ id: number; name: string; pages: number }[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [selectedPageIndex, setSelectedPageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,18 +34,18 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
   // Load maps when project path changes
   useEffect(() => {
     if (projectPath && isOpen) {
-      loadMaps();
+      void loadMaps();
     }
   }, [projectPath, isOpen]);
 
   // Load events when map changes
   useEffect(() => {
     if (selectedMapId !== null) {
-      loadEvents(selectedMapId);
+      void loadEvents(selectedMapId);
     }
   }, [selectedMapId]);
 
-  const loadMaps = async () => {
+  const loadMaps = async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -64,7 +62,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     }
   };
 
-  const loadEvents = async (mapId: number) => {
+  const loadEvents = async (mapId: number): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -82,7 +80,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     }
   };
 
-  const handleSelectProject = async () => {
+  const handleSelectProject = async (): Promise<void> => {
     const path = await window.api.dialog.openFolder();
     if (!path) return;
 
@@ -96,16 +94,14 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     setProjectPath(path);
   };
 
-  const handleCopyJSON = async () => {
+  const handleCopyJSON = async (): Promise<void> => {
     try {
       const json = exportAsJSON(document);
       await navigator.clipboard.writeText(json);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopied(true);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
-      useUIStore
-        .getState()
-        .addToast({ message: "Copied to clipboard", type: "success" });
+      useUIStore.getState().addToast({ message: "Copied to clipboard", type: "success" });
     } catch (err) {
       const detail = err instanceof Error ? `: ${err.message}` : "";
       useUIStore.getState().addToast({
@@ -115,7 +111,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
     }
   };
 
-  const handleExportToMap = async () => {
+  const handleExportToMap = async (): Promise<void> => {
     if (!selectedMapId || !selectedEventId) {
       setError("Please select a map and event");
       return;
@@ -176,14 +172,14 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={TRANSITION.fast}
+          transition={TRANSITION["fast"]}
         >
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <motion.div
             className="relative w-[500px] rounded-lg border border-border bg-card shadow-overlay"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={TRANSITION.normal}
+            transition={TRANSITION["normal"]}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -199,18 +195,15 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
               <div className="rounded border border-border p-4">
                 <h3 className="mb-2 font-medium">Copy as JSON</h3>
                 <p className="mb-3 text-sm text-muted-foreground">
-                  Copy the generated RPG Maker commands to clipboard for manual
-                  pasting.
+                  Copy the generated RPG Maker commands to clipboard for manual pasting.
                 </p>
                 <button
-                  onClick={handleCopyJSON}
+                  onClick={() => {
+                    void handleCopyJSON();
+                  }}
                   className="flex items-center gap-2 rounded bg-secondary px-4 py-2 text-sm hover:bg-secondary/80"
                 >
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   {copied ? "Copied!" : "Copy to Clipboard"}
                 </button>
               </div>
@@ -224,9 +217,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
                 {/* Project Selection */}
                 <div className="mb-3">
-                  <label className="mb-1 block text-sm text-muted-foreground">
-                    Project
-                  </label>
+                  <label className="mb-1 block text-sm text-muted-foreground">Project</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -236,7 +227,9 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
                       placeholder="No project selected"
                     />
                     <button
-                      onClick={handleSelectProject}
+                      onClick={() => {
+                        void handleSelectProject();
+                      }}
                       className="rounded bg-secondary px-3 py-2 text-sm hover:bg-secondary/80"
                     >
                       Browse
@@ -246,15 +239,11 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
                 {/* Map Selection */}
                 <div className="mb-3">
-                  <label className="mb-1 block text-sm text-muted-foreground">
-                    Map
-                  </label>
+                  <label className="mb-1 block text-sm text-muted-foreground">Map</label>
                   <select
                     value={selectedMapId || ""}
                     onChange={(e) =>
-                      setSelectedMapId(
-                        e.target.value ? parseInt(e.target.value, 10) : null,
-                      )
+                      setSelectedMapId(e.target.value ? parseInt(e.target.value, 10) : null)
                     }
                     disabled={!projectPath || isLoading}
                     className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
@@ -270,15 +259,11 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
                 {/* Event Selection */}
                 <div className="mb-3">
-                  <label className="mb-1 block text-sm text-muted-foreground">
-                    Event
-                  </label>
+                  <label className="mb-1 block text-sm text-muted-foreground">Event</label>
                   <select
                     value={selectedEventId || ""}
                     onChange={(e) =>
-                      setSelectedEventId(
-                        e.target.value ? parseInt(e.target.value, 10) : null,
-                      )
+                      setSelectedEventId(e.target.value ? parseInt(e.target.value, 10) : null)
                     }
                     disabled={!selectedMapId || isLoading}
                     className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
@@ -294,14 +279,10 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
                 {/* Page Selection */}
                 <div className="mb-3">
-                  <label className="mb-1 block text-sm text-muted-foreground">
-                    Page
-                  </label>
+                  <label className="mb-1 block text-sm text-muted-foreground">Page</label>
                   <select
                     value={selectedPageIndex}
-                    onChange={(e) =>
-                      setSelectedPageIndex(parseInt(e.target.value, 10))
-                    }
+                    onChange={(e) => setSelectedPageIndex(parseInt(e.target.value, 10))}
                     disabled={!selectedEventId || isLoading}
                     className="w-full rounded border border-border bg-background px-3 py-2 text-sm disabled:opacity-50"
                   >
@@ -322,7 +303,9 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
                 {/* Export Button */}
                 <button
-                  onClick={handleExportToMap}
+                  onClick={() => {
+                    void handleExportToMap();
+                  }}
                   disabled={!selectedMapId || !selectedEventId || isLoading}
                   className="flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >

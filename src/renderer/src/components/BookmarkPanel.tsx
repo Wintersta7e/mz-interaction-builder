@@ -1,14 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Bookmark, ChevronDown, ChevronRight, X } from "lucide-react";
-import {
-  Play,
-  List,
-  Zap,
-  GitBranch,
-  Square,
-  Group,
-  MessageSquare,
-} from "lucide-react";
+import { Play, List, Zap, GitBranch, Square, Group, MessageSquare } from "lucide-react";
 import { useDocumentStore, useUIStore } from "../stores";
 import type { InteractionNodeType } from "../types";
 import { NODE_ACCENT_COLORS } from "../lib/nodeColors";
@@ -28,7 +20,7 @@ interface BookmarkPanelProps {
   onNavigateToNode: (nodeId: string) => void;
 }
 
-export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
+export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps): React.JSX.Element | null {
   const nodes = useDocumentStore((s) => s.document.nodes);
   const bookmarks = useDocumentStore((s) => s.document.bookmarks) ?? [];
   const removeBookmark = useDocumentStore((s) => s.removeBookmark);
@@ -60,14 +52,14 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={TRANSITION.normal}
+            transition={TRANSITION["normal"]}
             className="overflow-hidden"
           >
             <div className="max-h-[200px] overflow-y-auto border-t border-border py-1">
               {bookmarks.map((nodeId) => {
                 const node = nodes.find((n) => n.id === nodeId);
                 if (!node) return null;
-                const nodeType = node.type as InteractionNodeType;
+                const nodeType = node.type;
                 return (
                   <button
                     key={nodeId}
@@ -77,9 +69,7 @@ export function BookmarkPanel({ onNavigateToNode }: BookmarkPanelProps) {
                     <span style={{ color: NODE_ACCENT_COLORS[nodeType] }}>
                       {nodeIcons[nodeType]}
                     </span>
-                    <span className="flex-1 truncate text-foreground">
-                      {node.data.label}
-                    </span>
+                    <span className="flex-1 truncate text-foreground">{node.data.label}</span>
                     <span
                       role="button"
                       tabIndex={0}

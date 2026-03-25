@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { v4 as uuid } from "uuid";
@@ -20,7 +20,7 @@ export function SaveTemplateModal({
   onClose,
   nodes,
   edges,
-}: SaveTemplateModalProps) {
+}: SaveTemplateModalProps): React.JSX.Element {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -50,14 +50,12 @@ export function SaveTemplateModal({
     return counts;
   }, [nodes]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     if (!name.trim()) return;
 
     // Filter edges to only include internal ones
     const nodeIds = new Set(nodes.map((n) => n.id));
-    const internalEdges = edges.filter(
-      (e) => nodeIds.has(e.source) && nodeIds.has(e.target),
-    );
+    const internalEdges = edges.filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target));
 
     const template: NodeTemplate = {
       id: uuid(),
@@ -71,9 +69,7 @@ export function SaveTemplateModal({
 
     const result = await saveTemplate(template);
     if (result.success) {
-      useUIStore
-        .getState()
-        .addToast({ message: "Template saved", type: "success" });
+      useUIStore.getState().addToast({ message: "Template saved", type: "success" });
       onClose();
     } else {
       await window.api.dialog.message({
@@ -93,17 +89,14 @@ export function SaveTemplateModal({
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={TRANSITION.fast}
+          transition={TRANSITION["fast"]}
         >
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={onClose}
-          />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
           <motion.div
             className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-overlay"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={TRANSITION.normal}
+            transition={TRANSITION["normal"]}
           >
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">Save as Template</h2>
@@ -144,9 +137,7 @@ export function SaveTemplateModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">
-                  Description
-                </label>
+                <label className="mb-1 block text-xs text-muted-foreground">Description</label>
                 <input
                   type="text"
                   value={description}
@@ -157,9 +148,7 @@ export function SaveTemplateModal({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">
-                  Category
-                </label>
+                <label className="mb-1 block text-xs text-muted-foreground">Category</label>
                 <input
                   type="text"
                   value={category}
@@ -187,7 +176,9 @@ export function SaveTemplateModal({
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => {
+                  void handleSave();
+                }}
                 disabled={!name.trim()}
                 className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >

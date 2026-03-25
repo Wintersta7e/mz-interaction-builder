@@ -1,6 +1,7 @@
+import React from "react";
 import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
 
-export function StatusBar() {
+export function StatusBar(): React.JSX.Element {
   const nodeCount = useDocumentStore((s) => s.document.nodes.length);
   const edgeCount = useDocumentStore((s) => s.document.edges.length);
   const savedPath = useDocumentStore((s) => s.savedPath);
@@ -15,9 +16,7 @@ export function StatusBar() {
           {savedPath ? savedPath : "Unsaved"}
           {isDirty && " *"}
         </span>
-        {projectPath && (
-          <span className="text-primary">Project: {projectPath}</span>
-        )}
+        {projectPath && <span className="text-primary">Project: {projectPath}</span>}
       </div>
       <div className="flex items-center gap-4">
         <span>Nodes: {nodeCount}</span>

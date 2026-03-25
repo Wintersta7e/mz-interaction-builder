@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, type ReactNode } from "react";
+import React, { Component, useEffect, useMemo, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Play, X, AlertTriangle, RotateCcw } from "lucide-react";
 import { usePreviewStore } from "../../stores";
@@ -19,17 +19,14 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-class PreviewErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+class PreviewErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { error };
   }
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.error) {
       return (
         <div className="p-4 space-y-3">
@@ -37,9 +34,7 @@ class PreviewErrorBoundary extends Component<
             <AlertTriangle className="h-4 w-4" />
             <span className="text-sm font-medium">Preview Error</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {this.state.error.message}
-          </p>
+          <p className="text-xs text-muted-foreground">{this.state.error.message}</p>
           <button
             onClick={() => {
               this.setState({ error: null });
@@ -84,9 +79,7 @@ export function PreviewPanel(): React.JSX.Element {
     const totalCount = functionalNodes.length;
     if (totalCount === 0) return null;
 
-    const visitedCount = functionalNodes.filter((n) =>
-      coverageData.visitedNodes.has(n.id),
-    ).length;
+    const visitedCount = functionalNodes.filter((n) => coverageData.visitedNodes.has(n.id)).length;
     const pct = Math.round((visitedCount / totalCount) * 100);
 
     return `${visitedCount}/${totalCount} (${pct}%)`;
@@ -98,7 +91,7 @@ export function PreviewPanel(): React.JSX.Element {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={TRANSITION.normal}
+      transition={TRANSITION["normal"]}
       className="flex-shrink-0 border-l border-border flex flex-col bg-background overflow-hidden"
     >
       {/* Header */}
@@ -106,17 +99,9 @@ export function PreviewPanel(): React.JSX.Element {
         <div className="flex items-center gap-2">
           <Play className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold">Preview</span>
-          {coverageStat && (
-            <span className="text-xs text-muted-foreground">
-              {coverageStat}
-            </span>
-          )}
+          {coverageStat && <span className="text-xs text-muted-foreground">{coverageStat}</span>}
         </div>
-        <button
-          className="p-1 rounded hover:bg-muted"
-          title="Close preview"
-          onClick={close}
-        >
+        <button className="p-1 rounded hover:bg-muted" title="Close preview" onClick={close}>
           <X className="h-4 w-4" />
         </button>
       </div>

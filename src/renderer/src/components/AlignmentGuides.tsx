@@ -1,3 +1,4 @@
+import React from "react";
 import { useStore } from "@xyflow/react";
 import type { GuideLine } from "../lib/alignmentGuides";
 
@@ -5,7 +6,7 @@ interface AlignmentGuidesProps {
   guides: GuideLine[];
 }
 
-export function AlignmentGuides({ guides }: AlignmentGuidesProps) {
+export function AlignmentGuides({ guides }: AlignmentGuidesProps): React.JSX.Element | null {
   const transform = useStore((s) => s.transform);
 
   if (guides.length === 0) return null;

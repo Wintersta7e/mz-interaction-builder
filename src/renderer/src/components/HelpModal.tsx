@@ -1,3 +1,4 @@
+import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Keyboard, Mouse, FileText, HelpCircle } from "lucide-react";
 import { VARIANTS, TRANSITION } from "../lib/animations";
@@ -7,7 +8,7 @@ interface HelpModalProps {
   onClose: () => void;
 }
 
-export function HelpModal({ isOpen, onClose }: HelpModalProps) {
+export function HelpModal({ isOpen, onClose }: HelpModalProps): React.JSX.Element {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -17,14 +18,14 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={TRANSITION.fast}
+          transition={TRANSITION["fast"]}
         >
           <div className="absolute inset-0 bg-black/50" onClick={onClose} />
           <motion.div
             className="relative max-h-[80vh] w-[600px] overflow-hidden rounded-lg border border-border bg-card shadow-overlay"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={TRANSITION.normal}
+            transition={TRANSITION["normal"]}
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -48,78 +49,43 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 <div className="space-y-2 text-sm">
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 rounded bg-muted p-3">
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+N
-                      </kbd>{" "}
-                      New file
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+N</kbd> New file
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+O
-                      </kbd>{" "}
-                      Open file
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+O</kbd> Open file
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+S
-                      </kbd>{" "}
-                      Save file
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+S</kbd> Save file
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+Z
-                      </kbd>{" "}
-                      Undo
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+Z</kbd> Undo
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+Y
-                      </kbd>{" "}
-                      Redo
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+Y</kbd> Redo
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+Shift+Z
-                      </kbd>{" "}
-                      Redo
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+Shift+Z</kbd> Redo
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Delete
-                      </kbd>{" "}
-                      Delete node
+                      <kbd className="rounded bg-background px-2 py-0.5">Delete</kbd> Delete node
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Backspace
-                      </kbd>{" "}
-                      Delete node
+                      <kbd className="rounded bg-background px-2 py-0.5">Backspace</kbd> Delete node
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+C
-                      </kbd>{" "}
-                      Copy node
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+C</kbd> Copy node
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        Ctrl+V
-                      </kbd>{" "}
-                      Paste node
+                      <kbd className="rounded bg-background px-2 py-0.5">Ctrl+V</kbd> Paste node
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">B</kbd>{" "}
-                      Toggle bookmark
+                      <kbd className="rounded bg-background px-2 py-0.5">B</kbd> Toggle bookmark
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">M</kbd>{" "}
-                      Mute/Unmute node
+                      <kbd className="rounded bg-background px-2 py-0.5">M</kbd> Mute/Unmute node
                     </div>
                     <div>
-                      <kbd className="rounded bg-background px-2 py-0.5">
-                        F1
-                      </kbd>{" "}
-                      Help
+                      <kbd className="rounded bg-background px-2 py-0.5">F1</kbd> Help
                     </div>
                   </div>
                 </div>
@@ -135,8 +101,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   <div className="rounded bg-muted p-3">
                     <ul className="space-y-1">
                       <li>
-                        <strong>Drag from palette</strong> - Add new node to
-                        canvas
+                        <strong>Drag from palette</strong> - Add new node to canvas
                       </li>
                       <li>
                         <strong>Click node</strong> - Select node for editing
@@ -157,8 +122,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                         <strong>Right-drag / Middle-drag</strong> - Pan canvas
                       </li>
                       <li>
-                        <strong>Drag edge endpoint</strong> - Reconnect to
-                        different handle
+                        <strong>Drag edge endpoint</strong> - Reconnect to different handle
                       </li>
                       <li>
                         <strong>Drop edge on empty</strong> - Delete edge
@@ -178,38 +142,35 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   <div className="rounded border border-green-500/30 bg-green-500/10 p-3">
                     <strong className="text-green-500">Start Node</strong>
                     <p className="text-muted-foreground">
-                      Entry point of the interaction. Every interaction needs
-                      exactly one Start node.
+                      Entry point of the interaction. Every interaction needs exactly one Start
+                      node.
                     </p>
                   </div>
                   <div className="rounded border border-purple-500/30 bg-purple-500/10 p-3">
-                    <strong className="text-purple-500">
-                      Choice Menu Node
-                    </strong>
+                    <strong className="text-purple-500">Choice Menu Node</strong>
                     <p className="text-muted-foreground">
-                      Displays choices to the player. Each choice has its own
-                      output handle. Supports hide/disable conditions.
+                      Displays choices to the player. Each choice has its own output handle.
+                      Supports hide/disable conditions.
                     </p>
                   </div>
                   <div className="rounded border border-blue-500/30 bg-blue-500/10 p-3">
                     <strong className="text-blue-500">Action Node</strong>
                     <p className="text-muted-foreground">
-                      Executes actions: scripts, set variables, set switches,
-                      common events, show text, or plugin commands.
+                      Executes actions: scripts, set variables, set switches, common events, show
+                      text, or plugin commands.
                     </p>
                   </div>
                   <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3">
                     <strong className="text-amber-500">Condition Node</strong>
                     <p className="text-muted-foreground">
-                      Branches based on switches, variables, or scripts. Has
-                      True (green) and False (red) outputs.
+                      Branches based on switches, variables, or scripts. Has True (green) and False
+                      (red) outputs.
                     </p>
                   </div>
                   <div className="rounded border border-red-500/30 bg-red-500/10 p-3">
                     <strong className="text-red-500">End Node</strong>
                     <p className="text-muted-foreground">
-                      Exit point of the interaction. Terminates the current
-                      branch.
+                      Exit point of the interaction. Terminates the current branch.
                     </p>
                   </div>
                 </div>
@@ -219,26 +180,12 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <section>
                 <h3 className="mb-3 font-semibold">Tips</h3>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  <li>
-                    Load your RPG Maker project first to enable switch/variable
-                    dropdowns
-                  </li>
+                  <li>Load your RPG Maker project first to enable switch/variable dropdowns</li>
                   <li>Connect back to earlier nodes to create loops</li>
-                  <li>
-                    Use hide conditions to show choices only when conditions are
-                    met
-                  </li>
-                  <li>
-                    Use disable conditions to gray out choices but still show
-                    them
-                  </li>
-                  <li>
-                    Auto-save is enabled when the file has been saved at least
-                    once
-                  </li>
-                  <li>
-                    Export directly to a map event or copy commands to clipboard
-                  </li>
+                  <li>Use hide conditions to show choices only when conditions are met</li>
+                  <li>Use disable conditions to gray out choices but still show them</li>
+                  <li>Auto-save is enabled when the file has been saved at least once</li>
+                  <li>Export directly to a map event or copy commands to clipboard</li>
                 </ul>
               </section>
 

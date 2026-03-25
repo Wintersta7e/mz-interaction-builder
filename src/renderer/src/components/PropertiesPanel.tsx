@@ -1,7 +1,7 @@
 import { useDocumentStore, useUIStore } from "../stores";
 import type { GroupColor } from "../types";
 import { Save } from "lucide-react";
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "../lib/utils";
 import { VARIANTS, TRANSITION } from "../lib/animations";
@@ -13,15 +13,13 @@ import { ActionProperties } from "./properties/ActionProperties";
 import { ConditionProperties } from "./properties/ConditionProperties";
 import { CommentProperties } from "./properties/CommentProperties";
 
-export function PropertiesPanel() {
+export function PropertiesPanel(): React.JSX.Element {
   const selectedNodeId = useUIStore((s) => s.selectedNodeId);
   const updateNode = useDocumentStore((s) => s.updateNode);
   const selectedNode = useDocumentStore(
     useCallback(
       (s) =>
-        selectedNodeId
-          ? (s.document.nodes.find((n) => n.id === selectedNodeId) ?? null)
-          : null,
+        selectedNodeId ? (s.document.nodes.find((n) => n.id === selectedNodeId) ?? null) : null,
       [selectedNodeId],
     ),
   );
@@ -31,9 +29,7 @@ export function PropertiesPanel() {
   if (!selectedNode) {
     return (
       <div className="flex h-full items-center justify-center p-4 text-muted-foreground">
-        <p className="text-center text-sm">
-          Select a node to edit its properties
-        </p>
+        <p className="text-center text-sm">Select a node to edit its properties</p>
       </div>
     );
   }
@@ -46,9 +42,7 @@ export function PropertiesPanel() {
 
       {/* Common properties */}
       <div className="mb-4">
-        <label className="mb-1 block text-xs text-muted-foreground">
-          Label
-        </label>
+        <label className="mb-1 block text-xs text-muted-foreground">Label</label>
         <DebouncedInput
           value={selectedNode.data.label}
           onChange={(value) =>
@@ -65,9 +59,7 @@ export function PropertiesPanel() {
         selectedNode.type !== "group" &&
         selectedNode.type !== "comment" && (
           <div className="mb-4 flex items-center justify-between">
-            <label className="text-xs text-muted-foreground">
-              Muted (skip in export)
-            </label>
+            <label className="text-xs text-muted-foreground">Muted (skip in export)</label>
             <button
               onClick={() =>
                 updateNode(selectedNode.id, {
@@ -97,7 +89,7 @@ export function PropertiesPanel() {
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={TRANSITION.fast}
+          transition={TRANSITION["fast"]}
         >
           {selectedNode.type === "menu" && (
             <MenuProperties node={selectedNode} updateNode={updateNode} />
@@ -108,51 +100,38 @@ export function PropertiesPanel() {
           {selectedNode.type === "condition" && (
             <ConditionProperties node={selectedNode} updateNode={updateNode} />
           )}
-          {selectedNode.type === "group" &&
-            selectedNode.data.type === "group" && (
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Color
-                  </label>
-                  <div className="flex gap-1.5">
-                    {(
-                      [
-                        "blue",
-                        "green",
-                        "purple",
-                        "amber",
-                        "rose",
-                        "gray",
-                      ] as const
-                    ).map((c) => (
-                      <button
-                        key={c}
-                        onClick={() =>
-                          updateNode(selectedNode.id, {
-                            data: {
-                              ...selectedNode.data,
-                              color: c as GroupColor,
-                            },
-                          })
-                        }
-                        className={`h-6 w-6 rounded-full border-2 ${
-                          selectedNode.data.color === c
-                            ? "border-white"
-                            : "border-transparent"
-                        }`}
-                        style={{ backgroundColor: GROUP_COLORS[c] }}
-                        title={c}
-                      />
-                    ))}
-                  </div>
+          {selectedNode.type === "group" && selectedNode.data.type === "group" && (
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Color
+                </label>
+                <div className="flex gap-1.5">
+                  {(["blue", "green", "purple", "amber", "rose", "gray"] as const).map((c) => (
+                    <button
+                      key={c}
+                      onClick={() =>
+                        updateNode(selectedNode.id, {
+                          data: {
+                            ...selectedNode.data,
+                            color: c as GroupColor,
+                          },
+                        })
+                      }
+                      className={`h-6 w-6 rounded-full border-2 ${
+                        selectedNode.data.color === c ? "border-white" : "border-transparent"
+                      }`}
+                      style={{ backgroundColor: GROUP_COLORS[c] }}
+                      title={c}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
-          {selectedNode.type === "comment" &&
-            selectedNode.data.type === "comment" && (
-              <CommentProperties node={selectedNode} updateNode={updateNode} />
-            )}
+            </div>
+          )}
+          {selectedNode.type === "comment" && selectedNode.data.type === "comment" && (
+            <CommentProperties node={selectedNode} updateNode={updateNode} />
+          )}
           {selectedNode.type !== "group" && selectedNode.type !== "comment" && (
             <div className="mt-6 border-t border-border pt-4">
               <button

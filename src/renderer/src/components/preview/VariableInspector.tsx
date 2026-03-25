@@ -52,26 +52,20 @@ export function VariableInspector(): React.JSX.Element | null {
         <div className="px-3 pb-3 space-y-2">
           {/* Variable rows */}
           {variableIds.map((id) => {
-            const name = projectPath
-              ? projectVariables.find((v) => v.id === id)?.name
-              : undefined;
+            const name = projectPath ? projectVariables.find((v) => v.id === id)?.name : undefined;
             const value = previewState?.variables.get(id) ?? 0;
 
             return (
               <div key={`var-${id}`} className="flex items-center gap-2">
                 <label className="text-xs text-muted-foreground flex-1 truncate">
                   Var #{id}
-                  {name && (
-                    <span className="text-muted-foreground/70"> ({name})</span>
-                  )}
+                  {name && <span className="text-muted-foreground/70"> ({name})</span>}
                 </label>
                 <input
                   type="number"
                   value={value}
                   onChange={(e) =>
-                    usePreviewStore
-                      .getState()
-                      .setVariable(id, Number(e.target.value))
+                    usePreviewStore.getState().setVariable(id, Number(e.target.value))
                   }
                   className="w-20 px-2 py-0.5 text-xs rounded border border-border bg-slate-800 text-foreground focus:outline-none focus:border-primary"
                 />
@@ -81,25 +75,19 @@ export function VariableInspector(): React.JSX.Element | null {
 
           {/* Switch rows */}
           {switchIds.map((id) => {
-            const name = projectPath
-              ? projectSwitches.find((s) => s.id === id)?.name
-              : undefined;
+            const name = projectPath ? projectSwitches.find((s) => s.id === id)?.name : undefined;
             const value = previewState?.switches.get(id) ?? false;
 
             return (
               <div key={`sw-${id}`} className="flex items-center gap-2">
                 <label className="text-xs text-muted-foreground flex-1 truncate">
                   Sw #{id}
-                  {name && (
-                    <span className="text-muted-foreground/70"> ({name})</span>
-                  )}
+                  {name && <span className="text-muted-foreground/70"> ({name})</span>}
                 </label>
                 <input
                   type="checkbox"
                   checked={value}
-                  onChange={(e) =>
-                    usePreviewStore.getState().setSwitch(id, e.target.checked)
-                  }
+                  onChange={(e) => usePreviewStore.getState().setSwitch(id, e.target.checked)}
                   className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
                 />
               </div>

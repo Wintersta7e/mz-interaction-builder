@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, ChevronUp, ChevronDown, X } from "lucide-react";
 import { useUIStore } from "../stores";
@@ -8,7 +8,7 @@ interface SearchPanelProps {
   onNavigateToNode: (nodeId: string) => void;
 }
 
-export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
+export function SearchPanel({ onNavigateToNode }: SearchPanelProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTerm = useUIStore((s) => s.searchTerm);
   const searchMatches = useUIStore((s) => s.searchMatches);
@@ -26,7 +26,8 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
   // Navigate to current match
   useEffect(() => {
     if (searchMatches.length > 0 && searchCurrentIndex >= 0) {
-      onNavigateToNode(searchMatches[searchCurrentIndex]);
+      const matchId = searchMatches[searchCurrentIndex];
+      if (matchId) onNavigateToNode(matchId);
     }
   }, [searchCurrentIndex, searchMatches, onNavigateToNode]);
 
@@ -37,9 +38,7 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
 
   const cyclePrev = useCallback(() => {
     if (searchMatches.length === 0) return;
-    setSearchCurrentIndex(
-      (searchCurrentIndex - 1 + searchMatches.length) % searchMatches.length,
-    );
+    setSearchCurrentIndex((searchCurrentIndex - 1 + searchMatches.length) % searchMatches.length);
   }, [searchMatches.length, searchCurrentIndex, setSearchCurrentIndex]);
 
   const handleKeyDown = useCallback(
@@ -62,7 +61,7 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps) {
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={TRANSITION.fast}
+      transition={TRANSITION["fast"]}
     >
       <Search className="h-4 w-4 text-muted-foreground" />
       <input

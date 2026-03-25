@@ -1,3 +1,4 @@
+import React from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { generateId, useProjectStore } from "../../stores";
 import { parseIntSafe } from "../../lib/parseIntSafe";
@@ -10,13 +11,13 @@ export interface ActionPropertiesProps {
   updateNode: (id: string, data: Partial<InteractionNode>) => void;
 }
 
-export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
+export function ActionProperties({ node, updateNode }: ActionPropertiesProps): React.JSX.Element {
   // Safe: parent renders this component only when selectedNode.type === 'action'
   const data = node.data as ActionNodeData;
   const actions = data.actions || [];
   const { switches, variables } = useProjectStore();
 
-  const addAction = () => {
+  const addAction = (): void => {
     const newAction: Action = {
       id: generateId("action"),
       type: "script",
@@ -27,14 +28,12 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
     });
   };
 
-  const updateAction = (index: number, updates: Partial<Action>) => {
-    const newActions = actions.map((a, i) =>
-      i === index ? { ...a, ...updates } : a,
-    );
+  const updateAction = (index: number, updates: Partial<Action>): void => {
+    const newActions = actions.map((a, i) => (i === index ? { ...a, ...updates } : a));
     updateNode(node.id, { data: { ...data, actions: newActions } });
   };
 
-  const removeAction = (index: number) => {
+  const removeAction = (index: number): void => {
     const newActions = actions.filter((_, i) => i !== index);
     updateNode(node.id, { data: { ...data, actions: newActions } });
   };
@@ -126,8 +125,7 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                     value={action.variableOperation || "set"}
                     onChange={(e) =>
                       updateAction(index, {
-                        variableOperation: e.target
-                          .value as Action["variableOperation"],
+                        variableOperation: e.target.value as Action["variableOperation"],
                       })
                     }
                     className="w-20 rounded border border-border bg-background px-2 py-1 text-sm"
@@ -144,8 +142,7 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                     value={action.variableValue || ""}
                     onChange={(e) => {
                       const val = parseIntSafe(e.target.value);
-                      if (val !== undefined)
-                        updateAction(index, { variableValue: val });
+                      if (val !== undefined) updateAction(index, { variableValue: val });
                     }}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Value"
@@ -160,8 +157,7 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                 value={action.commonEventId || ""}
                 onChange={(e) => {
                   const val = parseIntSafe(e.target.value);
-                  if (val !== undefined)
-                    updateAction(index, { commonEventId: val });
+                  if (val !== undefined) updateAction(index, { commonEventId: val });
                 }}
                 className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                 placeholder="Common Event ID"
@@ -173,9 +169,7 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                 <div className="flex gap-2">
                   <DebouncedInput
                     value={action.faceName || ""}
-                    onChange={(value) =>
-                      updateAction(index, { faceName: value })
-                    }
+                    onChange={(value) => updateAction(index, { faceName: value })}
                     className="flex-1 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Face Name"
                   />
@@ -184,8 +178,7 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
                     value={action.faceIndex ?? ""}
                     onChange={(e) => {
                       const val = parseIntSafe(e.target.value);
-                      if (val !== undefined)
-                        updateAction(index, { faceIndex: val });
+                      if (val !== undefined) updateAction(index, { faceIndex: val });
                     }}
                     className="w-16 rounded border border-border bg-background px-2 py-1 text-sm"
                     placeholder="Idx"
@@ -207,27 +200,23 @@ export function ActionProperties({ node, updateNode }: ActionPropertiesProps) {
               <div className="space-y-2">
                 <DebouncedInput
                   value={action.pluginName || ""}
-                  onChange={(value) =>
-                    updateAction(index, { pluginName: value })
-                  }
+                  onChange={(value) => updateAction(index, { pluginName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Plugin Name"
                 />
                 <DebouncedInput
                   value={action.commandName || ""}
-                  onChange={(value) =>
-                    updateAction(index, { commandName: value })
-                  }
+                  onChange={(value) => updateAction(index, { commandName: value })}
                   className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
                   placeholder="Command Name"
                 />
                 <DebouncedTextarea
-                  value={
-                    action.commandArgs ? JSON.stringify(action.commandArgs) : ""
-                  }
+                  value={action.commandArgs ? JSON.stringify(action.commandArgs) : ""}
                   onChange={(value) => {
                     try {
-                      const args = value ? JSON.parse(value) : undefined;
+                      const args = value
+                        ? (JSON.parse(value) as Record<string, unknown>)
+                        : undefined;
                       updateAction(index, { commandArgs: args });
                     } catch (e) {
                       if (!(e instanceof SyntaxError)) throw e;

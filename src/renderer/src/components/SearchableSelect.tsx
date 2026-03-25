@@ -51,15 +51,11 @@ export function SearchableSelect({
   const listRef = useRef<HTMLDivElement>(null);
 
   const selectedItem = useMemo(
-    () =>
-      value !== null ? (items.find((item) => item.id === value) ?? null) : null,
+    () => (value !== null ? (items.find((item) => item.id === value) ?? null) : null),
     [items, value],
   );
 
-  const filtered = useMemo(
-    () => filterItems(items, searchText),
-    [items, searchText],
-  );
+  const filtered = useMemo(() => filterItems(items, searchText), [items, searchText]);
 
   // Compute the visible window slice for simple virtualization
   const visibleStart = useMemo(() => {
@@ -77,10 +73,7 @@ export function SearchableSelect({
   // Close dropdown on click outside
   useEffect(() => {
     function handleMouseDown(e: MouseEvent): void {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setSearchText("");
         setHighlightIndex(-1);
@@ -94,9 +87,7 @@ export function SearchableSelect({
   useEffect(() => {
     if (!isOpen || highlightIndex < 0 || !listRef.current) return;
     const adjustedIndex = highlightIndex - visibleStart;
-    const el = listRef.current.children[adjustedIndex] as
-      | HTMLElement
-      | undefined;
+    const el = listRef.current.children[adjustedIndex] as HTMLElement | undefined;
     if (el && typeof el.scrollIntoView === "function") {
       el.scrollIntoView({ block: "nearest" });
     }
@@ -141,7 +132,8 @@ export function SearchableSelect({
         case "Enter":
           e.preventDefault();
           if (highlightIndex >= 0 && highlightIndex < filtered.length) {
-            handleSelect(filtered[highlightIndex].id);
+            const item = filtered[highlightIndex];
+            if (item) handleSelect(item.id);
           }
           break;
         case "Escape":
@@ -155,11 +147,7 @@ export function SearchableSelect({
     [isOpen, filtered, highlightIndex, handleOpen, handleSelect],
   );
 
-  const displayValue = isOpen
-    ? searchText
-    : selectedItem
-      ? formatItem(selectedItem)
-      : "";
+  const displayValue = isOpen ? searchText : selectedItem ? formatItem(selectedItem) : "";
 
   return (
     <div ref={containerRef} className={`relative ${className ?? ""}`}>
@@ -186,9 +174,7 @@ export function SearchableSelect({
           className="absolute z-50 mt-1 max-h-[240px] w-full overflow-y-auto rounded border border-border bg-card shadow-lg"
         >
           {filtered.length === 0 ? (
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
-              No matches
-            </div>
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">No matches</div>
           ) : (
             visibleItems.map((item, windowIndex) => {
               const actualIndex = visibleStart + windowIndex;
@@ -199,9 +185,7 @@ export function SearchableSelect({
                   role="option"
                   aria-selected={isHighlighted}
                   className={`cursor-pointer px-2 py-1.5 text-sm ${
-                    isHighlighted
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted"
+                    isHighlighted ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                   }`}
                   onMouseDown={(e) => {
                     e.preventDefault();

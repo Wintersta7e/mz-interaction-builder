@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useState } from "react";
+import React, { useCallback, useRef, useEffect, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -50,29 +50,13 @@ import { getEdgeTypeAndData } from "../lib/edgeUtils";
 import { createNode } from "../lib/nodeFactory";
 import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
-import type {
-  InteractionNodeType,
-  InteractionNode,
-  InteractionEdge,
-} from "../types";
+import type { InteractionNodeType, InteractionNode, InteractionEdge } from "../types";
 
-function CanvasInner() {
+function CanvasInner(): React.JSX.Element {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const {
-    document,
-    setNodes,
-    setEdges,
-    addNode,
-    addEdge: addDocEdge,
-  } = useDocumentStore();
-  const {
-    selectedNodeId,
-    setSelectedNodeId,
-    showMinimap,
-    zoom,
-    setZoom,
-    snapToGrid,
-  } = useUIStore();
+  const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore();
+  const { selectedNodeId, setSelectedNodeId, showMinimap, zoom, setZoom, snapToGrid } =
+    useUIStore();
   const { push } = useHistoryStore();
   const templates = useTemplateStore((s) => s.templates);
   const { screenToFlowPosition, setCenter, getNodes } = useReactFlow();
@@ -120,16 +104,12 @@ function CanvasInner() {
   const handleNodesChange = useCallback(
     (changes: NodeChange<InteractionNode>[]) => {
       // Track drag state to prevent double history push (B5)
-      const dragStart = changes.some(
-        (c) => c.type === "position" && c.dragging,
-      );
+      const dragStart = changes.some((c) => c.type === "position" && c.dragging);
       const dragEnd = changes.some((c) => c.type === "position" && !c.dragging);
 
       if (dragStart) isDraggingRef.current = true;
 
-      const isRemoveOrAdd = changes.some(
-        (c) => c.type === "remove" || c.type === "add",
-      );
+      const isRemoveOrAdd = changes.some((c) => c.type === "remove" || c.type === "add");
       const isDragComplete = dragEnd && isDraggingRef.current;
 
       if (isDragComplete) isDraggingRef.current = false;
@@ -145,12 +125,13 @@ function CanvasInner() {
       );
 
       if (positionChanges.length === 1) {
-        const draggedId = positionChanges[0].id;
+        const firstChange = positionChanges[0]!;
+        const draggedId = firstChange.id;
         const draggedNode = nodesRef.current.find((n) => n.id === draggedId);
-        if (draggedNode && positionChanges[0].position) {
+        if (draggedNode && firstChange.position) {
           const updatedDragging = {
             ...draggedNode,
-            position: positionChanges[0].position,
+            position: firstChange.position,
           };
           const others = nodesRef.current.filter((n) => n.id !== draggedId);
           setGuideLines(computeGuideLines(updatedDragging, others));
@@ -179,9 +160,7 @@ function CanvasInner() {
 
   const handleEdgesChange = useCallback(
     (changes: EdgeChange<InteractionEdge>[]) => {
-      const significantChange = changes.some(
-        (c) => c.type === "remove" || c.type === "add",
-      );
+      const significantChange = changes.some((c) => c.type === "remove" || c.type === "add");
 
       // Push current document to history BEFORE applying changes
       if (significantChange) {
@@ -220,19 +199,16 @@ function CanvasInner() {
   );
 
   // Validate connections: reject self-loops and duplicate edges (I-3)
-  const isValidConnection = useCallback(
-    (connection: Connection | InteractionEdge) => {
-      if (connection.source === connection.target) return false;
-      return !edgesRef.current.some(
-        (e) =>
-          e.source === connection.source &&
-          e.target === connection.target &&
-          (e.sourceHandle ?? null) === (connection.sourceHandle ?? null) &&
-          (e.targetHandle ?? null) === (connection.targetHandle ?? null),
-      );
-    },
-    [],
-  );
+  const isValidConnection = useCallback((connection: Connection | InteractionEdge) => {
+    if (connection.source === connection.target) return false;
+    return !edgesRef.current.some(
+      (e) =>
+        e.source === connection.source &&
+        e.target === connection.target &&
+        (e.sourceHandle ?? null) === (connection.sourceHandle ?? null) &&
+        (e.targetHandle ?? null) === (connection.targetHandle ?? null),
+    );
+  }, []);
 
   // Edge reconnection handlers (Phase 5F)
   const onReconnectStart = useCallback(() => {
@@ -244,15 +220,10 @@ function CanvasInner() {
       edgeReconnectSuccessfulRef.current = true;
       push(useDocumentStore.getState().document);
 
-      const { type, data } = getEdgeTypeAndData(
-        newConnection,
-        nodesRef.current,
+      const { type, data } = getEdgeTypeAndData(newConnection, nodesRef.current);
+      const updatedEdges = reconnectEdge(oldEdge, newConnection, edgesRef.current).map((e) =>
+        e.id === oldEdge.id ? { ...e, type, data } : e,
       );
-      const updatedEdges = reconnectEdge(
-        oldEdge,
-        newConnection,
-        edgesRef.current,
-      ).map((e) => (e.id === oldEdge.id ? { ...e, type, data } : e));
 
       setEdgesState(updatedEdges);
       setEdges(updatedEdges);
@@ -278,15 +249,10 @@ function CanvasInner() {
     (event: React.MouseEvent, node: InteractionNode) => {
       if (event.altKey) {
         // Alt+Click = upstream, Shift+Alt+Click = downstream (Phase 3B)
-        const traverseFn = event.shiftKey
-          ? findDownstreamNodes
-          : findUpstreamNodes;
+        const traverseFn = event.shiftKey ? findDownstreamNodes : findUpstreamNodes;
         const { edges: docEdges } = useDocumentStore.getState().document;
         const result = traverseFn(node.id, docEdges);
-        setHighlightedPaths(
-          Array.from(result.nodeIds),
-          Array.from(result.edgeIds),
-        );
+        setHighlightedPaths(Array.from(result.nodeIds), Array.from(result.edgeIds));
       } else {
         clearHighlightedPaths();
       }
@@ -325,9 +291,7 @@ function CanvasInner() {
       event.preventDefault();
 
       // Handle template drop
-      const templateId = event.dataTransfer.getData(
-        "application/interaction-template",
-      );
+      const templateId = event.dataTransfer.getData("application/interaction-template");
       if (templateId) {
         const template = templates.find((t) => t.id === templateId);
         if (!template) return;
@@ -355,9 +319,7 @@ function CanvasInner() {
         // Brief entrance animation for template nodes
         requestAnimationFrame(() => {
           for (const node of newNodes) {
-            const el = window.document.querySelector(
-              `[data-id="${node.id}"] .interaction-node`,
-            );
+            const el = window.document.querySelector(`[data-id="${node.id}"] .interaction-node`);
             if (el instanceof HTMLElement) {
               el.setAttribute("data-entering", "true");
               setTimeout(() => {
@@ -369,9 +331,7 @@ function CanvasInner() {
         return;
       }
 
-      const rawType = event.dataTransfer.getData(
-        "application/interaction-node",
-      );
+      const rawType = event.dataTransfer.getData("application/interaction-node");
       if (!rawType) return;
       const validTypes: InteractionNodeType[] = [
         "start",
@@ -399,9 +359,7 @@ function CanvasInner() {
 
       // Brief entrance animation
       requestAnimationFrame(() => {
-        const el = window.document.querySelector(
-          `[data-id="${newNode.id}"] .interaction-node`,
-        );
+        const el = window.document.querySelector(`[data-id="${newNode.id}"] .interaction-node`);
         if (el instanceof HTMLElement) {
           el.setAttribute("data-entering", "true");
           setTimeout(() => {
@@ -453,7 +411,7 @@ function CanvasInner() {
       if (node) {
         const w = node.measured?.width ?? 180;
         const h = node.measured?.height ?? 80;
-        setCenter(node.position.x + w / 2, node.position.y + h / 2, {
+        void setCenter(node.position.x + w / 2, node.position.y + h / 2, {
           zoom: 1,
           duration: 300,
         });
@@ -506,8 +464,7 @@ function CanvasInner() {
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(
     (node: { type?: string }) =>
-      NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || "start"] ||
-      "#9ca3af",
+      NODE_ACCENT_COLORS[(node.type as InteractionNodeType) || "start"] || "#9ca3af",
     [],
   );
 
@@ -583,36 +540,21 @@ function CanvasInner() {
                 usePreviewStore.getState().open(nodeId);
                 setContextMenu(null);
               }}
-              hasSelectedNodes={
-                nodes.some((n) => n.selected) || selectedNodeId !== null
-              }
+              hasSelectedNodes={nodes.some((n) => n.selected) || selectedNodeId !== null}
               selectedNodeId={selectedNodeId}
               selectedNodeType={
-                selectedNodeId
-                  ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null)
-                  : null
+                selectedNodeId ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null) : null
               }
               isMuted={(() => {
                 // I-2: Compute from full selection, not just selectedNodeId
-                const mutableTypes = new Set([
-                  "action",
-                  "menu",
-                  "condition",
-                  "end",
-                ]);
-                const selected = nodes.filter(
-                  (n) => n.selected && mutableTypes.has(n.type ?? ""),
-                );
+                const mutableTypes = new Set(["action", "menu", "condition", "end"]);
+                const selected = nodes.filter((n) => n.selected && mutableTypes.has(n.type ?? ""));
                 if (selected.length > 0) {
                   return selected.every((n) => !!n.data.muted);
                 }
                 // Fallback to single selected node
-                const sel = selectedNodeId
-                  ? nodes.find((n) => n.id === selectedNodeId)
-                  : null;
-                return sel && mutableTypes.has(sel.type ?? "")
-                  ? !!sel.data.muted
-                  : false;
+                const sel = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : null;
+                return sel && mutableTypes.has(sel.type ?? "") ? !!sel.data.muted : false;
               })()}
             />
           )}
@@ -637,7 +579,7 @@ function CanvasInner() {
   );
 }
 
-export function Canvas() {
+export function Canvas(): React.JSX.Element {
   return (
     <ReactFlowProvider>
       <CanvasInner />

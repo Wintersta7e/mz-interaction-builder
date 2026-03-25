@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import {
   FilePlus,
@@ -45,7 +45,7 @@ export function Toolbar({
   onOpenProject,
   onHelp,
   onValidate,
-}: ToolbarProps) {
+}: ToolbarProps): React.JSX.Element {
   const { isDirty } = useDocumentStore();
   const { canUndo, canRedo, undo, redo } = useHistoryStore();
   const { zoom, setZoom } = useUIStore();
@@ -58,25 +58,25 @@ export function Toolbar({
   const [nodeSpacing, setNodeSpacing] = useState(80);
   const [rankSpacing, setRankSpacing] = useState(200);
 
-  const handleUndo = () => {
+  const handleUndo = (): void => {
     const doc = undo();
     if (doc) setDocument(doc);
   };
 
-  const handleRedo = () => {
+  const handleRedo = (): void => {
     const doc = redo();
     if (doc) setDocument(doc);
   };
 
-  const handleZoomIn = () => {
+  const handleZoomIn = (): void => {
     setZoom(Math.min(zoom * 1.2, 2));
   };
 
-  const handleZoomOut = () => {
+  const handleZoomOut = (): void => {
     setZoom(Math.max(zoom / 1.2, 0.25));
   };
 
-  const handleZoomReset = () => {
+  const handleZoomReset = (): void => {
     setZoom(1);
   };
 
@@ -199,9 +199,7 @@ export function Toolbar({
                 align="start"
               >
                 <div className="space-y-3">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Layout Settings
-                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">Layout Settings</div>
                   <div className="space-y-1">
                     <label className="text-xs">Direction</label>
                     <div className="flex gap-1">
@@ -228,9 +226,7 @@ export function Toolbar({
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs">
-                      Node Spacing: {nodeSpacing}px
-                    </label>
+                    <label className="text-xs">Node Spacing: {nodeSpacing}px</label>
                     <input
                       type="range"
                       min={20}
@@ -241,9 +237,7 @@ export function Toolbar({
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs">
-                      Rank Spacing: {rankSpacing}px
-                    </label>
+                    <label className="text-xs">Rank Spacing: {rankSpacing}px</label>
                     <input
                       type="range"
                       min={50}
@@ -290,9 +284,7 @@ export function Toolbar({
           className={`flex h-8 items-center gap-2 rounded px-3 text-sm hover:bg-muted ${
             projectPath ? "text-primary" : "text-muted-foreground"
           }`}
-          title={
-            projectPath ? `Project: ${projectPath}` : "Open RPG Maker Project"
-          }
+          title={projectPath ? `Project: ${projectPath}` : "Open RPG Maker Project"}
         >
           <Folder className="h-4 w-4" />
           {projectPath ? "Project Loaded" : "Open Project"}
