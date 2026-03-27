@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.2.0] - 2026-03-27
+
+### Fixed
+- **Export convergence labels** — labels now emitted at indent 0, preventing infinite loops when JUMP_TO_LABEL landed inside Show Choices or Conditional Branch blocks
+- **Preview state isolation** — PreviewEngine deep-clones Maps/Sets/arrays into Zustand snapshots, fixing stale React renders
+- **Menu choice reorder** — edge connections now follow their original choices when reordered via move up/down
+- **Number key node creation during preview** — keys 1-7 no longer create nodes while the preview panel is open
+- **Export command validation** — commands array structure validated before writing to RPG Maker map files
+- **File size limits** — 50MB cap on .mzinteraction files, 100MB on project JSON reads
+
+### Changed
+- Replaced unmaintained `dagre` 0.8.5 with actively maintained `@dagrejs/dagre` 3.0.0
+- Removed unused `electron-updater` dependency
+- Consolidated API type definitions into shared `src/shared/api-types.ts`
+- Alignment guide computation skips nodes >600px away for better drag performance on large graphs
+
+### Added
+- 47 new tests: export pipeline (all action types, conditions, menus, convergence), DocumentStore CRUD, HistoryStore undo/redo
+
 ## [2.1.1] - 2026-02-28
 
 ### Added
