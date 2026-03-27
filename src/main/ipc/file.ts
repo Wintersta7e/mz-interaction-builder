@@ -1,7 +1,10 @@
 import { IpcMain } from "electron";
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile, stat } from "fs/promises";
 import { existsSync } from "fs";
 import { extname } from "path";
+
+// SEC-10: Maximum file size for .mzinteraction files (50 MB)
+const MAX_INTERACTION_FILE_SIZE = 50 * 1024 * 1024;
 
 /** Validate that a file path is safe for interaction file operations */
 function isAllowedFilePath(filePath: string): boolean {
@@ -49,6 +52,14 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
         }
         if (!existsSync(filePath)) {
           return { success: false, error: "File not found" };
+        }
+        // SEC-10: Check file size before reading to prevent memory exhaustion
+        const fileStats = await stat(filePath);
+        if (fileStats.size > MAX_INTERACTION_FILE_SIZE) {
+          return {
+            success: false,
+            error: `File too large (${Math.round(fileStats.size / 1024 / 1024)}MB, max ${MAX_INTERACTION_FILE_SIZE / 1024 / 1024}MB)`,
+          };
         }
         const content = await readFile(filePath, "utf-8");
         return { success: true, content };
