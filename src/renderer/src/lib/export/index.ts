@@ -101,6 +101,7 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
 
   // Pre-analyze: find nodes with multiple incoming edges (convergence nodes)
   // These need special handling - labels must be placed outside branch structures
+  // at indent 0 so they're reachable from any branch via JUMP_TO_LABEL.
   const convergenceNodes = new Set<string>();
   for (const [nodeId, edges] of edgesByTarget) {
     if (edges.length > 1) {
@@ -115,14 +116,22 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
     return { commands, warnings };
   }
 
-  // Track nodes that need labels (visited more than once or are convergence points)
-  const needsLabel = new Set<string>();
+  // BUG-1 fix: Convergence nodes are deferred to be emitted at indent 0 after
+  // the main traversal. This prevents labels from being placed inside branch
+  // structures (Show Choices, Conditional Branch) where JUMP_TO_LABEL would
+  // re-enter the branch scope and cause infinite loops or wrong execution paths.
+  const deferredConvergence: string[] = [];
 
   // Process nodes using DFS with proper indentation tracking
   function processNode(nodeId: string, indent: number): void {
-    // If this is a convergence node and we're inside a branch (indent > 0),
-    // don't process it inline - just jump to it
-    if (convergenceNodes.has(nodeId) && indent > 0 && visited.has(nodeId)) {
+    // Convergence nodes are always deferred to indent 0.
+    // On first encounter: mark visited and queue for deferred processing.
+    // On subsequent encounters: just emit a jump (label will exist at indent 0).
+    if (convergenceNodes.has(nodeId)) {
+      if (!visited.has(nodeId)) {
+        visited.add(nodeId);
+        deferredConvergence.push(nodeId);
+      }
       commands.push({
         code: EVENT_CODES.JUMP_TO_LABEL,
         indent,
@@ -132,13 +141,9 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
     }
 
     if (visited.has(nodeId)) {
-      // Create jump to label for loops/convergence
-      needsLabel.add(nodeId);
-      commands.push({
-        code: EVENT_CODES.JUMP_TO_LABEL,
-        indent,
-        parameters: [`node_${nodeId}`],
-      });
+      // Non-convergence node visited again (loop) — should not happen in a DAG
+      // but handle gracefully with a warning
+      warnings.push(`Cycle detected at node "${nodeMap.get(nodeId)?.data.label ?? nodeId}"`);
       return;
     }
 
@@ -146,16 +151,6 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
     if (!node) return;
 
     visited.add(nodeId);
-
-    // Add label for this node if it's a convergence point or will need one
-    if (convergenceNodes.has(nodeId)) {
-      needsLabel.add(nodeId);
-      commands.push({
-        code: EVENT_CODES.LABEL,
-        indent,
-        parameters: [`node_${nodeId}`],
-      });
-    }
 
     // Muted node bypass: skip command generation, follow default outgoing edge
     if (node.data.muted && node.type !== "start") {
@@ -217,19 +212,10 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
     }
   }
 
-  // Emit inline processing or a jump-to-label depending on whether the
-  // target is a convergence node that has already been visited.
+  // Process a target node inline. Convergence nodes are handled by
+  // processNode itself (deferred to indent 0), so this is just a passthrough.
   function emitNodeOrJump(targetId: string, indent: number): void {
-    if (convergenceNodes.has(targetId) && visited.has(targetId)) {
-      needsLabel.add(targetId);
-      commands.push({
-        code: EVENT_CODES.JUMP_TO_LABEL,
-        indent,
-        parameters: [`node_${targetId}`],
-      });
-    } else {
-      processNode(targetId, indent);
-    }
+    processNode(targetId, indent);
   }
 
   // Helper to generate menu commands
@@ -659,6 +645,70 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
   const startEdges = edgesBySource.get(startNode.id) || [];
   if (startEdges.length > 0) {
     processNode(startEdges[0]!.target, 0);
+  }
+
+  // BUG-1 fix: Process deferred convergence nodes at indent 0.
+  // These are nodes with multiple incoming edges that were deferred during
+  // the main DFS to avoid placing labels inside branch structures.
+  // Use index-based loop since processing may append new entries.
+  for (let i = 0; i < deferredConvergence.length; i++) {
+    const deferredId = deferredConvergence[i]!;
+    const deferredNode = nodeMap.get(deferredId);
+    if (!deferredNode) continue;
+
+    // Emit label at indent 0
+    commands.push({
+      code: EVENT_CODES.LABEL,
+      indent: 0,
+      parameters: [`node_${deferredId}`],
+    });
+
+    // Skip muted nodes — follow bypass edge
+    if (deferredNode.data.muted && deferredNode.type !== "start") {
+      const outEdges = edgesBySource.get(deferredId) || [];
+      let bypassTarget: string | null = null;
+
+      if (deferredNode.type === "condition") {
+        const trueEdge = outEdges.find((e) => e.sourceHandle === "true");
+        bypassTarget = (trueEdge || outEdges[0])?.target ?? null;
+      } else if (deferredNode.type === "menu") {
+        const choiceEdge = outEdges.find((e) => e.sourceHandle === "choice-0");
+        bypassTarget = (choiceEdge || outEdges[0])?.target ?? null;
+      } else {
+        bypassTarget = outEdges[0]?.target ?? null;
+      }
+
+      if (bypassTarget) {
+        processNode(bypassTarget, 0);
+      }
+      continue;
+    }
+
+    // Generate commands at indent 0 based on node type
+    switch (deferredNode.type) {
+      case "menu":
+        generateMenuCommands(deferredNode, 0);
+        break;
+      case "action":
+        generateActionCommands(deferredNode, 0);
+        // Follow continuation edge for action nodes
+        {
+          const outEdges = edgesBySource.get(deferredId) || [];
+          if (outEdges.length > 0) {
+            processNode(outEdges[0]!.target, 0);
+          }
+        }
+        break;
+      case "condition":
+        generateConditionCommands(deferredNode, 0);
+        break;
+      case "end":
+      case "start":
+      case "group":
+      case "comment":
+        // No commands needed
+        break;
+    }
   }
 
   // Add terminating command
