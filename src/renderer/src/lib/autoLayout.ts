@@ -1,4 +1,4 @@
-import dagre from "dagre";
+import dagre, { type GraphLabel, type NodeLabel, type EdgeLabel } from "@dagrejs/dagre";
 import type { InteractionNode, InteractionEdge } from "../types";
 
 export interface AutoLayoutOptions {
@@ -22,7 +22,7 @@ export function autoLayout(
   // Filter out visual-only nodes — they should not participate in layout
   const layoutNodes = nodes.filter((n) => n.type !== "group" && n.type !== "comment");
 
-  const g = new dagre.graphlib.Graph();
+  const g = new dagre.graphlib.Graph<GraphLabel, NodeLabel, EdgeLabel>();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: direction,
@@ -47,7 +47,7 @@ export function autoLayout(
 
   const positions = new Map<string, { x: number; y: number }>();
   for (const node of layoutNodes) {
-    const dagreNode = g.node(node.id);
+    const dagreNode = g.node(node.id) as { x: number; y: number } | undefined;
     if (!dagreNode) continue;
     const width = node.measured?.width ?? DEFAULT_NODE_WIDTH;
     const height = node.measured?.height ?? DEFAULT_NODE_HEIGHT;

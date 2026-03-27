@@ -413,6 +413,8 @@ export function useCanvasKeyboard(options: UseCanvasKeyboardOptions): UseCanvasK
       }
 
       // Number keys 1-7: quick-add node at viewport center
+      // BUG-8: Don't create nodes while preview is running
+      if (previewState.isOpen) return;
       const nodeType = HOTKEY_NODE_MAP[e.key];
       if (nodeType && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();

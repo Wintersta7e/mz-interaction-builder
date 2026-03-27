@@ -1,7 +1,21 @@
 import { IpcMain } from "electron";
-import { readFile, writeFile, readdir } from "fs/promises";
+import { readFile, writeFile, readdir, stat } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
+
+// SEC-10: Maximum file size for RPG Maker project JSON files (100 MB)
+const MAX_PROJECT_FILE_SIZE = 100 * 1024 * 1024;
+
+/** Read a project JSON file with size limit enforcement */
+async function readProjectFile(filePath: string): Promise<string> {
+  const fileStats = await stat(filePath);
+  if (fileStats.size > MAX_PROJECT_FILE_SIZE) {
+    throw new Error(
+      `File too large (${Math.round(fileStats.size / 1024 / 1024)}MB, max ${MAX_PROJECT_FILE_SIZE / 1024 / 1024}MB)`,
+    );
+  }
+  return readFile(filePath, "utf-8");
+}
 
 interface MZMapInfo {
   id: number;
@@ -120,7 +134,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
     }
 
     try {
-      const data = await readFile(mapInfoFile, "utf-8");
+      const data = await readProjectFile(mapInfoFile);
       let mapInfos: (MZMapInfo | null)[];
       try {
         mapInfos = JSON.parse(data) as (MZMapInfo | null)[];
@@ -157,7 +171,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       }
 
       try {
-        const data = await readFile(mapFile, "utf-8");
+        const data = await readProjectFile(mapFile);
         let mapData: RawMZMapData;
         try {
           mapData = JSON.parse(data) as RawMZMapData;
@@ -189,7 +203,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
     }
 
     try {
-      const data = await readFile(file, "utf-8");
+      const data = await readProjectFile(file);
       let system: RawMZSystemData;
       try {
         system = JSON.parse(data) as RawMZSystemData;
@@ -219,7 +233,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
     }
 
     try {
-      const data = await readFile(file, "utf-8");
+      const data = await readProjectFile(file);
       let system: RawMZSystemData;
       try {
         system = JSON.parse(data) as RawMZSystemData;
@@ -282,7 +296,28 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       }
 
       try {
-        const data = await readFile(mapFile, "utf-8");
+        // SEC-8: Validate commands array structure before writing to map
+        if (!Array.isArray(options.commands)) {
+          return { success: false, error: "Commands must be an array" };
+        }
+        for (const cmd of options.commands) {
+          const rec = cmd as Record<string, unknown>;
+          if (
+            typeof cmd !== "object" ||
+            cmd === null ||
+            typeof rec["code"] !== "number" ||
+            typeof rec["indent"] !== "number" ||
+            !Array.isArray(rec["parameters"])
+          ) {
+            return {
+              success: false,
+              error:
+                "Invalid command structure: each command must have numeric code, numeric indent, and parameters array",
+            };
+          }
+        }
+
+        const data = await readProjectFile(mapFile);
         let mapData: RawMZMapData;
         try {
           mapData = JSON.parse(data) as RawMZMapData;

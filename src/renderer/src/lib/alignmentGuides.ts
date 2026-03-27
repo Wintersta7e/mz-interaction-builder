@@ -8,6 +8,8 @@ export interface GuideLine {
 const SNAP_THRESHOLD = 5; // px
 const DEFAULT_WIDTH = 180;
 const DEFAULT_HEIGHT = 80;
+// PERF-7: Only check alignment with nodes within this distance (px)
+const PROXIMITY_THRESHOLD = 600;
 
 /**
  * Given a dragging node and other nodes, returns guide lines
@@ -15,6 +17,9 @@ const DEFAULT_HEIGHT = 80;
  *
  * Checks 9 x-axis combinations (left/center/right vs left/center/right)
  * and 9 y-axis combinations (top/center/bottom vs top/center/bottom).
+ *
+ * PERF-7: Nodes farther than PROXIMITY_THRESHOLD are skipped to avoid
+ * unnecessary computation on large graphs.
  */
 export function computeGuideLines(
   draggingNode: InteractionNode,
@@ -34,6 +39,16 @@ export function computeGuideLines(
 
   for (const other of otherNodes) {
     if (other.id === draggingNode.id) continue;
+
+    // PERF-7: Skip distant nodes — alignment with them isn't visible/useful
+    const oCX = other.position.x + (other.measured?.width ?? DEFAULT_WIDTH) / 2;
+    const oCY = other.position.y + (other.measured?.height ?? DEFAULT_HEIGHT) / 2;
+    if (
+      Math.abs(oCX - dCenterX) > PROXIMITY_THRESHOLD ||
+      Math.abs(oCY - dCenterY) > PROXIMITY_THRESHOLD
+    ) {
+      continue;
+    }
 
     const ow = other.measured?.width ?? DEFAULT_WIDTH;
     const oh = other.measured?.height ?? DEFAULT_HEIGHT;

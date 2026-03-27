@@ -3,6 +3,22 @@ import { PreviewEngine } from "../lib/preview/PreviewEngine";
 import type { PreviewState } from "../lib/preview/types";
 import { useDocumentStore } from "./index";
 
+/** Deep-clone a PreviewState so the store holds an independent snapshot.
+ *  The engine mutates its Maps/Sets/arrays in place, so a shallow spread
+ *  would share references and break React change detection (BUG-5). */
+function clonePreviewState(state: PreviewState): PreviewState {
+  return {
+    ...state,
+    variables: new Map(state.variables),
+    switches: new Map(state.switches),
+    visitedNodes: new Set(state.visitedNodes),
+    visitedEdges: new Set(state.visitedEdges),
+    transcript: [...state.transcript],
+    choiceHistory: [...state.choiceHistory],
+    availableChoices: state.availableChoices.map((c) => ({ ...c })),
+  };
+}
+
 interface CoverageData {
   visitedNodes: Set<string>;
   visitedEdges: Set<string>;
@@ -44,7 +60,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
     set({
       isOpen: true,
       engine,
-      previewState: { ...engine.state },
+      previewState: clonePreviewState(engine.state),
       autoPlay: false,
     });
   },
@@ -75,7 +91,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
     }
 
     set({
-      previewState: { ...engine.state },
+      previewState: clonePreviewState(engine.state),
       coverageData: {
         visitedNodes: newVisitedNodes,
         visitedEdges: newVisitedEdges,
@@ -89,7 +105,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
 
     engine.reset(startNodeId);
     set({
-      previewState: { ...engine.state },
+      previewState: clonePreviewState(engine.state),
       autoPlay: false,
     });
   },

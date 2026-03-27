@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from "lucide-react";
-import { generateId } from "../../stores";
+import { generateId, useDocumentStore } from "../../stores";
 import { parseIntSafe } from "../../lib/parseIntSafe";
 import type { InteractionNode, MenuNodeData, MenuChoice } from "../../types";
 import { DebouncedInput } from "../DebouncedInputs";
@@ -46,6 +46,19 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps): React
     if (a === undefined || b === undefined) return;
     [newChoices[index], newChoices[newIndex]] = [b, a];
     updateNode(node.id, { data: { ...data, choices: newChoices } });
+
+    // BUG-6 fix: Swap edge sourceHandle references so edges follow their
+    // original choices to the new positions.
+    const { document: doc, setEdges } = useDocumentStore.getState();
+    const handleA = `choice-${index}`;
+    const handleB = `choice-${newIndex}`;
+    const updatedEdges = doc.edges.map((e) => {
+      if (e.source !== node.id) return e;
+      if (e.sourceHandle === handleA) return { ...e, sourceHandle: handleB };
+      if (e.sourceHandle === handleB) return { ...e, sourceHandle: handleA };
+      return e;
+    });
+    setEdges(updatedEdges);
   };
 
   return (
