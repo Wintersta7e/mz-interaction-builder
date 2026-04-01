@@ -68,13 +68,13 @@ describe("usePreviewStore", () => {
     expect(s.previewState).toBeNull();
   });
 
-  it("step() advances the preview state", () => {
+  it("step() advances through the graph, increasing visited count", () => {
     usePreviewStore.getState().open();
-    const before = usePreviewStore.getState().previewState!;
-    const visitedBefore = before.visitedNodes.size;
+    const visitedBefore = usePreviewStore.getState().previewState!.visitedNodes.size;
+    usePreviewStore.getState().step();
     usePreviewStore.getState().step();
     const after = usePreviewStore.getState().previewState!;
-    expect(after.visitedNodes.size).toBeGreaterThanOrEqual(visitedBefore);
+    expect(after.visitedNodes.size).toBeGreaterThan(visitedBefore);
   });
 
   it("step() accumulates coverage data", () => {
@@ -95,7 +95,7 @@ describe("usePreviewStore", () => {
     expect(s.previewState).not.toBeNull();
   });
 
-  it("setVariable() deep-clones state (BUG-02 regression test)", () => {
+  it("setVariable() deep-clones state and applies value (BUG-02 regression)", () => {
     usePreviewStore.getState().open();
     const stateBefore = usePreviewStore.getState().previewState!;
     usePreviewStore.getState().setVariable(1, 99);
@@ -103,15 +103,18 @@ describe("usePreviewStore", () => {
     // Must be a different object (deep clone, not shallow spread)
     expect(stateAfter).not.toBe(stateBefore);
     expect(stateAfter.variables).not.toBe(stateBefore.variables);
+    // Value must actually be applied
+    expect(stateAfter.variables.get(1)).toBe(99);
   });
 
-  it("setSwitch() deep-clones state (BUG-02 regression test)", () => {
+  it("setSwitch() deep-clones state and applies value (BUG-02 regression)", () => {
     usePreviewStore.getState().open();
     const stateBefore = usePreviewStore.getState().previewState!;
     usePreviewStore.getState().setSwitch(1, true);
     const stateAfter = usePreviewStore.getState().previewState!;
     expect(stateAfter).not.toBe(stateBefore);
     expect(stateAfter.switches).not.toBe(stateBefore.switches);
+    expect(stateAfter.switches.get(1)).toBe(true);
   });
 
   it("toggleAutoPlay() flips autoPlay state", () => {
