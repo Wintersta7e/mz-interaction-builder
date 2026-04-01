@@ -1266,5 +1266,138 @@ describe("PreviewEngine", () => {
       expect(engine.state.status).toBe("waiting_choice");
       expect(engine.state.transcript).toHaveLength(transcriptLength);
     });
+
+    it("division by zero returns 0 instead of Infinity", () => {
+      const action1 = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "set",
+            variableValue: 42,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const action2 = makeNode("a2", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-2",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "div",
+            variableValue: 0,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), action1, action2, makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "a1"), makeEdge("e-2", "a1", "a2"), makeEdge("e-3", "a2", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // set var 1 = 42
+      engine.step(); // div by 0 → should be 0
+
+      expect(engine.state.variables.get(1)).toBe(0);
+    });
+
+    it("modulo by zero returns 0 instead of NaN", () => {
+      const action1 = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "set",
+            variableValue: 42,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const action2 = makeNode("a2", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-2",
+            type: "set_variable",
+            variableId: 1,
+            variableOperation: "mod",
+            variableValue: 0,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), action1, action2, makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "a1"), makeEdge("e-2", "a1", "a2"), makeEdge("e-3", "a2", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // set var 1 = 42
+      engine.step(); // mod by 0 → should be 0
+
+      expect(engine.state.variables.get(1)).toBe(0);
+    });
+
+    it("common_event action is logged in transcript", () => {
+      const actionNode = makeNode("a1", "action", {
+        type: "action",
+        actions: [
+          {
+            id: "act-1",
+            type: "common_event",
+            commonEventId: 5,
+          },
+        ],
+      } as Partial<ActionNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), actionNode, makeNode("e1", "end")],
+        [makeEdge("e-1", "s1", "a1"), makeEdge("e-2", "a1", "e1")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → a1
+      engine.step(); // action → e1
+
+      const actionEntry = engine.state.transcript.find((t) => t.nodeType === "action");
+      expect(actionEntry).toBeDefined();
+      expect(actionEntry!.content).toContain("Common Event");
+    });
+
+    it("out-of-bounds choice index ends gracefully (no matching edge)", () => {
+      const menuNode = makeNode("m1", "menu", {
+        type: "menu",
+        choices: [{ id: "ch-0", text: "Only Choice" }],
+        cancelType: "disallow",
+        windowBackground: 0,
+        windowPosition: 1,
+      } as Partial<MenuNodeData>);
+
+      const doc = makeDoc(
+        [makeNode("s1", "start"), menuNode, makeNode("ea", "end")],
+        [makeEdge("e-1", "s1", "m1"), makeEdge("e-c0", "m1", "ea", "choice-0")],
+      );
+      const engine = new PreviewEngine(doc);
+
+      engine.step(); // start → m1
+      engine.step(); // process menu → waiting_choice
+
+      expect(engine.state.status).toBe("waiting_choice");
+
+      // Invalid choice index — no "choice-99" edge exists
+      engine.step(99);
+
+      // Engine follows non-existent edge and ends (dead end)
+      expect(engine.state.status).toBe("ended");
+    });
   });
 });

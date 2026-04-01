@@ -3,7 +3,15 @@ import { getDefaultNodeData, createNode } from "../nodeFactory";
 import type { InteractionNodeType } from "../../types";
 
 describe("getDefaultNodeData", () => {
-  const types: InteractionNodeType[] = ["start", "menu", "action", "condition", "end", "group", "comment"];
+  const types: InteractionNodeType[] = [
+    "start",
+    "menu",
+    "action",
+    "condition",
+    "end",
+    "group",
+    "comment",
+  ];
 
   it.each(types)("returns data with matching type field for %s", (type) => {
     const data = getDefaultNodeData(type);
@@ -70,8 +78,19 @@ describe("createNode", () => {
   });
 
   it("generates unique IDs for each node", () => {
-    const a = createNode("action", { x: 0, y: 0 });
-    const b = createNode("action", { x: 0, y: 0 });
-    expect(a.id).not.toBe(b.id);
+    const ids = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      ids.add(createNode("action", { x: 0, y: 0 }).id);
+    }
+    expect(ids.size).toBe(20);
+  });
+
+  it("returns independent data objects (no shared references)", () => {
+    const a = getDefaultNodeData("menu");
+    const b = getDefaultNodeData("menu");
+    expect(a).not.toBe(b);
+    // Mutating one shouldn't affect the other
+    (a as { choices: unknown[] }).choices.push({ id: "test", text: "test" });
+    expect((b as { choices: unknown[] }).choices).toHaveLength(0);
   });
 });

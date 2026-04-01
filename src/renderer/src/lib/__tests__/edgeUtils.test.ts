@@ -70,4 +70,30 @@ describe("getEdgeTypeAndData", () => {
     );
     expect(result.data.sourceColor).toBe("#9ca3af");
   });
+
+  it("uses fallback colors when both nodes are missing", () => {
+    const result = getEdgeTypeAndData(
+      { source: "ghost1", target: "ghost2", sourceHandle: null, targetHandle: null },
+      nodes,
+    );
+    expect(result.data.sourceColor).toBe("#9ca3af");
+    expect(result.data.targetColor).toBe("#9ca3af");
+    expect(result.data.edgeStyle).toBe("default");
+  });
+
+  it("returns choice-0 for choice-0 handle", () => {
+    const result = getEdgeTypeAndData(
+      { source: "menu", target: "act", sourceHandle: "choice-0", targetHandle: null },
+      nodes,
+    );
+    expect(result.data.choiceIndex).toBe(0);
+  });
+
+  it("condition node with non-true/false handle returns default edge", () => {
+    const result = getEdgeTypeAndData(
+      { source: "cond", target: "act", sourceHandle: "output", targetHandle: null },
+      nodes,
+    );
+    expect(result.data.edgeStyle).toBe("default");
+  });
 });

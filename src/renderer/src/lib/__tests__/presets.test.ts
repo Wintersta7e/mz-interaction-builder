@@ -42,6 +42,11 @@ describe("createCustomPreset", () => {
     const p = createCustomPreset("Minimal");
     expect(p.description).toBe("");
   });
+
+  it("ID includes timestamp prefix", () => {
+    const p = createCustomPreset("Test");
+    expect(p.id).toMatch(/^custom-\d+$/);
+  });
 });
 
 describe("getPreset", () => {

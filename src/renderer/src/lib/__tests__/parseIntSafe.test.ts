@@ -25,4 +25,13 @@ describe("parseIntSafe", () => {
   it("parses valid input even when fallback is provided", () => {
     expect(parseIntSafe("42", 0)).toBe(42);
   });
+
+  it("truncates floats to integer", () => {
+    expect(parseIntSafe("3.14")).toBe(3);
+    expect(parseIntSafe("9.99")).toBe(9);
+  });
+
+  it("handles whitespace-only input", () => {
+    expect(parseIntSafe("   ")).toBeUndefined();
+  });
 });
