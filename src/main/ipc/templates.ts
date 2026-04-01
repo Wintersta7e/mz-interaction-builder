@@ -1,6 +1,7 @@
 import { IpcMain, app } from "electron";
 import { readFile, writeFile, readdir, mkdir, unlink } from "fs/promises";
 import { join, basename } from "path";
+import { extractErrorMessage } from "./utils";
 
 function getTemplatesDir(): string {
   return join(app.getPath("userData"), "templates");
@@ -77,7 +78,7 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
     } catch (error) {
       return {
         success: false,
-        error: (error as Error).message,
+        error: extractErrorMessage(error),
         templates: [],
       };
     }
@@ -97,7 +98,7 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
       await writeFile(filePath, JSON.stringify(template, null, 2), "utf-8");
       return { success: true };
     } catch (error) {
-      return { success: false, error: (error as Error).message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 
@@ -114,7 +115,7 @@ export function setupTemplateHandlers(ipcMain: IpcMain): void {
       });
       return { success: true };
     } catch (error) {
-      return { success: false, error: (error as Error).message };
+      return { success: false, error: extractErrorMessage(error) };
     }
   });
 }

@@ -554,3 +554,30 @@ describe("export — group/comment nodes are skipped", () => {
     expect(scriptCmds).toHaveLength(1);
   });
 });
+
+describe("export — dynamic menu escaping (SEC-01)", () => {
+  it("escapes backslashes, quotes, and newlines in dynamic choice text", () => {
+    const m = menuNode("m1", [
+      {
+        id: "c1",
+        text: "It's a \\test\nline",
+        hideCondition: { id: "h1", type: "switch", switchId: 1, switchValue: "on" },
+      },
+    ]);
+
+    const { commands } = exportToMZCommands(
+      makeDoc([startNode(), m, endNode()], [edge("e1", "start", "m1"), edge("e2", "m1", "end", "choice-0")]),
+    );
+
+    // Find the script block
+    const scriptLines = commands
+      .filter((c) => c.code === CODE.SCRIPT || c.code === CODE.SCRIPT_LINE)
+      .map((c) => c.parameters[0] as string);
+
+    const joined = scriptLines.join("\n");
+    // Backslash should be double-escaped, quote escaped, newline escaped
+    expect(joined).toContain("It\\'s a \\\\test\\nline");
+    // Must NOT contain a raw unescaped single-quote breaking out
+    expect(joined).not.toContain("It's");
+  });
+});

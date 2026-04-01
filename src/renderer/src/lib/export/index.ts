@@ -47,6 +47,16 @@ const EVENT_CODES = {
 // If your project already uses this variable, change the value here.
 const TEMP_CHOICE_VAR = 99;
 
+/** Escape a string for safe embedding in a single-quoted JavaScript string literal. */
+function escapeJsString(str: string): string {
+  return str
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+}
+
 // Helper to generate condition evaluation script
 function generateConditionScript(condition: Condition): string {
   switch (condition.type) {
@@ -311,7 +321,7 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
     const initLines: string[] = ["const _mzib_c = [];", "const _mzib_m = [];"];
 
     choices.forEach((choice, index) => {
-      const choiceText = choice.text.replace(/'/g, "\\'");
+      const choiceText = escapeJsString(choice.text);
 
       if (choice.hideCondition) {
         // Only add if hide condition is FALSE
@@ -678,7 +688,7 @@ export function exportToMZCommands(document: InteractionDocument): ExportResult 
         bypassTarget = outEdges[0]?.target ?? null;
       }
 
-      if (bypassTarget) {
+      if (bypassTarget && !visited.has(bypassTarget)) {
         processNode(bypassTarget, 0);
       }
       continue;

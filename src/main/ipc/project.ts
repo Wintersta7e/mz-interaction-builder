@@ -2,6 +2,7 @@ import { IpcMain } from "electron";
 import { readFile, writeFile, readdir, stat } from "fs/promises";
 import { existsSync } from "fs";
 import { join } from "path";
+import { extractErrorMessage } from "./utils";
 
 // SEC-10: Maximum file size for RPG Maker project JSON files (100 MB)
 const MAX_PROJECT_FILE_SIZE = 100 * 1024 * 1024;
@@ -93,7 +94,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         }
         return { valid: true };
       } catch (error) {
-        return { valid: false, error: (error as Error).message };
+        return { valid: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -101,7 +102,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
   // Set project path
   ipcMain.handle(
     "project:set-path",
-    async (_event, path: string): Promise<{ success?: boolean; error?: string }> => {
+    async (_event, path: string): Promise<{ success: boolean; error?: string }> => {
       try {
         const files = await readdir(path);
         const hasProject = files.some(
@@ -109,12 +110,12 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
             f.toLowerCase().endsWith(".rmmzproject") || f.toLowerCase().endsWith(".rpgproject"),
         );
         if (!hasProject || !existsSync(join(path, "data"))) {
-          return { error: "Not a valid RPG Maker MZ project" };
+          return { success: false, error: "Not a valid RPG Maker MZ project" };
         }
         projectPath = path;
         return { success: true };
       } catch (error) {
-        return { error: (error as Error).message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -147,7 +148,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         .filter((m): m is MZMapInfo => m !== null)
         .map((m) => ({ id: m.id, name: m.name }));
     } catch (error) {
-      return { error: (error as Error).message };
+      return { error: extractErrorMessage(error) };
     }
   });
 
@@ -188,7 +189,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
             pages: e.pages?.length || 1,
           }));
       } catch (error) {
-        return { error: (error as Error).message };
+        return { error: extractErrorMessage(error) };
       }
     },
   );
@@ -219,7 +220,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         }))
         .filter((s) => s.id > 0);
     } catch (error) {
-      return { error: (error as Error).message };
+      return { error: extractErrorMessage(error) };
     }
   });
 
@@ -249,7 +250,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         }))
         .filter((v) => v.id > 0);
     } catch (error) {
-      return { error: (error as Error).message };
+      return { error: extractErrorMessage(error) };
     }
   });
 
@@ -370,7 +371,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
 
         return { success: true, commandCount: options.commands.length };
       } catch (error) {
-        return { success: false, error: (error as Error).message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );

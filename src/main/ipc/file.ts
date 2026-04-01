@@ -2,6 +2,7 @@ import { IpcMain } from "electron";
 import { readFile, writeFile, stat } from "fs/promises";
 import { existsSync } from "fs";
 import { extname } from "path";
+import { extractErrorMessage } from "./utils";
 
 // SEC-10: Maximum file size for .mzinteraction files (50 MB)
 const MAX_INTERACTION_FILE_SIZE = 50 * 1024 * 1024;
@@ -31,7 +32,7 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
         await writeFile(filePath, content, "utf-8");
         return { success: true };
       } catch (error) {
-        return { success: false, error: (error as Error).message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
@@ -64,7 +65,7 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
         const content = await readFile(filePath, "utf-8");
         return { success: true, content };
       } catch (error) {
-        return { success: false, error: (error as Error).message };
+        return { success: false, error: extractErrorMessage(error) };
       }
     },
   );
