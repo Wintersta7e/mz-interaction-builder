@@ -18,6 +18,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps): React
   const [expandedChoice, setExpandedChoice] = useState<string | null>(null);
 
   const addChoice = (): void => {
+    useHistoryStore.getState().push(useDocumentStore.getState().document);
     const newChoice: MenuChoice = {
       id: generateId("choice"),
       text: `Choice ${choices.length + 1}`,
@@ -33,6 +34,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps): React
   };
 
   const removeChoice = (index: number): void => {
+    useHistoryStore.getState().push(useDocumentStore.getState().document);
     const newChoices = choices.filter((_, i) => i !== index);
     updateNode(node.id, { data: { ...data, choices: newChoices } });
   };

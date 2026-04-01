@@ -70,8 +70,9 @@ export function setupFileHandlers(ipcMain: IpcMain): void {
     },
   );
 
-  // Check if file exists
+  // Check if file exists (restricted to .mzinteraction files)
   ipcMain.handle("file:exists", (_event, filePath: string): boolean => {
+    if (!isAllowedFilePath(filePath)) return false;
     return existsSync(filePath);
   });
 }

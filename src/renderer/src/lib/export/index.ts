@@ -65,7 +65,10 @@ function generateConditionScript(condition: Condition): string {
       return `$gameSwitches.value(${condition.switchId ?? 0}) === ${switchVal}`;
     }
     case "variable": {
-      const op = condition.variableOperator ?? "==";
+      const allowedOps = new Set(["==", "!=", ">", "<", ">=", "<="]);
+      const op = allowedOps.has(condition.variableOperator ?? "==")
+        ? condition.variableOperator!
+        : "==";
       const val = condition.variableCompareValue ?? 0;
       return `$gameVariables.value(${condition.variableId ?? 0}) ${op} ${val}`;
     }
