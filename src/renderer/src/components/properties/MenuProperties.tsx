@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2, ChevronDown, ChevronUp, Eye, EyeOff, Ban } from "lucide-react";
-import { generateId, useDocumentStore } from "../../stores";
+import { generateId, useDocumentStore, useHistoryStore } from "../../stores";
 import { parseIntSafe } from "../../lib/parseIntSafe";
 import type { InteractionNode, MenuNodeData, MenuChoice } from "../../types";
 import { DebouncedInput } from "../DebouncedInputs";
@@ -40,6 +40,7 @@ export function MenuProperties({ node, updateNode }: MenuPropertiesProps): React
   const moveChoice = (index: number, direction: "up" | "down"): void => {
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= choices.length) return;
+    useHistoryStore.getState().push(useDocumentStore.getState().document);
     const newChoices = [...choices];
     const a = newChoices[index];
     const b = newChoices[newIndex];

@@ -115,7 +115,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
     if (!engine) return;
 
     engine.setVariable(id, value);
-    set({ previewState: { ...engine.state } });
+    set({ previewState: clonePreviewState(engine.state) });
   },
 
   setSwitch: (id: number, value: boolean) => {
@@ -123,7 +123,7 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
     if (!engine) return;
 
     engine.setSwitch(id, value);
-    set({ previewState: { ...engine.state } });
+    set({ previewState: clonePreviewState(engine.state) });
   },
 
   toggleAutoPlay: () => {

@@ -336,16 +336,16 @@ export default function App(): React.JSX.Element {
             e.preventDefault();
             if (e.shiftKey) {
               const doc = useHistoryStore.getState().redo();
-              if (doc) setDocument(doc);
+              if (doc) setDocument(doc, true);
             } else {
               const doc = useHistoryStore.getState().undo();
-              if (doc) setDocument(doc);
+              if (doc) setDocument(doc, true);
             }
             break;
           case "y": {
             e.preventDefault();
             const doc = useHistoryStore.getState().redo();
-            if (doc) setDocument(doc);
+            if (doc) setDocument(doc, true);
             break;
           }
         }

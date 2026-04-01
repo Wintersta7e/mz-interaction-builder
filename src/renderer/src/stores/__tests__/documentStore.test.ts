@@ -122,7 +122,12 @@ describe("DocumentStore — presets", () => {
   beforeEach(resetStore);
 
   it("addPreset / updatePreset / removePreset", () => {
-    const preset: VariablePreset = { id: "p1", name: "Test Preset", description: "", variables: [] };
+    const preset: VariablePreset = {
+      id: "p1",
+      name: "Test Preset",
+      description: "",
+      variables: [],
+    };
     useDocumentStore.getState().addPreset(preset);
     expect(useDocumentStore.getState().document.variables).toHaveLength(1);
 
@@ -179,6 +184,22 @@ describe("DocumentStore — document lifecycle", () => {
 
     expect(useDocumentStore.getState().document.name).toBe("New");
     expect(useDocumentStore.getState().isDirty).toBe(false);
+  });
+
+  it("setDocument preserves isDirty when explicitly passed", () => {
+    useDocumentStore.getState().setDocument(
+      {
+        version: "2.0.0",
+        name: "Undo",
+        description: "",
+        nodes: [],
+        edges: [],
+        variables: [],
+        bookmarks: [],
+      },
+      true,
+    );
+    expect(useDocumentStore.getState().isDirty).toBe(true);
   });
 
   it("newDocument creates fresh document", () => {

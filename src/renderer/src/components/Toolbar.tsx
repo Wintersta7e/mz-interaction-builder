@@ -60,12 +60,12 @@ export function Toolbar({
 
   const handleUndo = (): void => {
     const doc = undo();
-    if (doc) setDocument(doc);
+    if (doc) setDocument(doc, true);
   };
 
   const handleRedo = (): void => {
     const doc = redo();
-    if (doc) setDocument(doc);
+    if (doc) setDocument(doc, true);
   };
 
   const handleZoomIn = (): void => {

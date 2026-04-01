@@ -18,7 +18,7 @@ export interface DocumentState {
   isDirty: boolean;
 
   // Document actions
-  setDocument: (doc: InteractionDocument) => void;
+  setDocument: (doc: InteractionDocument, isDirty?: boolean) => void;
   updateDocument: (updates: Partial<InteractionDocument>) => void;
   setSavedPath: (path: string | null) => void;
   setDirty: (dirty: boolean) => void;
@@ -51,7 +51,7 @@ export const useDocumentStore = create<DocumentState>()((set) => ({
   savedPath: null,
   isDirty: false,
 
-  setDocument: (document) => set({ document, isDirty: false }),
+  setDocument: (document, isDirty = false) => set({ document, isDirty }),
   updateDocument: (updates) =>
     set((state) => ({
       document: { ...state.document, ...updates },
