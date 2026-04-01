@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { GitBranch, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -26,7 +26,7 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps): Rea
   );
   const condition = data.condition;
 
-  const getConditionSummary = (): string => {
+  const conditionSummary = useMemo(() => {
     if (!condition) return "No condition";
 
     switch (condition.type) {
@@ -46,7 +46,7 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps): Rea
       default:
         return "Unknown condition";
     }
-  };
+  }, [condition]);
 
   return (
     <div
@@ -89,7 +89,7 @@ function ConditionNodeComponent({ id, data, selected }: ConditionNodeProps): Rea
 
       {/* Content */}
       <div className="relative px-3 pb-3">
-        <p className="truncate text-[11px] text-muted-foreground">{getConditionSummary()}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{conditionSummary}</p>
 
         {/* Branch labels */}
         <div className="mt-2 flex justify-between text-xs">

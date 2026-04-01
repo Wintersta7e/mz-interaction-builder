@@ -32,14 +32,16 @@ export function SearchPanel({ onNavigateToNode }: SearchPanelProps): React.JSX.E
   }, [searchCurrentIndex, searchMatches, onNavigateToNode]);
 
   const cycleNext = useCallback(() => {
-    if (searchMatches.length === 0) return;
-    setSearchCurrentIndex((searchCurrentIndex + 1) % searchMatches.length);
-  }, [searchMatches.length, searchCurrentIndex, setSearchCurrentIndex]);
+    const { searchMatches: matches, searchCurrentIndex: idx } = useUIStore.getState();
+    if (matches.length === 0) return;
+    setSearchCurrentIndex((idx + 1) % matches.length);
+  }, [setSearchCurrentIndex]);
 
   const cyclePrev = useCallback(() => {
-    if (searchMatches.length === 0) return;
-    setSearchCurrentIndex((searchCurrentIndex - 1 + searchMatches.length) % searchMatches.length);
-  }, [searchMatches.length, searchCurrentIndex, setSearchCurrentIndex]);
+    const { searchMatches: matches, searchCurrentIndex: idx } = useUIStore.getState();
+    if (matches.length === 0) return;
+    setSearchCurrentIndex((idx - 1 + matches.length) % matches.length);
+  }, [setSearchCurrentIndex]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

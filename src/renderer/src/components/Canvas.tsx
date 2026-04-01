@@ -52,6 +52,21 @@ import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
 import type { InteractionNodeType, InteractionNode, InteractionEdge } from "../types";
 
+/** Fire-and-forget entrance animation on newly added node elements. */
+function animateNodeEntrance(nodeIds: string[], duration = 200): void {
+  requestAnimationFrame(() => {
+    for (const id of nodeIds) {
+      const el = window.document.querySelector(`[data-id="${id}"] .interaction-node`);
+      if (el instanceof HTMLElement) {
+        el.setAttribute("data-entering", "true");
+        setTimeout(() => {
+          if (el.isConnected) el.removeAttribute("data-entering");
+        }, duration);
+      }
+    }
+  });
+}
+
 function CanvasInner(): React.JSX.Element {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { document, setNodes, setEdges, addNode, addEdge: addDocEdge } = useDocumentStore();
@@ -316,18 +331,7 @@ function CanvasInner(): React.JSX.Element {
         setNodes(allNodes);
         setEdges(allEdges);
 
-        // Brief entrance animation for template nodes
-        requestAnimationFrame(() => {
-          for (const node of newNodes) {
-            const el = window.document.querySelector(`[data-id="${node.id}"] .interaction-node`);
-            if (el instanceof HTMLElement) {
-              el.setAttribute("data-entering", "true");
-              setTimeout(() => {
-                if (el.isConnected) el.removeAttribute("data-entering");
-              }, 200);
-            }
-          }
-        });
+        animateNodeEntrance(newNodes.map((n) => n.id));
         return;
       }
 
@@ -357,16 +361,7 @@ function CanvasInner(): React.JSX.Element {
       addNode(newNode);
       setNodesState((nds) => [...nds, newNode]);
 
-      // Brief entrance animation
-      requestAnimationFrame(() => {
-        const el = window.document.querySelector(`[data-id="${newNode.id}"] .interaction-node`);
-        if (el instanceof HTMLElement) {
-          el.setAttribute("data-entering", "true");
-          setTimeout(() => {
-            if (el.isConnected) el.removeAttribute("data-entering");
-          }, 200);
-        }
-      });
+      animateNodeEntrance([newNode.id]);
     },
     [
       screenToFlowPosition,

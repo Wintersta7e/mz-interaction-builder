@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { List, Star, CheckCircle2, CircleDot } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -31,19 +31,21 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps): React.JSX.Ele
       [id],
     ),
   );
-  const choices = data.choices || [];
+  const choices = useMemo(() => data.choices || [], [data.choices]);
 
-  // Calculate the vertical position of each choice handle relative to the node top
-  const getChoiceHandleTop = (index: number): number => {
-    return (
-      HEADER_HEIGHT + CONTENT_PADDING + index * (CHOICE_HEIGHT + CHOICE_GAP) + CHOICE_HEIGHT / 2
-    );
-  };
+  // Memoize handle positions to avoid recalculating on every render
+  const choiceHandleTops = useMemo(
+    () =>
+      choices.map(
+        (_, i) =>
+          HEADER_HEIGHT + CONTENT_PADDING + i * (CHOICE_HEIGHT + CHOICE_GAP) + CHOICE_HEIGHT / 2,
+      ),
+    [choices],
+  );
 
-  // Input handle position (middle of the node)
-  const getInputHandleTop = (): number => {
+  const inputHandleTop = useMemo(() => {
     if (choices.length === 0) {
-      return HEADER_HEIGHT + CONTENT_PADDING + 10; // Roughly middle of "No choices defined"
+      return HEADER_HEIGHT + CONTENT_PADDING + 10;
     }
     const totalHeight =
       HEADER_HEIGHT +
@@ -51,7 +53,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps): React.JSX.Ele
       choices.length * CHOICE_HEIGHT +
       (choices.length - 1) * CHOICE_GAP;
     return totalHeight / 2;
-  };
+  }, [choices]);
 
   return (
     <div
@@ -74,7 +76,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps): React.JSX.Ele
         position={Position.Left}
         className="!h-3 !w-3 !rounded-full !border-2 !border-background"
         style={{
-          top: getInputHandleTop(),
+          top: inputHandleTop,
           left: -6,
           backgroundColor: "hsl(230 10% 50%)",
         }}
@@ -157,7 +159,7 @@ function MenuNodeComponent({ id, data, selected }: MenuNodeProps): React.JSX.Ele
           id={`choice-${index}`}
           className="!h-3 !w-3 !rounded-full !border-2 !border-background"
           style={{
-            top: getChoiceHandleTop(index),
+            top: choiceHandleTops[index],
             right: -6,
             backgroundColor: NODE_ACCENT_COLORS.menu,
           }}
