@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useEffect, useState } from "react";
+import React, { useCallback, useMemo, useRef, useEffect, useState } from "react";
 import {
   ReactFlow,
   Background,
@@ -461,6 +461,13 @@ function CanvasInner(): React.JSX.Element {
     applyDistribute,
   });
 
+  // PERF-03/05: Memoize selection-derived data to avoid O(n) per render
+  const selectedNodes = useMemo(() => nodes.filter((n) => n.selected), [nodes]);
+  const selectedNodeFromList = useMemo(
+    () => (selectedNodeId ? (nodes.find((n) => n.id === selectedNodeId) ?? null) : null),
+    [selectedNodeId, nodes],
+  );
+
   // P6: Memoize MiniMap nodeColor to avoid re-renders
   const miniMapNodeColor = useCallback(
     (node: { type?: string }) =>
@@ -540,21 +547,20 @@ function CanvasInner(): React.JSX.Element {
                 usePreviewStore.getState().open(nodeId);
                 setContextMenu(null);
               }}
-              hasSelectedNodes={nodes.some((n) => n.selected) || selectedNodeId !== null}
+              hasSelectedNodes={selectedNodes.length > 0 || selectedNodeId !== null}
               selectedNodeId={selectedNodeId}
-              selectedNodeType={
-                selectedNodeId ? (nodes.find((n) => n.id === selectedNodeId)?.type ?? null) : null
-              }
+              selectedNodeType={selectedNodeFromList?.type ?? null}
               isMuted={(() => {
                 // I-2: Compute from full selection, not just selectedNodeId
                 const mutableTypes = new Set(["action", "menu", "condition", "end"]);
-                const selected = nodes.filter((n) => n.selected && mutableTypes.has(n.type ?? ""));
-                if (selected.length > 0) {
-                  return selected.every((n) => !!n.data.muted);
+                const mutableSelected = selectedNodes.filter((n) => mutableTypes.has(n.type ?? ""));
+                if (mutableSelected.length > 0) {
+                  return mutableSelected.every((n) => !!n.data.muted);
                 }
                 // Fallback to single selected node
-                const sel = selectedNodeId ? nodes.find((n) => n.id === selectedNodeId) : null;
-                return sel && mutableTypes.has(sel.type ?? "") ? !!sel.data.muted : false;
+                return selectedNodeFromList && mutableTypes.has(selectedNodeFromList.type ?? "")
+                  ? !!selectedNodeFromList.data.muted
+                  : false;
               })()}
             />
           )}
@@ -564,7 +570,7 @@ function CanvasInner(): React.JSX.Element {
         </AnimatePresence>
         <BookmarkPanel onNavigateToNode={navigateToNode} />
         <AlignmentToolbar
-          selectedNodes={nodes.filter((n) => n.selected)}
+          selectedNodes={selectedNodes}
           onAlign={applyAlign}
           onDistribute={applyDistribute}
         />

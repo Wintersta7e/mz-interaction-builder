@@ -1,4 +1,4 @@
-import type { InteractionNode, InteractionEdge } from "../types";
+import type { InteractionNode, InteractionEdge, MenuNodeData, ActionNodeData } from "../types";
 
 export interface ValidationIssue {
   type: "error" | "warning";
@@ -67,7 +67,7 @@ export function validateDocument(
 
     // Check menu nodes for missing choice connections
     if (node.type === "menu") {
-      const choices = (node.data as { choices?: { id: string }[] }).choices || [];
+      const choices = (node.data as MenuNodeData).choices || [];
       choices.forEach((_choice, index) => {
         const hasConnection = edges.some(
           (e) => e.source === node.id && e.sourceHandle === `choice-${index}`,
@@ -111,7 +111,7 @@ export function validateDocument(
 
     // Check action nodes for empty actions
     if (node.type === "action") {
-      const actions = (node.data as { actions?: unknown[] }).actions || [];
+      const actions = (node.data as ActionNodeData).actions || [];
       if (actions.length === 0) {
         issues.push({
           type: "warning",
