@@ -18,7 +18,15 @@ function makeTestDoc(): InteractionDocument {
         data: {
           type: "action",
           label: "Act",
-          actions: [{ id: "x", type: "set_variable", variableId: 1, variableOperation: "set", variableValue: 42 }],
+          actions: [
+            {
+              id: "x",
+              type: "set_variable",
+              variableId: 1,
+              variableOperation: "set",
+              variableValue: 42,
+            },
+          ],
         } as InteractionDocument["nodes"][0]["data"],
       },
       { id: "e", type: "end", position: { x: 400, y: 0 }, data: { type: "end", label: "End" } },
