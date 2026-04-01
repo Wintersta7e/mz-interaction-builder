@@ -11,6 +11,16 @@ import type {
 import type { PreviewState, TranscriptEntry } from "./types";
 import { evaluateScript, executeScript } from "./scriptSandbox";
 
+/** Detect test environment without depending on Node.js `process` types. */
+function isTestEnvironment(): boolean {
+  try {
+    // Vitest injects process.env.NODE_ENV in its jsdom/happy-dom environment
+    return (globalThis as Record<string, unknown>)["__vitest_worker__"] !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * PreviewEngine — pure TypeScript class that walks an interaction graph
  * to simulate dialogue playback. No React dependencies.
@@ -592,7 +602,7 @@ export class PreviewEngine {
       this._state.transcript = this._state.transcript.slice(-500);
     }
 
-    if (typeof process === "undefined" || process.env?.["NODE_ENV"] !== "test") {
+    if (!isTestEnvironment()) {
       console.debug(
         `[Preview] [${entry.stepIndex}] ${entry.content}`,
         entry.detail ? `| ${entry.detail}` : "",

@@ -90,7 +90,7 @@ export default function App(): React.JSX.Element {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [, setDraggingNodeType] = useState<InteractionNodeType | null>(null);
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectLoadingRef = useRef<AbortController | null>(null);
 
   // Handle Save

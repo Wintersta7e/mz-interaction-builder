@@ -566,7 +566,10 @@ describe("export — dynamic menu escaping (SEC-01)", () => {
     ]);
 
     const { commands } = exportToMZCommands(
-      makeDoc([startNode(), m, endNode()], [edge("e1", "start", "m1"), edge("e2", "m1", "end", "choice-0")]),
+      makeDoc(
+        [startNode(), m, endNode()],
+        [edge("e1", "start", "m1"), edge("e2", "m1", "end", "choice-0")],
+      ),
     );
 
     // Find the script block
