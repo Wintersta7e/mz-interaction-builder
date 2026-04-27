@@ -13,6 +13,9 @@ updates:
       # @vitejs/plugin-react@6 requires vite ^8, blocked by electron-vite@5
       - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
+      # eslint-plugin-react@7.37.5 caps eslint peer at ^9.7; unpin once it ships eslint 10 support
+      - dependency-name: eslint
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         dependency-type: development
