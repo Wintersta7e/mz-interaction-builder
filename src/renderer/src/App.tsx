@@ -25,6 +25,7 @@ import {
   useUIStore,
 } from "./stores";
 import type { InteractionNodeType } from "./types";
+import { extractErrorMessage } from "./lib/extractErrorMessage";
 import "./types/api.d";
 import "./styles/globals.css";
 
@@ -145,6 +146,12 @@ export default function App(): React.JSX.Element {
       }
     }
 
+    // Cancel any pending auto-save so the previous document is not written
+    // after the new document replaces it in the store.
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
     newDocument();
     clear();
   }, [isDirty, newDocument, clear, handleSave]);
@@ -208,6 +215,12 @@ export default function App(): React.JSX.Element {
         }
       }
 
+      // Cancel any pending auto-save before replacing the document so the
+      // previous document is not written under the freshly loaded path.
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
       setDocument(doc);
       setSavedPath(filePath);
       clear();
@@ -215,7 +228,7 @@ export default function App(): React.JSX.Element {
       await window.api.dialog.message({
         type: "error",
         title: "Error",
-        message: e instanceof Error ? e.message : "Invalid file format",
+        message: extractErrorMessage(e),
       });
     }
   }, [isDirty, setDocument, setSavedPath, clear, handleSave]);
@@ -255,39 +268,35 @@ export default function App(): React.JSX.Element {
       }
 
       // Set project path
-      await window.api.project.setPath(folderPath);
+      const setResult = await window.api.project.setPath(folderPath);
       if (signal.aborted) return;
+      if (!setResult.success) {
+        await window.api.dialog.message({
+          type: "error",
+          title: "Invalid Project",
+          message: setResult.error ?? "Failed to set project path",
+        });
+        setLoading(false);
+        return;
+      }
       setProjectPath(folderPath);
       addRecentProject(folderPath);
 
+      // Load maps, switches, variables concurrently — three independent IPC calls.
+      const [mapsResult, switchesResult, variablesResult] = await Promise.all([
+        window.api.project.getMaps(),
+        window.api.project.getSwitches(),
+        window.api.project.getVariables(),
+      ]);
+      if (signal.aborted) return;
+
       const loadWarnings: string[] = [];
-
-      // Load maps
-      const mapsResult = await window.api.project.getMaps();
-      if (signal.aborted) return;
-      if (!("error" in mapsResult)) {
-        setMaps(mapsResult);
-      } else {
-        loadWarnings.push(`Maps: ${mapsResult.error}`);
-      }
-
-      // Load switches
-      const switchesResult = await window.api.project.getSwitches();
-      if (signal.aborted) return;
-      if (!("error" in switchesResult)) {
-        setSwitches(switchesResult);
-      } else {
-        loadWarnings.push(`Switches: ${switchesResult.error}`);
-      }
-
-      // Load variables
-      const variablesResult = await window.api.project.getVariables();
-      if (signal.aborted) return;
-      if (!("error" in variablesResult)) {
-        setVariables(variablesResult);
-      } else {
-        loadWarnings.push(`Variables: ${variablesResult.error}`);
-      }
+      if (!("error" in mapsResult)) setMaps(mapsResult);
+      else loadWarnings.push(`Maps: ${mapsResult.error}`);
+      if (!("error" in switchesResult)) setSwitches(switchesResult);
+      else loadWarnings.push(`Switches: ${switchesResult.error}`);
+      if (!("error" in variablesResult)) setVariables(variablesResult);
+      else loadWarnings.push(`Variables: ${variablesResult.error}`);
 
       const warningText =
         loadWarnings.length > 0
@@ -301,11 +310,12 @@ export default function App(): React.JSX.Element {
       });
     } catch (error) {
       if (signal.aborted) return;
-      setError(error instanceof Error ? error.message : "Failed to load project");
+      const message = extractErrorMessage(error);
+      setError(message);
       await window.api.dialog.message({
         type: "error",
         title: "Error",
-        message: error instanceof Error ? error.message : "Failed to load project",
+        message,
       });
     } finally {
       if (projectLoadingRef.current?.signal === signal) {

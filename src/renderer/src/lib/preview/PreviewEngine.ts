@@ -104,7 +104,10 @@ export class PreviewEngine {
     // Mark current node as visited before processing
     this._state.visitedNodes.add(nodeId);
 
-    // Muted node bypass — skip processing and follow bypass edge
+    // Muted node bypass — skip processing and follow bypass edge.
+    // Mirrors the export pipeline (lib/export/index.ts:680-697): try the
+    // canonical handle first ("choice-0" / "true"), fall back to any outgoing
+    // edge so muted nodes with non-canonical wiring still advance.
     if (node.data.muted && node.type !== "start") {
       this.addTranscript({
         nodeId: node.id,
@@ -112,16 +115,22 @@ export class PreviewEngine {
         content: `[Muted] Skipped ${node.data.label}`,
       });
 
-      switch (node.type) {
-        case "condition":
-          this.followEdge(node.id, "true");
-          break;
-        case "menu":
-          this.followEdge(node.id, "choice-0");
-          break;
-        default:
-          this.followEdge(node.id);
-          break;
+      const outEdges = this.edgesBySource.get(node.id) ?? [];
+      let bypassEdge: InteractionEdge | undefined;
+      if (node.type === "condition") {
+        bypassEdge = outEdges.find((e) => e.sourceHandle === "true") ?? outEdges[0];
+      } else if (node.type === "menu") {
+        bypassEdge = outEdges.find((e) => e.sourceHandle === "choice-0") ?? outEdges[0];
+      } else {
+        bypassEdge = outEdges[0];
+      }
+
+      if (bypassEdge) {
+        this._state.visitedEdges.add(bypassEdge.id);
+        this._state.currentNodeId = bypassEdge.target;
+      } else {
+        this._state.status = "ended";
+        this._state.currentNodeId = null;
       }
 
       return this._state;
@@ -601,6 +610,7 @@ export class PreviewEngine {
     if (this._state.transcript.length > 500) {
       this._state.transcript = this._state.transcript.slice(-500);
     }
+    this._state.transcriptVersion += 1;
 
     if (!isTestEnvironment()) {
       console.debug(
@@ -638,6 +648,7 @@ export class PreviewEngine {
       variables: new Map(),
       switches: new Map(),
       transcript: [],
+      transcriptVersion: 0,
       visitedNodes: new Set(),
       visitedEdges: new Set(),
       choiceHistory: [],

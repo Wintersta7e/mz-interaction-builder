@@ -4,6 +4,7 @@ import { X, Copy, Check, Download } from "lucide-react";
 import { useDocumentStore, useProjectStore, useUIStore } from "../stores";
 import { exportToMZCommands, exportAsJSON } from "../lib/export";
 import { VARIANTS, TRANSITION } from "../lib/animations";
+import { extractErrorMessage } from "../lib/extractErrorMessage";
 import "../types/api.d";
 
 interface ExportModalProps {
@@ -31,54 +32,56 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps): React.JSX.El
     };
   }, []);
 
-  // Load maps when project path changes
+  // Load maps when project path changes — guards state writes against unmount/close races.
   useEffect(() => {
-    if (projectPath && isOpen) {
-      void loadMaps();
-    }
-  }, [projectPath, isOpen]);
+    if (!projectPath || !isOpen) return;
+    let cancelled = false;
+    const run = async (): Promise<void> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await window.api.project.getMaps();
+        if (cancelled) return;
+        if ("error" in result) setError(result.error);
+        else setMaps(result);
+      } catch (e) {
+        if (!cancelled) setError(extractErrorMessage(e));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [projectPath, isOpen, setMaps]);
 
   // Load events when map changes
   useEffect(() => {
-    if (selectedMapId !== null) {
-      void loadEvents(selectedMapId);
-    }
+    if (selectedMapId === null) return;
+    let cancelled = false;
+    const run = async (mapId: number): Promise<void> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await window.api.project.getMapEvents(mapId);
+        if (cancelled) return;
+        if ("error" in result) setError(result.error);
+        else {
+          setEvents(result);
+          setSelectedEventId(null);
+        }
+      } catch (e) {
+        if (!cancelled) setError(extractErrorMessage(e));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    void run(selectedMapId);
+    return () => {
+      cancelled = true;
+    };
   }, [selectedMapId]);
-
-  const loadMaps = async (): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await window.api.project.getMaps();
-      if ("error" in result) {
-        setError(result.error);
-      } else {
-        setMaps(result);
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadEvents = async (mapId: number): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const result = await window.api.project.getMapEvents(mapId);
-      if ("error" in result) {
-        setError(result.error);
-      } else {
-        setEvents(result);
-        setSelectedEventId(null);
-      }
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSelectProject = async (): Promise<void> => {
     const path = await window.api.dialog.openFolder();
@@ -90,7 +93,11 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps): React.JSX.El
       return;
     }
 
-    await window.api.project.setPath(path);
+    const setResult = await window.api.project.setPath(path);
+    if (!setResult.success) {
+      setError(setResult.error ?? "Failed to set project path");
+      return;
+    }
     setProjectPath(path);
   };
 
@@ -154,7 +161,7 @@ export function ExportModal({ isOpen, onClose }: ExportModalProps): React.JSX.El
         onClose();
       }
     } catch (e) {
-      setError((e as Error).message);
+      setError(extractErrorMessage(e));
     } finally {
       setIsLoading(false);
     }

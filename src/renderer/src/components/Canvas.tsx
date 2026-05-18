@@ -38,6 +38,7 @@ import { AlignmentToolbar } from "./AlignmentToolbar";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
 import { AlignmentGuides } from "./AlignmentGuides";
+import { pendingAnimationTimers, clearPendingAnimationTimers } from "../lib/pendingAnimationTimers";
 import {
   useDocumentStore,
   useUIStore,
@@ -59,9 +60,11 @@ function animateNodeEntrance(nodeIds: string[], duration = 200): void {
       const el = window.document.querySelector(`[data-id="${id}"] .interaction-node`);
       if (el instanceof HTMLElement) {
         el.setAttribute("data-entering", "true");
-        setTimeout(() => {
+        const timerId = setTimeout(() => {
+          pendingAnimationTimers.delete(timerId);
           if (el.isConnected) el.removeAttribute("data-entering");
         }, duration);
+        pendingAnimationTimers.add(timerId);
       }
     }
   });
@@ -114,6 +117,10 @@ function CanvasInner(): React.JSX.Element {
     setNodesState(document.nodes);
     setEdgesState(document.edges);
   }, [document.nodes, document.edges, setNodesState, setEdgesState]);
+
+  // Cancel any in-flight node-entrance / paste-flash timers on unmount so
+  // their closures over detached DOM elements are released immediately.
+  useEffect(() => clearPendingAnimationTimers, []);
 
   // Sync nodes/edges changes to document store
   const handleNodesChange = useCallback(
@@ -216,7 +223,11 @@ function CanvasInner(): React.JSX.Element {
   // Validate connections: reject self-loops and duplicate edges (I-3)
   const isValidConnection = useCallback((connection: Connection | InteractionEdge) => {
     if (connection.source === connection.target) return false;
-    return !edgesRef.current.some(
+    // Read live edges directly from the store to avoid the stale-ref race
+    // between rapid connect events (edgesRef is updated by a useEffect after
+    // the render that follows each connect).
+    const currentEdges = useDocumentStore.getState().document.edges;
+    return !currentEdges.some(
       (e) =>
         e.source === connection.source &&
         e.target === connection.target &&
@@ -249,9 +260,13 @@ function CanvasInner(): React.JSX.Element {
   const onReconnectEnd = useCallback(
     (_event: MouseEvent | TouchEvent, edge: InteractionEdge) => {
       if (!edgeReconnectSuccessfulRef.current) {
-        // Dropped on empty space — delete the edge
+        // Dropped on empty space — delete the edge. Read live edges from the
+        // store rather than edgesRef (which is updated by a useEffect after
+        // render) so the post-reconnect snapshot is correct.
         push(useDocumentStore.getState().document);
-        const updatedEdges = edgesRef.current.filter((e) => e.id !== edge.id);
+        const updatedEdges = useDocumentStore
+          .getState()
+          .document.edges.filter((e) => e.id !== edge.id);
         setEdgesState(updatedEdges);
         setEdges(updatedEdges);
       }
