@@ -25,11 +25,15 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
   const currentNodeIdRef = useRef<string | null>(null);
 
   // Teardown effect: only runs when isOpen flips or the component unmounts.
+  // The cleanup returned from the open-run handles the close transition, so
+  // the body only sets up when isOpen is true.
   useEffect(() => {
+    if (!isOpen) return;
     const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
 
-    const reset = (): void => {
+    rfEl.setAttribute("data-previewing", "");
+    return () => {
       rfEl.removeAttribute("data-previewing");
       rfEl
         .querySelectorAll(".preview-current, .preview-visited")
@@ -38,13 +42,6 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
       markedEdgesRef.current = new Set();
       currentNodeIdRef.current = null;
     };
-
-    if (!isOpen) {
-      reset();
-      return;
-    }
-    rfEl.setAttribute("data-previewing", "");
-    return reset;
   }, [isOpen, wrapperRef]);
 
   // Incremental update effect: applies class swaps for the current node and
@@ -55,18 +52,17 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
     if (!rfEl) return;
 
     const newCurrentId = previewState?.currentNodeId ?? null;
-    const visitedNodes = coverageData.visitedNodes;
-    const visitedEdges = coverageData.visitedEdges;
+    const prevCurrentId = currentNodeIdRef.current;
 
-    if (currentNodeIdRef.current && currentNodeIdRef.current !== newCurrentId) {
-      const prevEl = rfEl.querySelector(`.react-flow__node[data-id="${currentNodeIdRef.current}"]`);
+    if (prevCurrentId && prevCurrentId !== newCurrentId) {
+      const prevEl = rfEl.querySelector(`.react-flow__node[data-id="${prevCurrentId}"]`);
       prevEl?.classList.remove("preview-current");
-      if (visitedNodes.has(currentNodeIdRef.current)) {
+      if (coverageData.visitedNodes.has(prevCurrentId)) {
         prevEl?.classList.add("preview-visited");
-        markedNodesRef.current.add(currentNodeIdRef.current);
+        markedNodesRef.current.add(prevCurrentId);
       }
     }
-    if (newCurrentId && newCurrentId !== currentNodeIdRef.current) {
+    if (newCurrentId && newCurrentId !== prevCurrentId) {
       const el = rfEl.querySelector(`.react-flow__node[data-id="${newCurrentId}"]`);
       if (el) {
         el.classList.remove("preview-visited");
@@ -75,14 +71,13 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
     }
     currentNodeIdRef.current = newCurrentId;
 
-    for (const id of visitedNodes) {
-      if (id === newCurrentId) continue;
-      if (markedNodesRef.current.has(id)) continue;
+    for (const id of coverageData.visitedNodes) {
+      if (id === newCurrentId || markedNodesRef.current.has(id)) continue;
       const el = rfEl.querySelector(`.react-flow__node[data-id="${id}"]`);
       el?.classList.add("preview-visited");
       markedNodesRef.current.add(id);
     }
-    for (const id of visitedEdges) {
+    for (const id of coverageData.visitedEdges) {
       if (markedEdgesRef.current.has(id)) continue;
       const el = rfEl.querySelector(`.react-flow__edge[data-id="${id}"]`);
       el?.classList.add("preview-visited");
