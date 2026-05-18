@@ -57,6 +57,20 @@ describe("evaluateScript", () => {
     expect(evaluateScript("undefinedThing.foo", vars, switches)).toBeInstanceOf(Error);
   });
 
+  it("blocks Function constructor escape (lexical name)", () => {
+    const vars = new Map<number, number>();
+    const switches = new Map<number, boolean>();
+    const result = evaluateScript("Function('return globalThis')()", vars, switches);
+    expect(result).toBeInstanceOf(Error);
+  });
+
+  it("shadows process and require so renderer cannot reach Node APIs", () => {
+    const vars = new Map<number, number>();
+    const switches = new Map<number, boolean>();
+    expect(evaluateScript("typeof process", vars, switches)).toBe("undefined");
+    expect(evaluateScript("typeof require", vars, switches)).toBe("undefined");
+  });
+
   it("shadows window/document/fetch as undefined", () => {
     const vars = new Map<number, number>();
     const switches = new Map<number, boolean>();

@@ -69,8 +69,12 @@ export function evaluateScript(
   switches: Map<number, boolean>,
 ): unknown {
   try {
-    // Shadow dangerous globals and constructor-chain escapes to prevent scripts
-    // from reaching the IPC bridge or Node APIs.
+    // Shadow dangerous globals so scripts cannot reach the IPC bridge or Node
+    // APIs by name. Note: prototype-chain escapes such as
+    // `(1).constructor.constructor("...")()` are not blockable inside a
+    // new-Function sandbox and remain a known limitation — this is a "trust
+    // the document you opened" boundary, not a hostile-code boundary. Real
+    // isolation would require a Worker or sandboxed iframe.
     // eslint-disable-next-line @typescript-eslint/no-implied-eval
     const fn = new Function(
       "$gameSwitches",

@@ -307,4 +307,56 @@ describe("validateDocument", () => {
       expect(issues[0]!.message).toContain("No Start node");
     });
   });
+
+  describe("group and comment nodes", () => {
+    it("does not warn about group nodes having no connections", () => {
+      const nodes: InteractionNode[] = [
+        node("s1", "start"),
+        node("g1", "group"),
+        node("e1", "end"),
+      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
+      const issues = validateDocument(nodes, edges);
+      expect(issues.filter((i) => i.nodeId === "g1")).toHaveLength(0);
+    });
+
+    it("does not warn about comment nodes having no connections", () => {
+      const nodes: InteractionNode[] = [
+        node("s1", "start"),
+        node("c1", "comment"),
+        node("e1", "end"),
+      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
+      const issues = validateDocument(nodes, edges);
+      expect(issues.filter((i) => i.nodeId === "c1")).toHaveLength(0);
+    });
+
+    it("returns no warnings at all when only start/end + group/comment present", () => {
+      const nodes: InteractionNode[] = [
+        node("s1", "start"),
+        node("g1", "group"),
+        node("c1", "comment"),
+        node("e1", "end"),
+      ];
+      const edges: InteractionEdge[] = [{ id: "e-1", source: "s1", target: "e1" }];
+      const issues = validateDocument(nodes, edges);
+      expect(issues).toHaveLength(0);
+    });
+  });
+
+  describe("menu node with zero choices", () => {
+    it("emits no choice-connection warnings when the menu has no choices", () => {
+      const nodes: InteractionNode[] = [
+        node("s1", "start"),
+        node("m1", "menu", { type: "menu", choices: [] } as Partial<InteractionNode["data"]>),
+        node("e1", "end"),
+      ];
+      const edges: InteractionEdge[] = [
+        { id: "e-1", source: "s1", target: "m1" },
+        { id: "e-2", source: "m1", target: "e1" },
+      ];
+      const issues = validateDocument(nodes, edges);
+      expect(issues.filter((i) => i.message.includes("Choice"))).toHaveLength(0);
+    });
+  });
 });

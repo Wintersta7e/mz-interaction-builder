@@ -114,4 +114,21 @@ describe("useDebouncedSync", () => {
 
     expect(result.current.localValue).toBe("external update");
   });
+
+  it("does not commit when the component unmounts before the delay elapses", () => {
+    const commit = vi.fn();
+    const { result, unmount } = renderHook(() => useDebouncedSync<string>("", commit, 300));
+
+    act(() => {
+      result.current.setLocalValue("typed");
+    });
+
+    unmount();
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(commit).not.toHaveBeenCalled();
+  });
 });

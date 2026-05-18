@@ -48,7 +48,7 @@ const EVENT_CODES = {
 const TEMP_CHOICE_VAR = 99;
 
 /** Escape a string for safe embedding in a single-quoted JavaScript string literal. */
-function escapeJsString(str: string): string {
+export function escapeJsString(str: string): string {
   return str
     .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
