@@ -94,20 +94,11 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
     engine.step(choiceIndex);
 
     // Merge engine's visited sets into cumulative coverage
-    const newVisitedNodes = new Set(coverageData.visitedNodes);
-    for (const id of engine.state.visitedNodes) {
-      newVisitedNodes.add(id);
-    }
-    const newVisitedEdges = new Set(coverageData.visitedEdges);
-    for (const id of engine.state.visitedEdges) {
-      newVisitedEdges.add(id);
-    }
-
     set({
       previewState: clonePreviewState(engine.state, previewState),
       coverageData: {
-        visitedNodes: newVisitedNodes,
-        visitedEdges: newVisitedEdges,
+        visitedNodes: new Set([...coverageData.visitedNodes, ...engine.state.visitedNodes]),
+        visitedEdges: new Set([...coverageData.visitedEdges, ...engine.state.visitedEdges]),
       },
     });
   },

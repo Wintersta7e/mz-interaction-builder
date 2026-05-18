@@ -18,6 +18,27 @@ async function readProjectFile(filePath: string): Promise<string> {
   return readFile(filePath, "utf-8");
 }
 
+/** RPG Maker MZ map filenames are zero-padded to 3 digits (e.g. Map001.json). */
+function mapFileName(mapId: number): string {
+  return `Map${String(mapId).padStart(3, "0")}.json`;
+}
+
+/** Validate that a value is a positive (>= min) integer. */
+function isPositiveInt(value: unknown, min: number): boolean {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= min &&
+    value === Math.floor(value)
+  );
+}
+
+/** Returns true if `filename` looks like an RPG Maker MZ project descriptor. */
+function isProjectFile(filename: string): boolean {
+  const lower = filename.toLowerCase();
+  return lower.endsWith(".rmmzproject") || lower.endsWith(".rpgproject");
+}
+
 interface MZMapInfo {
   id: number;
   name: string;
@@ -75,11 +96,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       try {
         // Check for RPG Maker MZ project files (case-insensitive)
         const files = await readdir(path);
-        const projectFile = files.find(
-          (f) =>
-            f.toLowerCase().endsWith(".rmmzproject") || f.toLowerCase().endsWith(".rpgproject"),
-        );
-        if (!projectFile) {
+        if (!files.some(isProjectFile)) {
           return {
             valid: false,
             error: "Not a valid RPG Maker MZ project (no .rmmzproject or .rpgproject file found)",
@@ -105,11 +122,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
     async (_event, path: string): Promise<{ success: boolean; error?: string }> => {
       try {
         const files = await readdir(path);
-        const hasProject = files.some(
-          (f) =>
-            f.toLowerCase().endsWith(".rmmzproject") || f.toLowerCase().endsWith(".rpgproject"),
-        );
-        if (!hasProject || !existsSync(join(path, "data"))) {
+        if (!files.some(isProjectFile) || !existsSync(join(path, "data"))) {
           return { success: false, error: "Not a valid RPG Maker MZ project" };
         }
         projectPath = path;
@@ -157,16 +170,10 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
     "project:get-map-events",
     async (_event, mapId: number): Promise<MZMapEvent[] | { error: string }> => {
       if (!projectPath) return { error: "No project loaded" };
-      if (
-        typeof mapId !== "number" ||
-        !Number.isFinite(mapId) ||
-        mapId < 1 ||
-        mapId !== Math.floor(mapId)
-      ) {
-        return { error: "Invalid map ID" };
-      }
+      if (!isPositiveInt(mapId, 1)) return { error: "Invalid map ID" };
 
-      const mapFile = join(projectPath, "data", `Map${String(mapId).padStart(3, "0")}.json`);
+      const fileName = mapFileName(mapId);
+      const mapFile = join(projectPath, "data", fileName);
       if (!existsSync(mapFile)) {
         return { error: "Map file not found" };
       }
@@ -178,7 +185,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           mapData = JSON.parse(data) as RawMZMapData;
         } catch (parseError) {
           return {
-            error: `Failed to parse Map${String(mapId).padStart(3, "0")}.json: ${extractErrorMessage(parseError)}`,
+            error: `Failed to parse ${fileName}: ${extractErrorMessage(parseError)}`,
           };
         }
         return mapData.events
@@ -267,41 +274,20 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
       },
     ): Promise<{ success: boolean; commandCount?: number; error?: string }> => {
       if (!projectPath) return { success: false, error: "No project loaded" };
-      if (
-        typeof options.mapId !== "number" ||
-        !Number.isFinite(options.mapId) ||
-        options.mapId < 1 ||
-        options.mapId !== Math.floor(options.mapId)
-      ) {
+      if (!isPositiveInt(options.mapId, 1)) {
         return { success: false, error: "Invalid map ID" };
       }
-      if (
-        typeof options.eventId !== "number" ||
-        !Number.isFinite(options.eventId) ||
-        options.eventId < 1 ||
-        options.eventId !== Math.floor(options.eventId)
-      ) {
+      if (!isPositiveInt(options.eventId, 1)) {
         return { success: false, error: "Invalid event ID" };
       }
-      if (
-        typeof options.pageIndex !== "number" ||
-        !Number.isFinite(options.pageIndex) ||
-        options.pageIndex < 0 ||
-        options.pageIndex !== Math.floor(options.pageIndex)
-      ) {
+      if (!isPositiveInt(options.pageIndex, 0)) {
         return { success: false, error: "Invalid page index" };
       }
 
-      const mapFile = join(
-        projectPath,
-        "data",
-        `Map${String(options.mapId).padStart(3, "0")}.json`,
-      );
+      const fileName = mapFileName(options.mapId);
+      const mapFile = join(projectPath, "data", fileName);
       if (!existsSync(mapFile)) {
-        return {
-          success: false,
-          error: `Map file not found: Map${String(options.mapId).padStart(3, "0")}.json`,
-        };
+        return { success: false, error: `Map file not found: ${fileName}` };
       }
 
       try {
@@ -333,7 +319,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         } catch (parseError) {
           return {
             success: false,
-            error: `Failed to parse Map${String(options.mapId).padStart(3, "0")}.json: ${extractErrorMessage(parseError)}`,
+            error: `Failed to parse ${fileName}: ${extractErrorMessage(parseError)}`,
           };
         }
 

@@ -13,12 +13,7 @@ import { evaluateScript, executeScript } from "./scriptSandbox";
 
 /** Detect test environment without depending on Node.js `process` types. */
 function isTestEnvironment(): boolean {
-  try {
-    // Vitest injects process.env.NODE_ENV in its jsdom/happy-dom environment
-    return (globalThis as Record<string, unknown>)["__vitest_worker__"] !== undefined;
-  } catch {
-    return false;
-  }
+  return (globalThis as Record<string, unknown>)["__vitest_worker__"] !== undefined;
 }
 
 /**

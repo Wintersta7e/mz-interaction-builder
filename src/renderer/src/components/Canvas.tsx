@@ -53,6 +53,17 @@ import { useTemplateStore } from "../stores/templateStore";
 import { instantiateTemplate } from "../lib/templateUtils";
 import type { InteractionNodeType, InteractionNode, InteractionEdge } from "../types";
 
+const VALID_NODE_TYPES: ReadonlySet<InteractionNodeType> = new Set([
+  "start",
+  "menu",
+  "action",
+  "condition",
+  "end",
+  "group",
+  "comment",
+]);
+const MUTABLE_NODE_TYPES: ReadonlySet<string> = new Set(["action", "menu", "condition", "end"]);
+
 /** Fire-and-forget entrance animation on newly added node elements. */
 function animateNodeEntrance(nodeIds: string[], duration = 200): void {
   requestAnimationFrame(() => {
@@ -351,17 +362,7 @@ function CanvasInner(): React.JSX.Element {
       }
 
       const rawType = event.dataTransfer.getData("application/interaction-node");
-      if (!rawType) return;
-      const validTypes: InteractionNodeType[] = [
-        "start",
-        "menu",
-        "action",
-        "condition",
-        "end",
-        "group",
-        "comment",
-      ];
-      if (!validTypes.includes(rawType as InteractionNodeType)) return;
+      if (!rawType || !VALID_NODE_TYPES.has(rawType as InteractionNodeType)) return;
       const type = rawType as InteractionNodeType;
 
       const position = screenToFlowPosition({
@@ -489,10 +490,9 @@ function CanvasInner(): React.JSX.Element {
   // a Set + ran a filter on every CanvasInner render (~60/sec during drag).
   const isMutedForContextMenu = useMemo(() => {
     if (!contextMenu) return false;
-    const mutableTypes = new Set(["action", "menu", "condition", "end"]);
-    const mutableSelected = selectedNodes.filter((n) => mutableTypes.has(n.type ?? ""));
+    const mutableSelected = selectedNodes.filter((n) => MUTABLE_NODE_TYPES.has(n.type ?? ""));
     if (mutableSelected.length > 0) return mutableSelected.every((n) => !!n.data.muted);
-    return selectedNodeFromList && mutableTypes.has(selectedNodeFromList.type ?? "")
+    return selectedNodeFromList && MUTABLE_NODE_TYPES.has(selectedNodeFromList.type ?? "")
       ? !!selectedNodeFromList.data.muted
       : false;
   }, [contextMenu, selectedNodes, selectedNodeFromList]);

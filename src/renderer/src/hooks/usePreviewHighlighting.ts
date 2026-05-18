@@ -27,14 +27,18 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
     const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
 
-    if (!isOpen) {
+    const reset = (): void => {
       rfEl.removeAttribute("data-previewing");
-      rfEl.querySelectorAll(".preview-current, .preview-visited").forEach((el) => {
-        el.classList.remove("preview-current", "preview-visited");
-      });
+      rfEl
+        .querySelectorAll(".preview-current, .preview-visited")
+        .forEach((el) => el.classList.remove("preview-current", "preview-visited"));
       markedNodesRef.current = new Set();
       markedEdgesRef.current = new Set();
       currentNodeIdRef.current = null;
+    };
+
+    if (!isOpen) {
+      reset();
       return;
     }
 
@@ -79,43 +83,34 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
       markedEdgesRef.current.add(id);
     }
 
-    return () => {
-      rfEl.removeAttribute("data-previewing");
-      rfEl
-        .querySelectorAll(".preview-current, .preview-visited")
-        .forEach((el) => el.classList.remove("preview-current", "preview-visited"));
-      markedNodesRef.current = new Set();
-      markedEdgesRef.current = new Set();
-      currentNodeIdRef.current = null;
-    };
+    return reset;
   }, [isOpen, previewState, coverageData, wrapperRef]);
 
   // Auto-center on current node when it changes
   useEffect(() => {
     if (!isOpen || !previewState?.currentNodeId) return;
-    const node = getNodes().find((n) => n.id === previewState.currentNodeId);
-    if (node) {
-      const w = node.measured?.width ?? 180;
-      const h = node.measured?.height ?? 80;
-      void setCenter(node.position.x + w / 2, node.position.y + h / 2, {
-        zoom: 1,
-        duration: 300,
-      });
-    }
+    centerOnNode(getNodes(), previewState.currentNodeId, setCenter);
   }, [isOpen, previewState?.currentNodeId, setCenter, getNodes]);
 
   // Handle focusNodeId from ExecutionLog clicks
   useEffect(() => {
     if (!focusNodeId) return;
-    const node = getNodes().find((n) => n.id === focusNodeId);
-    if (node) {
-      const w = node.measured?.width ?? 180;
-      const h = node.measured?.height ?? 80;
-      void setCenter(node.position.x + w / 2, node.position.y + h / 2, {
-        zoom: 1,
-        duration: 300,
-      });
-    }
+    centerOnNode(getNodes(), focusNodeId, setCenter);
     usePreviewStore.getState().setFocusNodeId(null);
   }, [focusNodeId, setCenter, getNodes]);
+}
+
+type RFNode = {
+  id: string;
+  position: { x: number; y: number };
+  measured?: { width?: number; height?: number };
+};
+type SetCenter = (x: number, y: number, opts?: { zoom?: number; duration?: number }) => unknown;
+
+function centerOnNode(nodes: RFNode[], nodeId: string, setCenter: SetCenter): void {
+  const node = nodes.find((n) => n.id === nodeId);
+  if (!node) return;
+  const w = node.measured?.width ?? 180;
+  const h = node.measured?.height ?? 80;
+  void setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: 1, duration: 300 });
 }
