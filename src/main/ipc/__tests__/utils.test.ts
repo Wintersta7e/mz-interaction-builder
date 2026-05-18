@@ -71,4 +71,10 @@ describe("extractErrorMessage (main)", () => {
   it("preserves non-path text when no path is present", () => {
     expect(extractErrorMessage(new Error("Just a plain message"))).toBe("Just a plain message");
   });
+
+  it("falls through to path-stripping for unrecognized errno codes", () => {
+    const result = extractErrorMessage(errnoError("ETIMEDOUT", "connect ETIMEDOUT /run/socket"));
+    expect(result).not.toContain("/run/socket");
+    expect(result).toContain("ETIMEDOUT");
+  });
 });

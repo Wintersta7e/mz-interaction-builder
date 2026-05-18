@@ -255,7 +255,7 @@ export class PreviewEngine {
     const detailParts: string[] = [];
     let dialogueText: string | null = null;
 
-    for (const action of data.actions) {
+    for (const action of data.actions ?? []) {
       const result = this.simulateAction(action);
       if (result) {
         summaryParts.push(result);
@@ -443,7 +443,7 @@ export class PreviewEngine {
   /** Process a Menu node: evaluate choice conditions, build available choices, wait for selection */
   private processMenuNode(node: InteractionNode): void {
     const data = node.data as MenuNodeData;
-    const choices = data.choices;
+    const choices = data.choices ?? [];
 
     const availableChoices: PreviewState["availableChoices"] = choices.map((choice, index) => {
       let hidden = false;
