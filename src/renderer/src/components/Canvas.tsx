@@ -485,6 +485,18 @@ function CanvasInner(): React.JSX.Element {
     [],
   );
 
+  // Memoize isMuted for the context menu. The previous inline IIFE allocated
+  // a Set + ran a filter on every CanvasInner render (~60/sec during drag).
+  const isMutedForContextMenu = useMemo(() => {
+    if (!contextMenu) return false;
+    const mutableTypes = new Set(["action", "menu", "condition", "end"]);
+    const mutableSelected = selectedNodes.filter((n) => mutableTypes.has(n.type ?? ""));
+    if (mutableSelected.length > 0) return mutableSelected.every((n) => !!n.data.muted);
+    return selectedNodeFromList && mutableTypes.has(selectedNodeFromList.type ?? "")
+      ? !!selectedNodeFromList.data.muted
+      : false;
+  }, [contextMenu, selectedNodes, selectedNodeFromList]);
+
   return (
     <div className="flex h-full w-full flex-col">
       <BreadcrumbTrail onNavigateToNode={navigateToNode} />
@@ -560,18 +572,7 @@ function CanvasInner(): React.JSX.Element {
               hasSelectedNodes={selectedNodes.length > 0 || selectedNodeId !== null}
               selectedNodeId={selectedNodeId}
               selectedNodeType={selectedNodeFromList?.type ?? null}
-              isMuted={(() => {
-                // I-2: Compute from full selection, not just selectedNodeId
-                const mutableTypes = new Set(["action", "menu", "condition", "end"]);
-                const mutableSelected = selectedNodes.filter((n) => mutableTypes.has(n.type ?? ""));
-                if (mutableSelected.length > 0) {
-                  return mutableSelected.every((n) => !!n.data.muted);
-                }
-                // Fallback to single selected node
-                return selectedNodeFromList && mutableTypes.has(selectedNodeFromList.type ?? "")
-                  ? !!selectedNodeFromList.data.muted
-                  : false;
-              })()}
+              isMuted={isMutedForContextMenu}
             />
           )}
         </AnimatePresence>

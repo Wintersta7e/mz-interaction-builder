@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { usePreviewStore } from "../stores";
 
@@ -7,9 +7,8 @@ import { usePreviewStore } from "../stores";
  * Applies CSS classes to React Flow nodes/edges for dimming/highlighting
  * during dialogue preview.
  *
- * NOTE: Uses direct DOM manipulation for performance — avoids re-rendering
- * all nodes just to toggle a CSS class. Follows the same pattern as
- * usePathHighlighting.ts.
+ * Uses direct DOM manipulation and incremental updates to avoid re-rendering
+ * all nodes when only one or two have changed.
  */
 export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | null>): void {
   const isOpen = usePreviewStore((s) => s.isOpen);
@@ -18,51 +17,76 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
   const focusNodeId = usePreviewStore((s) => s.focusNodeId);
   const { setCenter, getNodes } = useReactFlow();
 
-  // Apply preview DOM classes
+  // Track which IDs have the preview-visited class applied so we can do
+  // incremental updates instead of scanning every node element on each step.
+  const markedNodesRef = useRef<Set<string>>(new Set());
+  const markedEdgesRef = useRef<Set<string>>(new Set());
+  const currentNodeIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
 
-    if (isOpen) {
-      rfEl.setAttribute("data-previewing", "");
-    } else {
+    if (!isOpen) {
       rfEl.removeAttribute("data-previewing");
-      // Clean up all preview classes
       rfEl.querySelectorAll(".preview-current, .preview-visited").forEach((el) => {
         el.classList.remove("preview-current", "preview-visited");
       });
+      markedNodesRef.current = new Set();
+      markedEdgesRef.current = new Set();
+      currentNodeIdRef.current = null;
       return;
     }
 
-    const currentId = previewState?.currentNodeId;
+    rfEl.setAttribute("data-previewing", "");
+    const newCurrentId = previewState?.currentNodeId ?? null;
     const visitedNodes = coverageData.visitedNodes;
     const visitedEdges = coverageData.visitedEdges;
 
-    // Update node classes
-    rfEl.querySelectorAll(".react-flow__node").forEach((el) => {
-      const id = el.getAttribute("data-id");
-      el.classList.remove("preview-current", "preview-visited");
-      if (id === currentId) {
+    // Swap preview-current: remove from previous, add to new (1–2 DOM ops).
+    if (currentNodeIdRef.current && currentNodeIdRef.current !== newCurrentId) {
+      const prevEl = rfEl.querySelector(`.react-flow__node[data-id="${currentNodeIdRef.current}"]`);
+      prevEl?.classList.remove("preview-current");
+      // The just-departed node is now visited.
+      if (visitedNodes.has(currentNodeIdRef.current)) {
+        prevEl?.classList.add("preview-visited");
+        markedNodesRef.current.add(currentNodeIdRef.current);
+      }
+    }
+    if (newCurrentId && newCurrentId !== currentNodeIdRef.current) {
+      const el = rfEl.querySelector(`.react-flow__node[data-id="${newCurrentId}"]`);
+      if (el) {
+        el.classList.remove("preview-visited");
         el.classList.add("preview-current");
-      } else if (id && visitedNodes.has(id)) {
-        el.classList.add("preview-visited");
       }
-    });
+    }
+    currentNodeIdRef.current = newCurrentId;
 
-    // Update edge classes
-    rfEl.querySelectorAll(".react-flow__edge").forEach((el) => {
-      const id = el.getAttribute("data-id");
-      el.classList.remove("preview-visited");
-      if (id && visitedEdges.has(id)) {
-        el.classList.add("preview-visited");
-      }
-    });
+    // Add preview-visited only to newly-visited node IDs (typically 0–1/step)
+    for (const id of visitedNodes) {
+      if (id === newCurrentId) continue;
+      if (markedNodesRef.current.has(id)) continue;
+      const el = rfEl.querySelector(`.react-flow__node[data-id="${id}"]`);
+      el?.classList.add("preview-visited");
+      markedNodesRef.current.add(id);
+    }
+
+    // Same for edges.
+    for (const id of visitedEdges) {
+      if (markedEdgesRef.current.has(id)) continue;
+      const el = rfEl.querySelector(`.react-flow__edge[data-id="${id}"]`);
+      el?.classList.add("preview-visited");
+      markedEdgesRef.current.add(id);
+    }
 
     return () => {
       rfEl.removeAttribute("data-previewing");
       rfEl
         .querySelectorAll(".preview-current, .preview-visited")
         .forEach((el) => el.classList.remove("preview-current", "preview-visited"));
+      markedNodesRef.current = new Set();
+      markedEdgesRef.current = new Set();
+      currentNodeIdRef.current = null;
     };
   }, [isOpen, previewState, coverageData, wrapperRef]);
 
@@ -92,7 +116,6 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
         duration: 300,
       });
     }
-    // Clear focusNodeId after handling
     usePreviewStore.getState().setFocusNodeId(null);
   }, [focusNodeId, setCenter, getNodes]);
 }

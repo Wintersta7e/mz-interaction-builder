@@ -20,12 +20,28 @@ export function BreadcrumbTrail({
   const startNodeId = useDocumentStore(selectStartNodeId);
   const selectedNodeId = useUIStore((s) => s.selectedNodeId);
 
-  // M2: Only recompute BFS when edges, selection, or start node changes — not on position updates
-  const path = useMemo(() => {
+  // Derive the breadcrumb items in a single memo keyed on inputs that actually
+  // matter (selection, start, edges, nodes). The previous version did a
+  // `nodes.find` inside the render loop, which made every keystroke on any
+  // node's label re-traverse the visible path even when the path didn't change.
+  const items = useMemo(() => {
     if (!selectedNodeId || !startNodeId) return null;
-    if (startNodeId === selectedNodeId) return [startNodeId];
-    return findShortestPath(startNodeId, selectedNodeId, edges);
-  }, [selectedNodeId, startNodeId, edges]);
+    const path =
+      startNodeId === selectedNodeId
+        ? [startNodeId]
+        : findShortestPath(startNodeId, selectedNodeId, edges);
+    if (!path || path.length === 0) return null;
+
+    const MAX_VISIBLE = 5;
+    const truncated = path.length > MAX_VISIBLE;
+    const visiblePath = truncated ? [...path.slice(0, 2), "...", ...path.slice(-2)] : path;
+
+    const labelById = new Map(nodes.map((n) => [n.id, n.data.label] as const));
+    return visiblePath.map((item) => ({
+      id: item,
+      label: item === "..." ? null : (labelById.get(item) ?? item),
+    }));
+  }, [selectedNodeId, startNodeId, edges, nodes]);
 
   const handleClick = useCallback(
     (nodeId: string) => {
@@ -34,17 +50,12 @@ export function BreadcrumbTrail({
     [onNavigateToNode],
   );
 
-  if (!path || path.length === 0) return null;
-
-  // Truncate: if >5 nodes, show first 2 + ... + last 2
-  const MAX_VISIBLE = 5;
-  const truncated = path.length > MAX_VISIBLE;
-  const visiblePath = truncated ? [...path.slice(0, 2), "...", ...path.slice(-2)] : path;
+  if (!items) return null;
 
   return (
     <div className="flex items-center gap-1 border-b border-border bg-card/50 px-4 py-1.5 text-xs">
-      {visiblePath.map((item, i) => {
-        if (item === "...") {
+      {items.map((item, i) => {
+        if (item.label === null) {
           return (
             <span key="ellipsis" className="flex items-center gap-1 text-muted-foreground">
               <ChevronRight className="h-3 w-3" />
@@ -53,20 +64,17 @@ export function BreadcrumbTrail({
           );
         }
 
-        const node = nodes.find((n) => n.id === item);
-        if (!node) return null;
-        const isLast = i === visiblePath.length - 1;
-
+        const isLast = i === items.length - 1;
         return (
-          <span key={item} className="flex items-center gap-1">
+          <span key={item.id} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
             <button
-              onClick={() => handleClick(item)}
+              onClick={() => handleClick(item.id)}
               className={`rounded px-1.5 py-0.5 transition-colors hover:bg-muted ${
                 isLast ? "font-medium text-foreground" : "text-muted-foreground"
               }`}
             >
-              {node.data.label}
+              {item.label}
             </button>
           </span>
         );

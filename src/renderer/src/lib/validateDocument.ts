@@ -37,12 +37,22 @@ export function validateDocument(
     });
   }
 
+  // Pre-index edges by target, by source, and by source+handle to avoid
+  // repeated linear scans inside the per-node loop (O(n×e) → O(n+e)).
+  const targetSet = new Set<string>();
+  const sourceSet = new Set<string>();
+  const sourceHandleSet = new Set<string>();
+  for (const e of edges) {
+    targetSet.add(e.target);
+    sourceSet.add(e.source);
+    if (e.sourceHandle != null) sourceHandleSet.add(`${e.source}|${e.sourceHandle}`);
+  }
+
   // Check each node for issues
   nodes.forEach((node) => {
     // Check for unconnected inputs (except start nodes)
     if (node.type !== "start" && node.type !== "group" && node.type !== "comment") {
-      const hasIncomingEdge = edges.some((e) => e.target === node.id);
-      if (!hasIncomingEdge) {
+      if (!targetSet.has(node.id)) {
         issues.push({
           type: "warning",
           nodeId: node.id,
@@ -54,8 +64,7 @@ export function validateDocument(
 
     // Check for unconnected outputs (except end nodes)
     if (node.type !== "end" && node.type !== "group" && node.type !== "comment") {
-      const hasOutgoingEdge = edges.some((e) => e.source === node.id);
-      if (!hasOutgoingEdge) {
+      if (!sourceSet.has(node.id)) {
         issues.push({
           type: "warning",
           nodeId: node.id,
@@ -69,10 +78,7 @@ export function validateDocument(
     if (node.type === "menu") {
       const choices = (node.data as MenuNodeData).choices || [];
       choices.forEach((_choice, index) => {
-        const hasConnection = edges.some(
-          (e) => e.source === node.id && e.sourceHandle === `choice-${index}`,
-        );
-        if (!hasConnection) {
+        if (!sourceHandleSet.has(`${node.id}|choice-${index}`)) {
           issues.push({
             type: "warning",
             nodeId: node.id,
@@ -85,13 +91,7 @@ export function validateDocument(
 
     // Check condition nodes for missing true/false branches
     if (node.type === "condition") {
-      const hasTrueConnection = edges.some(
-        (e) => e.source === node.id && e.sourceHandle === "true",
-      );
-      const hasFalseConnection = edges.some(
-        (e) => e.source === node.id && e.sourceHandle === "false",
-      );
-      if (!hasTrueConnection) {
+      if (!sourceHandleSet.has(`${node.id}|true`)) {
         issues.push({
           type: "warning",
           nodeId: node.id,
@@ -99,7 +99,7 @@ export function validateDocument(
           message: "True branch has no connection.",
         });
       }
-      if (!hasFalseConnection) {
+      if (!sourceHandleSet.has(`${node.id}|false`)) {
         issues.push({
           type: "warning",
           nodeId: node.id,

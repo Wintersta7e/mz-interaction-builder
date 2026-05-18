@@ -33,10 +33,18 @@ import "./styles/globals.css";
 const AUTO_SAVE_INTERVAL = 30000;
 
 class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+  {
+    children: React.ReactNode;
+    fallback?: (error: Error | null) => React.ReactNode;
+    label?: string;
+  },
   { hasError: boolean; error: Error | null }
 > {
-  constructor(props: { children: React.ReactNode }) {
+  constructor(props: {
+    children: React.ReactNode;
+    fallback?: (error: Error | null) => React.ReactNode;
+    label?: string;
+  }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
@@ -45,8 +53,13 @@ class ErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
+  componentDidCatch(error: Error, info: React.ErrorInfo): void {
+    console.error(`[${this.props.label ?? "App"}] Error caught:`, error, info);
+  }
+
   render(): React.ReactNode {
     if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback(this.state.error);
       return (
         <div className="flex h-screen items-center justify-center bg-background p-8">
           <div className="max-w-md space-y-4 text-center">
@@ -69,6 +82,28 @@ class ErrorBoundary extends React.Component<
     }
     return this.props.children;
   }
+}
+
+function PanelErrorFallback({
+  panel,
+  error,
+}: {
+  panel: string;
+  error: Error | null;
+}): React.JSX.Element {
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-background/50 p-4">
+      <div className="max-w-sm space-y-2 text-center">
+        <h2 className="text-sm font-semibold text-foreground">{panel} crashed</h2>
+        <p className="text-xs text-muted-foreground">
+          {error?.message ?? "An error occurred in this panel."}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Other panels remain usable; reload the app to recover this one.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function App(): React.JSX.Element {
@@ -451,9 +486,23 @@ export default function App(): React.JSX.Element {
               />
             }
             palette={<NodePalette onDragStart={setDraggingNodeType} />}
-            canvas={<Canvas />}
+            canvas={
+              <ErrorBoundary
+                label="Canvas"
+                fallback={(error) => <PanelErrorFallback panel="Canvas" error={error} />}
+              >
+                <Canvas />
+              </ErrorBoundary>
+            }
             preview={previewIsOpen ? <PreviewPanel key="preview" /> : null}
-            properties={<PropertiesPanel />}
+            properties={
+              <ErrorBoundary
+                label="Properties"
+                fallback={(error) => <PanelErrorFallback panel="Properties" error={error} />}
+              >
+                <PropertiesPanel />
+              </ErrorBoundary>
+            }
             statusbar={<StatusBar />}
           />
           <ExportModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />

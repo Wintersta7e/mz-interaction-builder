@@ -46,11 +46,17 @@ export function Toolbar({
   onHelp,
   onValidate,
 }: ToolbarProps): React.JSX.Element {
-  const { isDirty } = useDocumentStore();
-  const { canUndo, canRedo, undo, redo } = useHistoryStore();
-  const { zoom, setZoom } = useUIStore();
-  const { projectPath } = useProjectStore();
+  const isDirty = useDocumentStore((s) => s.isDirty);
   const setDocument = useDocumentStore((s) => s.setDocument);
+  // Subscribe to length only — re-renders Toolbar only when undo/redo
+  // availability actually flips, not on every history push during drags.
+  const pastLength = useHistoryStore((s) => s.past.length);
+  const futureLength = useHistoryStore((s) => s.future.length);
+  const undo = useHistoryStore((s) => s.undo);
+  const redo = useHistoryStore((s) => s.redo);
+  const zoom = useUIStore((s) => s.zoom);
+  const setZoom = useUIStore((s) => s.setZoom);
+  const projectPath = useProjectStore((s) => s.projectPath);
   const triggerAutoLayout = useUIStore((s) => s.triggerAutoLayout);
   const snapToGrid = useUIStore((s) => s.snapToGrid);
   const toggleSnapToGrid = useUIStore((s) => s.toggleSnapToGrid);
@@ -115,7 +121,7 @@ export function Toolbar({
         <div className="flex items-center gap-1">
           <button
             onClick={handleUndo}
-            disabled={!canUndo()}
+            disabled={pastLength === 0}
             className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
             title="Undo (Ctrl+Z)"
           >
@@ -123,7 +129,7 @@ export function Toolbar({
           </button>
           <button
             onClick={handleRedo}
-            disabled={!canRedo()}
+            disabled={futureLength === 0}
             className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted disabled:opacity-50"
             title="Redo (Ctrl+Y)"
           >
