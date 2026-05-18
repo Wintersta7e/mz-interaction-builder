@@ -3,9 +3,9 @@
 A visual node-graph editor for creating RPG Maker MZ character interactions without coding. Design complex dialogue trees, choice menus, and branching logic visually, then export directly to RPG Maker event commands.
 
 [![CI](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml)
-![Electron](https://img.shields.io/badge/Electron-40-47848F?logo=electron)
+![Electron](https://img.shields.io/badge/Electron-42-47848F?logo=electron)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
 
 > **Part of [MZ DevKit](https://github.com/topics/mz-devkit)** — a suite of visual tools for RPG Maker MZ:
@@ -229,21 +229,22 @@ Loops are handled with Labels (118) and Jump to Label (119).
 This application follows Electron security best practices:
 
 - **Sandboxed renderer** — `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`
-- **IPC validation** — File operations restricted to `.mzinteraction` files; project paths validated before acceptance
+- **IPC validation** — File operations restricted to `.mzinteraction` files; project paths validated before acceptance; `pageIndex`, `mapId`, `eventId`, and command-array structure validated before writing to map files
 - **Content Security Policy** — Restricts script, style, connect, object, and frame sources
 - **Navigation blocking** — `will-navigate` handler prevents renderer from loading external pages
 - **Protocol allowlist** — `shell.openExternal` limited to `https:` and `http:` URLs
-- **Script sandbox** — Preview script evaluation shadows `window`, `document`, `fetch`, and other globals to prevent access to the IPC bridge
-- **Error boundaries** — Global React error boundary prevents white-screen crashes with recovery UI
+- **Script sandbox** — Preview script evaluation shadows `window`, `document`, `fetch`, `Function`, `process`, and `require` to prevent access to the IPC bridge and Node APIs
+- **Error boundaries** — App-level and per-panel React error boundaries isolate render crashes to the affected panel rather than the full window
+- **Filesystem error sanitization** — Native fs error messages are mapped to friendly text and stripped of absolute paths before reaching the renderer
 
 ## Tech Stack
 
-- **Framework**: Electron 40 + Vite 7
-- **UI**: React 19 + TypeScript 5
+- **Framework**: Electron 42 + Vite 7
+- **UI**: React 19 + TypeScript 6
 - **Node Graph**: React Flow (@xyflow/react 12)
 - **State**: Zustand 5
 - **Layout**: Dagre (auto-layout engine)
-- **Styling**: Tailwind CSS 3
+- **Styling**: Tailwind CSS 4
 - **Animation**: Framer Motion 12
 
 ## Project Structure
@@ -281,11 +282,11 @@ src/
 ## Testing
 
 ```bash
-npm test              # 181 tests across 14 files
+npm test              # 324 tests across 24 files
 npm run test:coverage # Coverage report
 ```
 
-Tested modules include graph traversal, node search, alignment/layout, export (muted paths), document validation, preview engine, script sandbox, debounced sync, templates, and UI components.
+Tested modules include graph traversal, node search, alignment/layout, export (muted paths, escape utility), document validation, preview engine, script sandbox (including escape-vector negative tests), debounced sync (including unmount cleanup), templates, document/history/preview stores, and the main-process error-message extractor.
 
 ## Development
 
