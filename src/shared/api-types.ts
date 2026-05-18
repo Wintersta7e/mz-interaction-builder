@@ -28,7 +28,7 @@ export interface DialogAPI {
 
 export interface ProjectAPI {
   validate: (path: string) => Promise<{ valid: boolean; error?: string }>;
-  setPath: (path: string) => Promise<void>;
+  setPath: (path: string) => Promise<{ success: boolean; error?: string }>;
   getPath: () => Promise<string | null>;
   getMaps: () => Promise<{ id: number; name: string }[] | { error: string }>;
   getMapEvents: (

@@ -28,6 +28,9 @@ export interface PreviewState {
   variables: Map<number, number>;
   switches: Map<number, boolean>;
   transcript: TranscriptEntry[];
+  /** Bumped by the engine whenever `transcript` is mutated. Lets callers
+   *  cheaply detect transcript-only changes without comparing entries. */
+  transcriptVersion: number;
   visitedNodes: Set<string>;
   visitedEdges: Set<string>;
   choiceHistory: number[];
