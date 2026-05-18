@@ -75,15 +75,15 @@ export const usePreviewStore = create<PreviewStoreState>()((set, get) => ({
   },
 
   close: () => {
-    // Reset coverage when closing — otherwise stale node IDs from a prior
-    // document linger across reopen and DOM highlight passes iterate over them
-    // for no reason.
+    // Reset coverage and focus when closing — otherwise stale state from the
+    // previous run lingers across reopen.
     set({
       isOpen: false,
       engine: null,
       previewState: null,
       autoPlay: false,
       coverageData: { visitedNodes: new Set(), visitedEdges: new Set() },
+      focusNodeId: null,
     });
   },
 

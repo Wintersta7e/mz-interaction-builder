@@ -12,7 +12,7 @@ import { createNode } from "../lib/nodeFactory";
 import type { AutoLayoutOptions } from "../lib/autoLayout";
 import type { AlignMode, DistributeMode } from "../lib/alignNodes";
 import type { InteractionNodeType, InteractionNode, InteractionEdge } from "../types";
-import { pendingAnimationTimers } from "../lib/pendingAnimationTimers";
+import { pendingAnimationTimers, pendingAnimationFrames } from "../lib/pendingAnimationTimers";
 
 // Quick-add hotkeys: press 1-7 to create a node at viewport center
 const HOTKEY_NODE_MAP: Record<string, InteractionNodeType> = {
@@ -316,9 +316,10 @@ export function useCanvasKeyboard(options: UseCanvasKeyboardOptions): UseCanvasK
         setNodes(allNodes);
         setEdges(allEdges);
 
-        // Brief paste highlight flash — timers tracked centrally so they can
-        // be cancelled if the canvas unmounts mid-animation (see Canvas.tsx).
-        requestAnimationFrame(() => {
+        // Brief paste highlight flash — timers and rAF tracked centrally so
+        // they can be cancelled if the canvas unmounts mid-animation.
+        const flashFrameId = requestAnimationFrame(() => {
+          pendingAnimationFrames.delete(flashFrameId);
           for (const [, newId] of idMap) {
             const el = window.document.querySelector(`[data-id="${newId}"] .interaction-node`);
             if (el instanceof HTMLElement) {
@@ -331,6 +332,7 @@ export function useCanvasKeyboard(options: UseCanvasKeyboardOptions): UseCanvasK
             }
           }
         });
+        pendingAnimationFrames.add(flashFrameId);
       }
 
       // Ctrl+0: Fit All (Phase 3D)

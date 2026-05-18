@@ -7,8 +7,9 @@ import { usePreviewStore } from "../stores";
  * Applies CSS classes to React Flow nodes/edges for dimming/highlighting
  * during dialogue preview.
  *
- * Uses direct DOM manipulation and incremental updates to avoid re-rendering
- * all nodes when only one or two have changed.
+ * Two effects: one drives teardown when preview closes; the other applies
+ * incremental DOM updates as previewState advances. Splitting them avoids
+ * running the full querySelectorAll teardown on every step.
  */
 export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | null>): void {
   const isOpen = usePreviewStore((s) => s.isOpen);
@@ -23,6 +24,7 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
   const markedEdgesRef = useRef<Set<string>>(new Set());
   const currentNodeIdRef = useRef<string | null>(null);
 
+  // Teardown effect: only runs when isOpen flips or the component unmounts.
   useEffect(() => {
     const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
     if (!rfEl) return;
@@ -41,17 +43,24 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
       reset();
       return;
     }
-
     rfEl.setAttribute("data-previewing", "");
+    return reset;
+  }, [isOpen, wrapperRef]);
+
+  // Incremental update effect: applies class swaps for the current node and
+  // any newly-visited nodes/edges without tearing down on every step.
+  useEffect(() => {
+    if (!isOpen) return;
+    const rfEl = wrapperRef.current?.querySelector(".react-flow") as HTMLElement | null;
+    if (!rfEl) return;
+
     const newCurrentId = previewState?.currentNodeId ?? null;
     const visitedNodes = coverageData.visitedNodes;
     const visitedEdges = coverageData.visitedEdges;
 
-    // Swap preview-current: remove from previous, add to new (1–2 DOM ops).
     if (currentNodeIdRef.current && currentNodeIdRef.current !== newCurrentId) {
       const prevEl = rfEl.querySelector(`.react-flow__node[data-id="${currentNodeIdRef.current}"]`);
       prevEl?.classList.remove("preview-current");
-      // The just-departed node is now visited.
       if (visitedNodes.has(currentNodeIdRef.current)) {
         prevEl?.classList.add("preview-visited");
         markedNodesRef.current.add(currentNodeIdRef.current);
@@ -66,7 +75,6 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
     }
     currentNodeIdRef.current = newCurrentId;
 
-    // Add preview-visited only to newly-visited node IDs (typically 0–1/step)
     for (const id of visitedNodes) {
       if (id === newCurrentId) continue;
       if (markedNodesRef.current.has(id)) continue;
@@ -74,16 +82,12 @@ export function usePreviewHighlighting(wrapperRef: RefObject<HTMLDivElement | nu
       el?.classList.add("preview-visited");
       markedNodesRef.current.add(id);
     }
-
-    // Same for edges.
     for (const id of visitedEdges) {
       if (markedEdgesRef.current.has(id)) continue;
       const el = rfEl.querySelector(`.react-flow__edge[data-id="${id}"]`);
       el?.classList.add("preview-visited");
       markedEdgesRef.current.add(id);
     }
-
-    return reset;
   }, [isOpen, previewState, coverageData, wrapperRef]);
 
   // Auto-center on current node when it changes

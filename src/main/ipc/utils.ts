@@ -26,8 +26,16 @@ export function extractErrorMessage(error: unknown): string {
           return "Too many open files";
       }
     }
-    // Strip trailing absolute paths from messages we did not match above.
-    return error.message.replace(/,?\s*['"]?(?:[a-zA-Z]:[\\/]|\/)[^'"\n]+['"]?$/, "").trim();
+    // Strip absolute-path-looking tokens from messages we did not match above.
+    // Bounded by whitespace/quote/comma so we do not also strip the
+    // surrounding sentence text after the path.
+    return error.message
+      .replace(/(?:[a-zA-Z]:[\\/]|\/)[^\s'",]+/g, "")
+      .replace(/['"]\s*['"]/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/,\s*,/g, ",")
+      .replace(/[,\s]+$/, "")
+      .trim();
   }
   if (typeof error === "string") return error;
   return "Unknown error";

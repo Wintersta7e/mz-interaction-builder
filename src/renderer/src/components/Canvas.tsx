@@ -38,7 +38,11 @@ import { AlignmentToolbar } from "./AlignmentToolbar";
 import { SaveTemplateModal } from "./SaveTemplateModal";
 import { computeGuideLines, type GuideLine } from "../lib/alignmentGuides";
 import { AlignmentGuides } from "./AlignmentGuides";
-import { pendingAnimationTimers, clearPendingAnimationTimers } from "../lib/pendingAnimationTimers";
+import {
+  pendingAnimationTimers,
+  pendingAnimationFrames,
+  clearPendingAnimationTimers,
+} from "../lib/pendingAnimationTimers";
 import {
   useDocumentStore,
   useUIStore,
@@ -66,7 +70,8 @@ const MUTABLE_NODE_TYPES: ReadonlySet<string> = new Set(["action", "menu", "cond
 
 /** Fire-and-forget entrance animation on newly added node elements. */
 function animateNodeEntrance(nodeIds: string[], duration = 200): void {
-  requestAnimationFrame(() => {
+  const frameId = requestAnimationFrame(() => {
+    pendingAnimationFrames.delete(frameId);
     for (const id of nodeIds) {
       const el = window.document.querySelector(`[data-id="${id}"] .interaction-node`);
       if (el instanceof HTMLElement) {
@@ -79,6 +84,7 @@ function animateNodeEntrance(nodeIds: string[], duration = 200): void {
       }
     }
   });
+  pendingAnimationFrames.add(frameId);
 }
 
 function CanvasInner(): React.JSX.Element {
