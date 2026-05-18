@@ -5,6 +5,7 @@ import { setupFileHandlers } from "./ipc/file";
 import { setupDialogHandlers } from "./ipc/dialog";
 import { setupProjectHandlers } from "./ipc/project";
 import { setupTemplateHandlers } from "./ipc/templates";
+import { extractErrorMessage } from "./ipc/utils";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -64,32 +65,37 @@ function createWindow(): void {
     mainWindow?.webContents.send("window-maximized-changed", false);
   });
 
+  // Window control handlers — scoped to this window's lifecycle so they do not
+  // accumulate across re-creations (macOS dock reactivate after window-all-closed).
+  const onMinimize = (): void => {
+    mainWindow?.minimize();
+  };
+  const onMaximizeToggle = (): void => {
+    if (mainWindow?.isMaximized()) mainWindow.unmaximize();
+    else mainWindow?.maximize();
+  };
+  const onClose = (): void => {
+    mainWindow?.close();
+  };
+  ipcMain.on("window-minimize", onMinimize);
+  ipcMain.on("window-maximize", onMaximizeToggle);
+  ipcMain.on("window-close", onClose);
+  mainWindow.on("closed", () => {
+    ipcMain.removeListener("window-minimize", onMinimize);
+    ipcMain.removeListener("window-maximize", onMaximizeToggle);
+    ipcMain.removeListener("window-close", onClose);
+    mainWindow = null;
+  });
+
   const loadPromise =
     is.dev && process.env["ELECTRON_RENDERER_URL"]
       ? mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"])
       : mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
 
   loadPromise.catch((err) => {
-    dialog.showErrorBox("Failed to load application", (err as Error).message);
+    dialog.showErrorBox("Failed to load application", extractErrorMessage(err));
   });
 }
-
-// Window control handlers
-ipcMain.on("window-minimize", () => {
-  mainWindow?.minimize();
-});
-
-ipcMain.on("window-maximize", () => {
-  if (mainWindow?.isMaximized()) {
-    mainWindow.unmaximize();
-  } else {
-    mainWindow?.maximize();
-  }
-});
-
-ipcMain.on("window-close", () => {
-  mainWindow?.close();
-});
 
 ipcMain.handle("window-is-maximized", () => {
   return mainWindow?.isMaximized();

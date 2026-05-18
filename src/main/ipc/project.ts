@@ -141,7 +141,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         mapInfos = JSON.parse(data) as (MZMapInfo | null)[];
       } catch (parseError) {
         return {
-          error: `Failed to parse MapInfos.json: ${(parseError as Error).message}`,
+          error: `Failed to parse MapInfos.json: ${extractErrorMessage(parseError)}`,
         };
       }
       return mapInfos
@@ -178,7 +178,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
           mapData = JSON.parse(data) as RawMZMapData;
         } catch (parseError) {
           return {
-            error: `Failed to parse Map${String(mapId).padStart(3, "0")}.json: ${(parseError as Error).message}`,
+            error: `Failed to parse Map${String(mapId).padStart(3, "0")}.json: ${extractErrorMessage(parseError)}`,
           };
         }
         return mapData.events
@@ -210,7 +210,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         system = JSON.parse(data) as RawMZSystemData;
       } catch (parseError) {
         return {
-          error: `Failed to parse System.json: ${(parseError as Error).message}`,
+          error: `Failed to parse System.json: ${extractErrorMessage(parseError)}`,
         };
       }
       return system.switches
@@ -240,7 +240,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         system = JSON.parse(data) as RawMZSystemData;
       } catch (parseError) {
         return {
-          error: `Failed to parse System.json: ${(parseError as Error).message}`,
+          error: `Failed to parse System.json: ${extractErrorMessage(parseError)}`,
         };
       }
       return system.variables
@@ -282,6 +282,14 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         options.eventId !== Math.floor(options.eventId)
       ) {
         return { success: false, error: "Invalid event ID" };
+      }
+      if (
+        typeof options.pageIndex !== "number" ||
+        !Number.isFinite(options.pageIndex) ||
+        options.pageIndex < 0 ||
+        options.pageIndex !== Math.floor(options.pageIndex)
+      ) {
+        return { success: false, error: "Invalid page index" };
       }
 
       const mapFile = join(
@@ -325,7 +333,7 @@ export function setupProjectHandlers(ipcMain: IpcMain): void {
         } catch (parseError) {
           return {
             success: false,
-            error: `Failed to parse Map${String(options.mapId).padStart(3, "0")}.json: ${(parseError as Error).message}`,
+            error: `Failed to parse Map${String(options.mapId).padStart(3, "0")}.json: ${extractErrorMessage(parseError)}`,
           };
         }
 
