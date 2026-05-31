@@ -1,5 +1,7 @@
 # MZ Interaction Builder
 
+> ⚠️ **This project is archived and no longer actively maintained.** It remains fully functional, and the source stays available for reference, forking, and reuse under the MIT license.
+
 A visual node-graph editor for creating RPG Maker MZ character interactions without coding. Design complex dialogue trees, choice menus, and branching logic visually, then export directly to RPG Maker event commands.
 
 [![CI](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml/badge.svg)](https://github.com/Wintersta7e/mz-interaction-builder/actions/workflows/ci.yml)
